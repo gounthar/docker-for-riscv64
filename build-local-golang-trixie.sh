@@ -24,3 +24,7 @@ if ! docker buildx build --platform linux/riscv64 --load -f Dockerfile.golang-tr
 fi
 
 echo "Local $TAG image for riscv64 built and loaded into Docker."
+
+# Also tag as docker.io/library/golang:1.24.4-trixie for buildx compatibility
+docker tag $TAG docker.io/library/golang:1.24.4-trixie || true
+echo "Image also tagged as docker.io/library/golang:1.24.4-trixie"
