@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "=== BananaPi F3 System Monitor ==="
+echo "Date: $(date)"
+echo "Uptime: $(uptime -p)"
+echo "Load: $(uptime | cut -d',' -f3-)"
+echo "Memory: $(free -h | grep '^Mem:' | awk '{print $3 "/" $2}')"
+echo "Disk: $(df -h / | tail -1 | awk '{print $3 "/" $2 " (" $5 " used)"}')"
+echo "Temperature: $(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null | awk '{print $1/1000"°C"}' || echo "N/A")"
+echo "Docker: $(docker system df 2>/dev/null | tail -1 || echo "Not available")"
+echo "================================="

@@ -1,9 +1,10 @@
-# Patch to add riscv64 platform/group to moby/docker-bake.hcl
-# Apply with: patch -d moby -p1 < ../patches/docker-bake.hcl.riscv64.patch
-
 --- docker-bake.hcl
 +++ docker-bake.hcl
-@@
+@@ -222,6 +222,11 @@
+   no-cache-filter = ["run"]
+   output = ["${DESTDIR}"]
+ }
++
 +group "riscv64" {
 +  targets = ["docker-image"]
 +  platforms = ["linux/riscv64"]

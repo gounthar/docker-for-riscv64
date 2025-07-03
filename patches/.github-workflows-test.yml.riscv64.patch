@@ -1,28 +1,31 @@
-# Patch to add riscv64 build/test job to moby/.github/workflows/test.yml
-# Apply with: patch -d moby -p1 < ../patches/.github-workflows-test.yml.riscv64.patch
-
 --- .github/workflows/test.yml
 +++ .github/workflows/test.yml
-@@
-+  riscv64-build:
-+    runs-on: ubuntu-24.04
-+    continue-on-error: true
-+    steps:
-+      - name: Checkout
-+        uses: actions/checkout@v4
-+      - name: Set up QEMU
-+        uses: docker/setup-qemu-action@v3
-+      - name: Set up Docker Buildx
-+        uses: docker/setup-buildx-action@v3
-+        with:
-+          version: ${{ env.SETUP_BUILDX_VERSION }}
-+          driver-opts: image=${{ env.SETUP_BUILDKIT_IMAGE }}
-+          buildkitd-flags: --debug
-+      - name: Build riscv64 image
-+        uses: docker/bake-action@v6
-+        with:
-+          targets: docker-image
-+          set: |
-+            *.platform=linux/riscv64
-+      - name: Run E2E tests (stub)
-+        run: echo "TODO: Implement riscv64 E2E tests"
+@@ -202,6 +202,21 @@
+        uses: docker/bake-action@v6
+        with:
+          targets: binary-smoketest
+          set: |
+            *.platform=${{ matrix.platform }}
++
++riscv64-build:
++  runs-on: ubuntu-24.04
++  continue-on-error: true
++  steps:
++    - name: Checkout
++      uses: actions/checkout@v4
++    - name: Set up QEMU
++      uses: docker/setup-qemu-action@v3
++    - name: Set up Docker Buildx
++      uses: docker/setup-buildx-action@v3
++      with:
++        version: ${{ env.SETUP_BUILDX_VERSION }}
++        driver-opts: image=${{ env.SETUP_BUILDKIT_IMAGE }}
++        buildkitd-flags: --debug
++    - name: Build riscv64 image
++      uses: docker/bake-action@v6
++      with:
++        targets: docker-image
++        set: |
++          *.platform=linux/riscv64
++    - name: Run E2E tests (stub)
++      run: echo "TODO: Implement riscv64 E2E tests"
