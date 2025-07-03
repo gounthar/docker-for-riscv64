@@ -1,0 +1,10 @@
+# Dockerfile.riscv64 - Minimal stub for riscv64 Docker Engine build
+# This is a placeholder Dockerfile for riscv64 support.
+# TODO: Update with actual riscv64 build steps and base image.
+
+FROM scratch
+LABEL maintainer="TODO: set maintainer"
+LABEL architecture="riscv64"
+
+# Stub command
+CMD ["echo", "riscv64 build stub"]
