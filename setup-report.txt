@@ -1,0 +1,66 @@
+BananaPi F3 Docker Development Environment Setup Report
+======================================================
+Date: lun. 16 juin 2025 19:45:26 CEST
+Hostname: bananapif3
+User: poddingue
+
+System Information:
+- Architecture: riscv64
+- Kernel: 6.6.87-current-spacemit
+- OS: Armbian 25.5.1 trixie
+Armbian 25.5.1 trixie
+- Memory: 15Gi
+- Available Storage: 8,5G
+
+Installed Components:
+- Docker: Docker version 26.1.5+dfsg1, build a72d7cd
+- Docker Compose: Docker Compose version 2.26.1-4
+- Go: go version go1.24.2 linux/riscv64
+- Git: git version 2.47.2
+
+Docker Images:
+REPOSITORY                           TAG             IMAGE ID       CREATED         SIZE
+riscv64/debian                       sid             b8ed73792a3a   6 days ago      105MB
+riscv64/alpine                       latest          3139e75da5d8   2 weeks ago     7.07MB
+riscv64/ubuntu                       latest          d6c7147b75e3   2 weeks ago     70.5MB
+hello-world                          latest          0079a746a6c9   4 months ago    5.15kB
+harbor.spacemit.com/library/debian   unstable-slim   0b7da19f6d95   12 months ago   67.6MB
+riscv64/buildpack-deps               sid             becbb47ea3cb   17 months ago   1.34GB
+ghcr.io/go-riscv/go                  latest          7a03bc56d98d   21 months ago   1.32GB
+
+Workspace Structure:
+/home/poddingue/docker-dev/
+├── moby/                 # Docker source code
+├── scripts/              # Development scripts
+├── logs/                 # Build logs
+├── docker-aliases.sh     # Useful aliases
+└── setup-report.txt      # This report
+
+Available Scripts:
+- ~/docker-dev/scripts/test-docker.sh      # Test Docker installation
+- ~/docker-dev/scripts/setup-env.sh        # Setup build environment
+- ~/docker-dev/scripts/quick-build.sh      # Quick build test
+- ~/docker-dev/scripts/monitor.sh          # System monitoring
+
+Next Steps:
+1. Restart your shell: exec bash
+2. Test Docker: dtest
+3. Setup environment: denv
+4. Navigate to moby: cdmoby
+5. Try quick build: ~/docker-dev/scripts/quick-build.sh
+
+For building Docker from source:
+1. Use the dockerfile-riscv-fix.sh script to fix base image issues
+2. Use the docker-build-automation.sh script for automated building
+
+Useful Commands:
+- dmonitor     # System monitoring
+- dtest        # Test Docker
+- denv         # Setup build environment
+- cdmoby       # Navigate to moby source
+- temp         # Check CPU temperature
+
+Support Resources:
+- BananaPi F3 Documentation: https://docs.banana-pi.org/
+- RISC-V Docker Hub: https://hub.docker.com/search?architecture=riscv64
+- Moby Repository: https://github.com/moby/moby
