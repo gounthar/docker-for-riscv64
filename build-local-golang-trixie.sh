@@ -16,8 +16,11 @@ curl -fsSL https://raw.githubusercontent.com/docker-library/golang/master/1.24/b
 echo "Patching Dockerfile to use trixie as the base..."
 sed -i 's/bookworm/trixie/g' Dockerfile.golang-trixie
 
-# Build the image locally
-echo "Building local $TAG image..."
-docker buildx build --platform linux/riscv64 -f Dockerfile.golang-trixie -t $TAG .
+# Build the image locally and load it into the Docker daemon
+echo "Building local $TAG image for riscv64 and loading into Docker..."
+if ! docker buildx build --platform linux/riscv64 --load -f Dockerfile.golang-trixie -t $TAG .; then
+  echo "Error: Failed to build or load $TAG for riscv64. Ensure QEMU emulation is enabled (docker run --rm --privileged multiarch/qemu-user-static --reset -p yes)."
+  exit 1
+fi
 
-echo "Local $TAG image built and ready for use."
+echo "Local $TAG image for riscv64 built and loaded into Docker."
