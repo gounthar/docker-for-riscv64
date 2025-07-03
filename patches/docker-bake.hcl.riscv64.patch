@@ -1,6 +1,6 @@
 --- docker-bake.hcl
 +++ docker-bake.hcl
-@@ -222,6 +222,11 @@
+@@ -218,6 +218,11 @@
    no-cache-filter = ["run"]
    output = ["${DESTDIR}"]
  }
