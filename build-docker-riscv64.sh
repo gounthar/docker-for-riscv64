@@ -1,20 +1,31 @@
-#!/bin/sh
+#!/bin/bash
 # build-docker-riscv64.sh
-# Stub build script for Docker Engine riscv64 support.
-# Usage: ./build-docker-riscv64.sh [options]
-# This is a placeholder. Implement actual build logic as needed.
+# Build Docker Engine for riscv64 using trixie as the base.
+# Usage: ./build-docker-riscv64.sh
+
+set -e
 
 show_usage() {
-  echo "Usage: $0 [options]"
-  echo "Stub build script for riscv64. No build performed."
+  echo "Usage: $0"
+  echo "Build Docker Engine for riscv64 using trixie as the base."
 }
 
-if [ "$1" = "--help" ] || [ "$1" = "-h" ] || [ $# -eq 0 ]; then
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
   show_usage
   exit 0
 fi
 
-echo "Building Docker Engine for riscv64 (stub)."
-# TODO: Add actual build logic here.
+echo "Building Docker Engine for riscv64 using trixie as the base..."
 
-exit 0
+cd moby
+
+# Ensure buildx is available
+if ! docker buildx version >/dev/null 2>&1; then
+  echo "Error: docker buildx is not available. Please install Docker Buildx."
+  exit 1
+fi
+
+# Build for riscv64 using the patched Dockerfile
+docker buildx build --platform linux/riscv64 -f Dockerfile -t docker-riscv64:dev .
+
+echo "Build complete. Image tagged as docker-riscv64:dev"
