@@ -1,9 +1,6 @@
 --- .github/workflows/test.yml
 +++ .github/workflows/test.yml
-@@ -210,6 +210,21 @@
-      -
-        name: Test
-        uses: docker/bake-action@v6
+@@ -230,6 +230,21 @@
         with:
           targets: binary-smoketest
           set: |

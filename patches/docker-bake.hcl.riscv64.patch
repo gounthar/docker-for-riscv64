@@ -4,7 +4,6 @@
    no-cache-filter = ["run"]
    output = ["${DESTDIR}"]
  }
-+
 +group "riscv64" {
 +  targets = ["docker-image"]
 +  platforms = ["linux/riscv64"]
