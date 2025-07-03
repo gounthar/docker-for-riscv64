@@ -13,7 +13,7 @@ echo "Applying riscv64 and trixie patches to $MOBYDIR..."
 # List of patches to apply (in order)
 PATCHES_MOBY=(
   "$PATCH_DIR/docker-bake.hcl.riscv64.patch"
-  "$PATCH_DIR/.github-workflows-test.yml.riscv64.patch"
+  "$PATCH_DIR/Dockerfile.trixie-riscv64.patch"
 )
 PATCHES_RISCV=(
   "$PATCH_DIR/Dockerfile.riscv-trixie.patch"
