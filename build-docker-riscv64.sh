@@ -17,6 +17,9 @@ fi
 
 echo "Building Docker Engine for riscv64 using trixie as the base..."
 
+# Ensure the local golang:1.24.4-trixie image exists
+./build-local-golang-trixie.sh
+
 cd moby
 
 # Ensure buildx is available
