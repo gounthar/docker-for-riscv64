@@ -1,0 +1,17 @@
+Audit for Existing riscv64 Support
+==================================
+
+Date: 2025-07-03
+
+Result:
+-------
+
+No files, scripts, or configuration files in the repository currently mention or target "riscv64" (case-insensitive).
+
+- Searched for "riscv64" in all files: no results found.
+- Searched for "riscv": no results found in file contents, though some filenames suggest riscv support (e.g., Dockerfile.riscv, build-docker-riscv.sh), but these do not mention riscv64.
+
+Conclusion:
+-----------
+
+There is currently no explicit riscv64 support in the codebase.
