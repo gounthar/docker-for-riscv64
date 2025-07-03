@@ -43,6 +43,15 @@ This repository provides out-of-tree integration, build, and patch management fo
 - Not all upstream Docker features may work on riscv64.
 - Patches may need to be reapplied after updating the submodule.
 
+## Debian trixie transition
+
+- The default base image in Dockerfiles is "bookworm", which is not available for riscv64.
+- Out-of-tree patches are provided to switch the base to "trixie" for riscv64 builds:
+  - `patches/Dockerfile.riscv-trixie.patch` for `moby/Dockerfile.riscv`
+  - `patches/Dockerfile.riscv-fixed-trixie.patch` for `moby/Dockerfile.riscv-fixed`
+- Apply these patches before building for riscv64.
+- If you need to patch the main `moby/Dockerfile`, create a similar patch or use a riscv64-specific Dockerfile.
+
 ## Contributing
 
 - Do **not** edit files inside `moby/` directly.

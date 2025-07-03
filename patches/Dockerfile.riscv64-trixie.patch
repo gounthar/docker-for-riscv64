@@ -1,0 +1,18 @@
+--- Dockerfile
++++ Dockerfile
+@@ -2,7 +2,13 @@
+ 
+-ARG GO_VERSION=1.24.4
+-ARG BASE_DEBIAN_DISTRO="bookworm"
++ARG GO_VERSION=1.24.4
++ARG BASE_DEBIAN_DISTRO
++# Patch: Use trixie for riscv64, bookworm otherwise
++ARG TARGETARCH
++RUN if [ "$TARGETARCH" = "riscv64" ]; then \
++      echo "Using trixie for riscv64"; \
++      export BASE_DEBIAN_DISTRO="trixie"; \
++    else \
++      export BASE_DEBIAN_DISTRO="bookworm"; \
++    fi
+ ARG GOLANG_IMAGE="golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO}"
+ ARG XX_VERSION=1.6.1
