@@ -12,8 +12,12 @@ LOCAL_TAG="$LOCAL_REGISTRY/golang:1.24.4-trixie"
 
 # Start local registry if not running
 if ! docker ps | grep -q "registry:2"; then
+  if docker ps -a | grep -q "registry"; then
+    echo "Removing stopped registry container..."
+    docker rm registry
+  fi
   echo "Starting local Docker registry on $LOCAL_REGISTRY..."
-  docker run -d -p 5000:5000 --name registry registry:2 || true
+  docker run -d -p 5000:5000 --name registry registry:2
 fi
 
 # Download the official Dockerfile for golang:1.24.4-bookworm
