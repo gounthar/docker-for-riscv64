@@ -131,8 +131,8 @@ This plan is atomic, testable, and follows the updated coding and git workflow p
   - **18.2. Create a patch for moby/Dockerfile to use trixie for riscv64**  
     - Patch moby/Dockerfile so that when building for riscv64, it uses "trixie" as the base image.
 
-  - **18.3. Patch any other Dockerfiles (e.g., Dockerfile.riscv, Dockerfile.riscv-fixed) to use trixie**  
-    - Ensure all riscv64-related Dockerfiles use "trixie".
+  - **18.3. Update patch script to only patch files in the moby submodule**  
+    - Remove patching of riscv/Dockerfile.riscv and riscv/Dockerfile.riscv-fixed from the patch script, as these are now maintained directly.
 
   - **18.4. Patch build scripts to reference trixie where needed**  
     - Update scripts that may hardcode "bookworm" to use "trixie" for riscv64.
