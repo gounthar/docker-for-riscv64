@@ -22,6 +22,16 @@ PATCHES_RISCV=(
 
 for patch in "${PATCHES_MOBY[@]}"; do
   if [ -f "$patch" ]; then
+    patchfile=$(basename "$patch" .patch)
+    targetfile="$MOBYDIR/$patchfile"
+    # Normalize line endings in patch and target file
+    if command -v dos2unix >/dev/null 2>&1; then
+      echo "Normalizing line endings in $patch and $targetfile (if exists)..."
+      dos2unix "$patch"
+      if [ -f "$targetfile" ]; then
+        dos2unix "$targetfile"
+      fi
+    fi
     echo "Applying $patch to $MOBYDIR..."
     patch -d "$MOBYDIR" -p0 < "$patch" || {
       echo "Warning: $patch may already be applied or failed to apply."
