@@ -22,7 +22,13 @@ echo "Building Docker Engine for riscv64 using trixie as the base..."
 
 cd moby
 
-# Build for riscv64 using the patched Dockerfile (update the filename as needed)
-docker build -f Dockerfile -t docker-riscv64:dev .
+# Ensure Dockerfile exists
+if [ ! -f ./Dockerfile ]; then
+  echo "Error: moby/Dockerfile not found. Please ensure the patch has been applied and you are in the correct directory."
+  exit 1
+fi
+
+# Build for riscv64 using the patched Dockerfile
+docker build -f ./Dockerfile -t docker-riscv64:dev .
 
 echo "Build complete. Image tagged as docker-riscv64:dev"
