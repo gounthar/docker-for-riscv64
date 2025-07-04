@@ -1,0 +1,186 @@
+= Building Docker Engine for RISC-V 64: A Technical Blogpost
+:author: Your Name
+:date: 2025-07-04
+
+== Introduction
+
+Running Docker Engine (Moby) on riscv64 is a challenge: upstream Moby doesn't support riscv64 or Debian trixie out of the box, and many base images are missing. This post documents our journey to make it work, with all the technical details, code snippets, and troubleshooting we encountered.
+
+== Initial Setup
+
+We started by forking the Moby repository and creating a new integration repo. To keep things maintainable, we decided:
+
+* All riscv64-specific logic, scripts, and patches would live _outside_ the moby submodule.
+* Moby is added as a git submodule:
++
+[source,bash]
+----
+git submodule add https://github.com/moby/moby.git moby
+----
+
+* All work is done on a feature branch:
++
+[source,bash]
+----
+git checkout -b feature/add-riscv64-support
+----
+
+== Step-by-Step Plan
+
+We created a `tasks.md` file with atomic, testable steps, including:
+
+* Auditing for existing riscv64 support
+* Writing failing unit tests
+* Creating riscv64 Dockerfiles and build scripts
+* Moving all riscv64 logic out-of-tree
+* Patch-based integration for upstream files
+
+== Early Attempts
+
+We searched for "bookworm" in all Dockerfiles and scripts:
++
+[source,bash]
+----
+grep -ri bookworm .
+----
+
+We created riscv64-specific Dockerfiles and scripts, but quickly realized this duplicated too much logic and would be hard to maintain.
+
+== Patch-Based Approach
+
+We switched to patching the upstream Moby Dockerfile and build system. Example patch for docker-bake.hcl:
++
+[source,patch]
+----
+--- docker-bake.hcl
++++ docker-bake.hcl
+@@ -218,6 +218,11 @@
+   no-cache-filter = ["run"]
+   output = ["${DESTDIR}"]
+ }
++group "riscv64" {
++  targets = ["docker-image"]
++  platforms = ["linux/riscv64"]
++}
+----
+
+We automated patch application with a script:
++
+[source,bash]
+----
+./apply-riscv64-patches.sh
+----
+
+== The Golang Image Problem
+
+Moby's Dockerfile expects a `golang:1.24.4-trixie` image, which doesn't exist on Docker Hub. BuildKit won't use local images for cross-arch builds unless they're in a registry.
+
+=== Solution: Build and Push a Custom Image
+
+We wrote a script to build and push the image to a local registry:
++
+[source,bash]
+----
+#!/bin/bash
+GO_VERSION=1.24.4
+BASE_DISTRO=trixie
+TAG="golang:${GO_VERSION}-${BASE_DISTRO}"
+LOCAL_REGISTRY="host.docker.internal:5000"
+LOCAL_TAG="$LOCAL_REGISTRY/golang:1.24.4-trixie"
+
+# Start local registry if not running
+if ! docker ps | grep -q "registry:2"; then
+  if docker ps -a | grep -q "registry"; then
+    docker rm registry
+  fi
+  docker run -d -p 5000:5000 --name registry registry:2
+fi
+
+# Wait for registry
+for i in {1..10}; do
+  if curl -fsSL http://127.0.0.1:5000/v2/ > /dev/null; then break; fi
+  sleep 1
+done
+
+# Build and push
+docker buildx build --platform linux/riscv64 --load -f Dockerfile.golang-trixie -t $TAG .
+docker tag $TAG $LOCAL_TAG
+docker push $LOCAL_TAG
+----
+
+== Patching the Dockerfile
+
+We patched moby/Dockerfile to use the local registry image:
++
+[source,patch]
+----
+-ARG GOLANG_IMAGE="golang:${GO_VERSION}-${BASE_DEBIAN_DISTRO}"
++ARG GOLANG_IMAGE="host.docker.internal:5000/golang:1.24.4-trixie"
+----
+
+== Buildx/BuildKit Quirks
+
+* BuildKit containers can't access 127.0.0.1:5000, but can access host.docker.internal:5000 on Docker Desktop.
+* You must configure Docker to allow insecure registries:
++
+[source,json]
+----
+"insecure-registries": ["host.docker.internal:5000"]
+----
+* Restart Docker after changing the config.
+
+== Final Automated Workflow
+
+* `build-local-golang-trixie.sh` builds and pushes the custom image to the local registry.
+* `apply-riscv64-patches.sh` applies all necessary patches to the moby submodule.
+* `build-docker-riscv64.sh` runs the full riscv64 build using trixie as the base.
+
+== Troubleshooting
+
+=== Patch Failures
+
+* "unexpected end of file in patch": Add a trailing newline to the patch file.
+* "malformed patch": Ensure the context matches the target file exactly (line endings, whitespace).
+
+=== Registry Issues
+
+* "connection refused": The registry container may not be running, or BuildKit can't access it.
+* Use `host.docker.internal:5000` instead of `localhost:5000` for cross-container access.
+
+=== BuildKit Ignores Local Images
+
+* BuildKit only pulls from registries for cross-arch builds.
+* Always push your custom image to a registry and reference it by registry address.
+
+=== QEMU Emulation
+
+* If you see errors about unsupported architecture, ensure QEMU is enabled:
++
+[source,bash]
+----
+docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+----
+
+== Lessons Learned
+
+* Out-of-tree patching is maintainable, but patch context and line endings must match exactly.
+* BuildKit’s image resolution logic is registry-first for cross-arch builds.
+* Local registry and host.docker.internal are essential for local development with custom base images.
+* Automating every step (patching, image build, registry setup) is key for reproducibility.
+
+== Next Steps
+
+* Upstream the riscv64 and trixie support if possible.
+* Explore CI/CD integration for riscv64 builds.
+* Document and share scripts for the community.
+
+== References
+
+* https://github.com/moby/moby
+* https://github.com/docker-library/golang
+* https://docs.docker.com/build/building/multi-platform/
+* https://docs.docker.com/engine/reference/commandline/buildx_build/
+
+---
+
+Let me know if you want to add more code snippets, screenshots, or specific troubleshooting stories!
