@@ -23,6 +23,6 @@ echo "Building Docker Engine for riscv64 using trixie as the base..."
 cd moby
 
 # Build for riscv64 using the patched Dockerfile (update the filename as needed)
-docker build -f Dockerfile.trixie-riscv64 -t docker-riscv64:dev .
+docker build -f Dockerfile -t docker-riscv64:dev .
 
 echo "Build complete. Image tagged as docker-riscv64:dev"
