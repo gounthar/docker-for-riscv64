@@ -17,6 +17,12 @@ fi
 
 echo "Building Docker Engine for riscv64 using trixie as the base..."
 
+# Ensure moby submodule is initialized and updated
+if [ ! -f moby/Dockerfile ]; then
+  echo "Initializing and updating moby submodule..."
+  git submodule update --init --recursive
+fi
+
 # Ensure the local golang:1.24.4-trixie image exists
 ./build-local-golang-trixie.sh
 
