@@ -22,13 +22,7 @@ echo "Building Docker Engine for riscv64 using trixie as the base..."
 
 cd moby
 
-# Ensure buildx is available
-if ! docker buildx version >/dev/null 2>&1; then
-  echo "Error: docker buildx is not available. Please install Docker Buildx."
-  exit 1
-fi
-
-# Build for riscv64 using the patched Dockerfile
-docker buildx build --platform linux/riscv64 -f Dockerfile -t docker-riscv64:dev .
+# Build for riscv64 using the patched Dockerfile (update the filename as needed)
+docker build -f Dockerfile.trixie-riscv64 -t docker-riscv64:dev .
 
 echo "Build complete. Image tagged as docker-riscv64:dev"
