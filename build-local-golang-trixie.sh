@@ -4,7 +4,7 @@
 
 set -e
 
-GO_VERSION=1.24.4
+GO_VERSION=1.25.1
 BASE_DISTRO=trixie
 TAG="golang:${GO_VERSION}-${BASE_DISTRO}"
 LOCAL_REGISTRY="localhost:5000"
