@@ -52,4 +52,6 @@ for patch in "${PATCHES_RISCV[@]}"; do
   fi
 done
 
+./go-to-trixie.sh
+
 echo "All patches applied (or attempted)."
