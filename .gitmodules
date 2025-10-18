@@ -1,1 +1,3 @@
-
+[submodule "moby"]
+	path = moby
+	url = https://github.com/moby/moby.git
