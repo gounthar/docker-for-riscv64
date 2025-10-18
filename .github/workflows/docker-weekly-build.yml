@@ -93,16 +93,6 @@ jobs:
           # Comment out COPY commands referencing dockercli-integration
           sed -i '/^COPY.*dockercli-integration/s/^/# /' Dockerfile
       
-      - name: Build Docker development image
-        run: |
-          cd moby
-          docker build \
-            --build-arg BASE_DEBIAN_DISTRO=trixie \
-            --build-arg GO_VERSION=1.25.3 \
-            -f Dockerfile \
-            -t docker-riscv64:dev-$(date +%Y%m%d) \
-            .
-      
       - name: Build Docker binaries
         run: |
           cd moby
