@@ -77,8 +77,13 @@ jobs:
           chmod +x release-$DATE/dockerd release-$DATE/docker-proxy
 
           # Get versions
-          ./release-$DATE/dockerd --version > release-$DATE/versions.txt
-          ./release-$DATE/docker-proxy --version >> release-$DATE/versions.txt
+          ./release-$DATE/dockerd --version > release-$DATE/VERSIONS.txt
+          ./release-$DATE/docker-proxy --version >> release-$DATE/VERSIONS.txt
+
+          # Copy documentation
+          cp README.md release-$DATE/ || true
+          cp RUNNER-SETUP.md release-$DATE/ || true
+          cp INSTALL.md release-$DATE/ 2>/dev/null || echo "Note: INSTALL.md not found" > release-$DATE/INSTALL-NEEDED.txt
 
           ls -lh release-$DATE/
       
