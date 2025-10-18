@@ -83,11 +83,27 @@ jobs:
         run: |
           DATE=$(date +%Y%m%d)
           MOBY_COMMIT=$(cd moby && git rev-parse --short HEAD)
+          MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
+
+          # Determine release version
+          # If moby_ref is a version tag (vX.Y.Z), use it; otherwise use date-based
+          if [[ "$MOBY_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Official release: v27.5.1 -> v27.5.1-riscv64
+            RELEASE_VERSION="${MOBY_REF}-riscv64"
+            RELEASE_TITLE="Docker ${MOBY_REF} for RISC-V64"
+            VERSION_INFO="**Docker Version:** ${MOBY_REF}"
+          else
+            # Development build: master -> v20251018-dev
+            RELEASE_VERSION="v${DATE}-dev"
+            RELEASE_TITLE="Docker RISC-V64 Development Build ${DATE}"
+            VERSION_INFO="**Moby Branch:** ${MOBY_REF}
+          **Moby Commit:** ${MOBY_COMMIT}"
+          fi
 
           cat > release-notes.md << EOF
-          Automated weekly build of Docker Engine for RISC-V64
+          Automated build of Docker Engine for RISC-V64
 
-          **Moby Version:** ${MOBY_COMMIT}
+          ${VERSION_INFO}
           **Build Date:** $(date -u +%Y-%m-%d)
           **Architecture:** riscv64
 
@@ -106,8 +122,8 @@ jobs:
           **Installation:**
           \`\`\`bash
           # Download binaries
-          wget https://github.com/gounthar/docker-for-riscv64/releases/download/v${DATE}-${MOBY_COMMIT}/dockerd
-          wget https://github.com/gounthar/docker-for-riscv64/releases/download/v${DATE}-${MOBY_COMMIT}/docker-proxy
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/dockerd
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/docker-proxy
 
           # Make executable
           chmod +x dockerd docker-proxy
@@ -119,7 +135,7 @@ jobs:
           Automated build on RISC-V64 hardware
           EOF
 
-          gh release create "v${DATE}-${MOBY_COMMIT}" \
-            --title "Docker RISC-V64 Build ${DATE}" \
+          gh release create "${RELEASE_VERSION}" \
+            --title "${RELEASE_TITLE}" \
             --notes-file release-notes.md \
             release-$DATE/*

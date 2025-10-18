@@ -20,15 +20,16 @@ jobs:
           # Get latest moby release
           LATEST=$(gh api repos/moby/moby/releases/latest --jq '.tag_name')
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
-          
-          # Check if we've already built this
-          if gh release view "moby-$LATEST" >/dev/null 2>&1; then
+
+          # Check if we've already built this (using -riscv64 suffix)
+          if gh release view "${LATEST}-riscv64" >/dev/null 2>&1; then
             echo "already_built=true" >> $GITHUB_OUTPUT
           else
             echo "already_built=false" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "Latest Moby release: $LATEST"
+          echo "Checking for: ${LATEST}-riscv64"
         env:
           GH_TOKEN: ${{ github.token }}
       
