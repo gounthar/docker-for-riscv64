@@ -1,22 +1,21 @@
 Package: containerd
 Source: docker.io
-Version: 28.5.1-4
+Version: 28.5.1-5
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
 Installed-Size: 54068
 Depends: libc6 (>= 2.34), runc (>= 1.3.0)
 Conflicts: containerd.io
-Breaks: docker.io (<< 28.5.1-1~)
 Replaces: docker.io (<< 28.5.1-1~)
 Provides: containerd.io
 Homepage: https://github.com/gounthar/docker-for-riscv64
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/containerd_28.5.1-4_riscv64.deb
-Size: 12493380
-SHA256: 0c4365a5044c29128d469bf55264d1d20dbdf0a82e50b33642bf159d03f04506
-SHA1: 0fe7e2d7984206abf37f9b02ccb0565e6a3310e7
-MD5sum: 0296f4a7e30e20f4c49b2677945c4e45
+Filename: pool/main/d/docker.io/containerd_28.5.1-5_riscv64.deb
+Size: 12492744
+SHA256: 3dd5562860aefb2dcf1adcc4b38b140ceb9c3180c34eb13e52e89305ebe760f4
+SHA1: d54a5805d665b4ba85f494128d0676f34bed8c65
+MD5sum: b93b9fcd9b499b3a3db5cd7aa027ad6d
 Description: Container runtime for RISC-V64 architecture
  containerd is an industry-standard container runtime with an emphasis on
  simplicity, robustness and portability. It is available as a daemon for
@@ -30,7 +29,7 @@ Description: Container runtime for RISC-V64 architecture
  Debian Trixie.
 
 Package: docker.io
-Version: 28.5.1-4
+Version: 28.5.1-5
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
 Installed-Size: 66516
@@ -43,11 +42,11 @@ Provides: docker-engine
 Homepage: https://github.com/gounthar/docker-for-riscv64
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/docker.io_28.5.1-4_riscv64.deb
-Size: 15658392
-SHA256: 241f537478524598f04736f7ed0897f30c3f85079679efa7848f3a370b019962
-SHA1: a4aa48c761996b1ab12bb7bede4c095677ebe761
-MD5sum: 9d92821dc9a48dd02594391b8a37c59f
+Filename: pool/main/d/docker.io/docker.io_28.5.1-5_riscv64.deb
+Size: 15657544
+SHA256: 35dc56983d6e047e077a7eaebf2e477185fbf9e76c9af3b156cc422cee2914f9
+SHA1: 2a389fe39b06f6e9032a7ed2c5d481925530183e
+MD5sum: f0c12ef3a3a34352392db509043cd780
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
@@ -63,21 +62,20 @@ Description: Docker Engine for RISC-V64 architecture
 
 Package: runc
 Source: docker.io
-Version: 28.5.1-4
+Version: 28.5.1-5
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
 Installed-Size: 10641
 Conflicts: runc-nvidia
-Breaks: docker.io (<< 28.5.1-1~)
 Replaces: docker.io (<< 28.5.1-1~)
 Homepage: https://github.com/gounthar/docker-for-riscv64
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/runc_28.5.1-4_riscv64.deb
-Size: 3153088
-SHA256: 807ed75a0d4043f7ba72e84108f90e400e7d713d1ec54782013514fe09340632
-SHA1: 910af99a9fead579d2d6be27db8f108e045c75b1
-MD5sum: 4477471d6db2bbe42fb71bd5e10367f4
+Filename: pool/main/d/docker.io/runc_28.5.1-5_riscv64.deb
+Size: 3154204
+SHA256: ff3bb8cae87e27eecbca848cb2e331a98a29385ccde44fec7014ad2f0451b6fe
+SHA1: c41ce81536cda1999429ae965817307f35027176
+MD5sum: fc1cbc90c01d038922f4b9cf11ac9092
 Description: OCI container runtime for RISC-V64 architecture
  runc is a CLI tool for spawning and running containers according to the
  OCI specification. It is designed to be as minimal as possible, and is
