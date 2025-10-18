@@ -15,11 +15,13 @@ This document describes how we set up a self-hosted GitHub Actions runner on a B
 ## Prerequisites
 
 - RISC-V64 machine (we used BananaPi F3)
-- Debian Trixie or similar (riscv64)
+- Debian Trixie or Armbian Trixie (riscv64)
 - **Node.js 18+** (required for JavaScript-based GitHub Actions)
 - Go 1.24+ installed
 - Docker installed
 - GitHub repository admin access
+
+**Note**: This guide was tested on BananaPi F3 running Armbian Trixie.
 
 ## Setup Steps
 

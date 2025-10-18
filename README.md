@@ -7,12 +7,12 @@ Native Docker Engine binaries built for RISC-V64 architecture, enabling containe
 This project provides pre-built Docker Engine binaries for RISC-V64 Linux systems. Built from the official [Moby](https://github.com/moby/moby) source with minimal patches for RISC-V compatibility, these binaries enable running Docker containers natively on RISC-V hardware.
 
 **Key Features:**
-- Native RISC-V64 compilation
+- Native RISC-V64 compilation on BananaPi F3 (Armbian Trixie)
 - Debian APT repository for easy installation
 - Automated `.deb` package creation
 - Automated weekly builds
 - Based on official Moby releases
-- Built on Debian Trixie
+- Built and tested on Debian Trixie / Armbian Trixie
 - Minimal patches for RISC-V compatibility
 
 ## Quick Start
@@ -96,11 +96,12 @@ docker info
 - ✅ RISC-V64 (riscv64)
 
 **Tested Hardware:**
-- BananaPi F3
+- BananaPi F3 (running Armbian Trixie)
 - Other RISC-V64 SBCs (community tested)
 
 **Operating Systems:**
 - Debian Trixie (primary)
+- Armbian Trixie (tested on BananaPi F3)
 - Other RISC-V Linux distributions (may work)
 
 ## Releases
