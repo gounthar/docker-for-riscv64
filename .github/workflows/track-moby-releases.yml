@@ -20,41 +20,57 @@ jobs:
           # Get latest moby release
           LATEST=$(gh api repos/moby/moby/releases/latest --jq '.tag_name')
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
-          
-          # Check if we've already built this
-          if gh release view "moby-$LATEST" >/dev/null 2>&1; then
+
+          # Check if we've already built this (using -riscv64 suffix)
+          if gh release view "${LATEST}-riscv64" >/dev/null 2>&1; then
             echo "already_built=true" >> $GITHUB_OUTPUT
           else
             echo "already_built=false" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "Latest Moby release: $LATEST"
+          echo "Checking for: ${LATEST}-riscv64"
         env:
           GH_TOKEN: ${{ github.token }}
       
-      - name: Create issue for new release
+      - name: Trigger automatic build for new release
         if: steps.check.outputs.already_built == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           LATEST=${{ steps.check.outputs.latest_release }}
+
+          echo "New Moby release detected: $LATEST"
+          echo "Triggering automatic build..."
+
+          # Trigger the build workflow
+          gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST
+
+          # Create tracking issue
+          cat > issue-body.md << EOF
+          New Moby release detected: **$LATEST**
+
+          **Status:** Build automatically triggered
+
+          The docker-weekly-build workflow has been started automatically.
+          Expected completion time: ~35-40 minutes
+
+          **Monitor build progress:**
+          \`\`\`bash
+          gh run list --workflow=docker-weekly-build.yml --limit 1
+          gh run watch
+          \`\`\`
+
+          **Expected release:** ${LATEST}-riscv64
+
+          **Upstream release notes:** https://github.com/moby/moby/releases/tag/$LATEST
+
+          This issue will track the build progress. Close it once the release is published.
+          EOF
+
           gh issue create \
-            --title "Build Docker for Moby $LATEST" \
-            --body "New Moby release detected: **$LATEST**
+            --title "Building Docker ${LATEST} for RISC-V64" \
+            --body-file issue-body.md \
+            --label "build-in-progress,moby-release"
 
-Please trigger the weekly build workflow with this release:
-\`\`\`bash
-gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST
-\`\`\`
-
-Or manually:
-\`\`\`bash
-cd moby
-git fetch origin
-git checkout $LATEST
-cd ..
-# Run build
-\`\`\`
-
-Release notes: https://github.com/moby/moby/releases/tag/$LATEST" \
-            --label "build-request,moby-release"
+          echo "Build triggered successfully!"

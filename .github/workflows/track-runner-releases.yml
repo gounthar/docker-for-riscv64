@@ -40,24 +40,28 @@ jobs:
         run: |
           LATEST=${{ steps.check.outputs.latest_release }}
           CURRENT=${{ steps.check.outputs.current_version }}
-          
+
+          cat > issue-body.md << EOF
+          New runner version available!
+
+          **Current version:** $CURRENT
+          **New version:** $LATEST
+
+          **Update steps:**
+          \`\`\`bash
+          ssh poddingue@192.168.1.185
+          cd ~/github-act-runner-test
+          git pull
+          go build -v -o github-act-runner .
+
+          # Restart runner service
+          sudo systemctl restart github-runner
+          \`\`\`
+
+          Release notes: https://github.com/ChristopherHX/github-act-runner/releases/tag/$LATEST
+          EOF
+
           gh issue create \
             --title "Update github-act-runner to $LATEST" \
-            --body "New runner version available!
-
-**Current version:** $CURRENT  
-**New version:** $LATEST
-
-**Update steps:**
-\`\`\`bash
-ssh poddingue@192.168.1.185
-cd ~/github-act-runner-test
-git pull
-go build -v -o github-act-runner .
-
-# Restart runner service
-sudo systemctl restart github-runner
-\`\`\`
-
-Release notes: https://github.com/ChristopherHX/github-act-runner/releases/tag/$LATEST" \
+            --body-file issue-body.md \
             --label "maintenance,runner-update"

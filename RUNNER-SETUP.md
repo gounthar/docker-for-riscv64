@@ -391,6 +391,5 @@ git clean -fdx moby/
 ---
 
 **Last Updated:** 2025-10-18  
-**Author:** Claude Code  
 **Hardware:** BananaPi F3 (RISC-V64)  
 **Repository:** https://github.com/gounthar/docker-for-riscv64
