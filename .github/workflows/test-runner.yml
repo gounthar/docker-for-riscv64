@@ -1,0 +1,25 @@
+name: Test RISC-V Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: [self-hosted, riscv64]
+    
+    steps:
+      - name: Check architecture
+        run: uname -m
+      
+      - name: Check Go version
+        run: go version
+      
+      - name: Check Docker version
+        run: docker --version
+      
+      - name: System info
+        run: |
+          echo "Host: $(hostname)"
+          echo "User: $(whoami)"
+          echo "Disk: $(df -h ~ | tail -1)"
+          echo "CPU: $(nproc)"
