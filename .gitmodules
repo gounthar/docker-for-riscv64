@@ -1,3 +1,6 @@
 [submodule "moby"]
 	path = moby
 	url = https://github.com/moby/moby.git
+[submodule "upstream-debian-docker"]
+	path = upstream-debian-docker
+	url = https://salsa.debian.org/docker-team/docker.git
