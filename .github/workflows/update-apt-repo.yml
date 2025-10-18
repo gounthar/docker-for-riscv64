@@ -97,14 +97,12 @@ jobs:
           fi
 
           git add dists pool
-          git commit -m "Add docker.io $VERSION from release $RELEASE_TAG
-
-Automated update from GitHub Actions.
-
-Package: docker.io_${VERSION}-1_riscv64.deb
-Release: $RELEASE_TAG
-Workflow: ${{ github.workflow }}
-Run: ${{ github.run_id }}"
+          git commit -m "Add docker.io $VERSION from release $RELEASE_TAG" \
+                     -m "Automated update from GitHub Actions." \
+                     -m "Package: docker.io_${VERSION}-1_riscv64.deb" \
+                     -m "Release: $RELEASE_TAG" \
+                     -m "Workflow: ${{ github.workflow }}" \
+                     -m "Run: ${{ github.run_id }}"
 
           git push
 
