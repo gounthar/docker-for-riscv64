@@ -11,6 +11,8 @@ Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
 Package: docker.io
 Architecture: riscv64
 Depends: ${shlibc:Depends}, ${misc:Depends},
+         containerd (>= 1.7.28),
+         runc (>= 1.3.0),
          iptables,
          systemd
 Recommends: ca-certificates,
@@ -19,8 +21,8 @@ Recommends: ca-certificates,
             docker-cli
 Suggests: cgroupfs-mount | cgroup-lite
 Conflicts: docker, docker-ce, docker-engine
-Provides: docker-engine, containerd, runc
-Replaces: docker-engine-riscv64, containerd, runc
+Provides: docker-engine
+Replaces: docker-engine-riscv64
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
@@ -30,6 +32,43 @@ Description: Docker Engine for RISC-V64 architecture
  This package contains the Docker Engine daemon (dockerd) and docker-proxy,
  built natively for RISC-V64 architecture from the official Moby project
  source code.
+ .
+ This is an unofficial build specifically for RISC-V64 systems running
+ Debian Trixie.
+
+Package: containerd
+Architecture: riscv64
+Depends: ${shlibc:Depends}, ${misc:Depends},
+         runc (>= 1.3.0)
+Conflicts: containerd.io
+Provides: containerd.io
+Replaces: docker.io (<< 28.5.1-1~)
+Breaks: docker.io (<< 28.5.1-1~)
+Description: Container runtime for RISC-V64 architecture
+ containerd is an industry-standard container runtime with an emphasis on
+ simplicity, robustness and portability. It is available as a daemon for
+ Linux and Windows, which can manage the complete container lifecycle of
+ its host system.
+ .
+ This package contains containerd and containerd-shim-runc-v2, built
+ natively for RISC-V64 architecture.
+ .
+ This is an unofficial build specifically for RISC-V64 systems running
+ Debian Trixie.
+
+Package: runc
+Architecture: riscv64
+Depends: ${shlibc:Depends}, ${misc:Depends}
+Conflicts: runc-nvidia
+Replaces: docker.io (<< 28.5.1-1~)
+Breaks: docker.io (<< 28.5.1-1~)
+Description: OCI container runtime for RISC-V64 architecture
+ runc is a CLI tool for spawning and running containers according to the
+ OCI specification. It is designed to be as minimal as possible, and is
+ the reference implementation of the OCI runtime specification.
+ .
+ This package contains the runc binary, built natively for RISC-V64
+ architecture.
  .
  This is an unofficial build specifically for RISC-V64 systems running
  Debian Trixie.

@@ -71,34 +71,54 @@ jobs:
 
       - name: Run lintian checks
         run: |
-          lintian --info --display-info ../docker.io_*.deb || true
+          lintian --info --display-info ../*.deb || true
 
       - name: Package info
         run: |
-          echo "=== Package Contents ==="
-          dpkg-deb --contents ../docker.io_*.deb | head -50
+          for deb in ../*.deb; do
+            echo "============================================"
+            echo "=== Package: $(basename $deb) ==="
+            echo "============================================"
+            echo ""
+            echo "=== Package Contents (first 30 files) ==="
+            dpkg-deb --contents "$deb" | head -30
+            echo ""
+            echo "=== Package Info ==="
+            dpkg-deb --info "$deb"
+            echo ""
+            echo "=== Package Size ==="
+            ls -lh "$deb"
+            echo ""
+          done
 
-          echo ""
-          echo "=== Package Info ==="
-          dpkg-deb --info ../docker.io_*.deb
-
-          echo ""
-          echo "=== Package Size ==="
-          ls -lh ../docker.io_*.deb
-
-      - name: Upload package to release
+      - name: Upload packages to release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           RELEASE_TAG="${{ github.event.release.tag_name || github.event.inputs.release_tag }}"
-          DEB_FILE=$(ls ../docker.io_*.deb)
 
-          echo "Uploading $DEB_FILE to release $RELEASE_TAG"
-          gh release upload $RELEASE_TAG $DEB_FILE --clobber
+          echo "Uploading packages to release $RELEASE_TAG"
+          echo ""
+
+          for deb in ../*.deb; do
+            echo "Uploading $(basename $deb)..."
+            gh release upload $RELEASE_TAG "$deb" --clobber
+          done
 
           echo ""
-          echo "✅ Debian package uploaded successfully!"
+          echo "✅ All Debian packages uploaded successfully!"
+          echo ""
+          echo "Packages built:"
+          ls -lh ../*.deb
+          echo ""
           echo "Install with:"
-          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/$(basename $DEB_FILE)"
-          echo "  sudo dpkg -i $(basename $DEB_FILE)"
+          echo "  # Download all packages"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/docker.io_*_riscv64.deb"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/containerd_*_riscv64.deb"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/runc_*_riscv64.deb"
+          echo ""
+          echo "  # Install in dependency order"
+          echo "  sudo dpkg -i runc_*_riscv64.deb"
+          echo "  sudo dpkg -i containerd_*_riscv64.deb"
+          echo "  sudo dpkg -i docker.io_*_riscv64.deb"
           echo "  sudo apt-get install -f"
