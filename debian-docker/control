@@ -18,6 +18,7 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
 Recommends: ca-certificates,
             git,
             xz-utils,
+            tini,
             docker-cli
 Suggests: cgroupfs-mount | cgroup-lite
 Conflicts: docker, docker-ce, docker-engine

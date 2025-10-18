@@ -1,3 +1,10 @@
+docker.io (28.5.1-2) trixie; urgency=medium
+
+  * Add tini to Recommends (container init system)
+  * Prevents tini from being removed during package upgrades
+
+ -- Bruno Verachten <gounthar@gmail.com>  Sat, 18 Oct 2025 19:05:00 +0200
+
 docker.io (28.5.1-1) trixie; urgency=medium
 
   * Initial RISC-V64 package for Docker Engine v28.5.1
