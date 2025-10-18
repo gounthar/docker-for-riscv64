@@ -1,3 +1,11 @@
+docker.io (28.5.1-4) trixie; urgency=medium
+
+  * Fix typo in Depends field (${shlibs:Depends} not ${shlibc:Depends})
+  * Enables automatic shared library dependency detection
+  * Removes dpkg-gencontrol warnings during build
+
+ -- Bruno Verachten <gounthar@gmail.com>  Sat, 18 Oct 2025 18:10:00 +0200
+
 docker.io (28.5.1-3) trixie; urgency=medium
 
   * Fix systemd service file path (use /usr/lib/systemd/system/)

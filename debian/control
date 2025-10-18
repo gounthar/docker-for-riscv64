@@ -10,7 +10,7 @@ Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
 
 Package: docker.io
 Architecture: riscv64
-Depends: ${shlibc:Depends}, ${misc:Depends},
+Depends: ${shlibs:Depends}, ${misc:Depends},
          containerd (>= 1.7.28),
          runc (>= 1.3.0),
          iptables,
@@ -38,7 +38,7 @@ Description: Docker Engine for RISC-V64 architecture
 
 Package: containerd
 Architecture: riscv64
-Depends: ${shlibc:Depends}, ${misc:Depends},
+Depends: ${shlibs:Depends}, ${misc:Depends},
          runc (>= 1.3.0)
 Conflicts: containerd.io
 Provides: containerd.io
@@ -58,7 +58,7 @@ Description: Container runtime for RISC-V64 architecture
 
 Package: runc
 Architecture: riscv64
-Depends: ${shlibc:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: runc-nvidia
 Replaces: docker.io (<< 28.5.1-1~)
 Breaks: docker.io (<< 28.5.1-1~)
