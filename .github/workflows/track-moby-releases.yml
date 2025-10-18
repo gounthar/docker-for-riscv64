@@ -1,0 +1,60 @@
+name: Track Moby Releases
+
+on:
+  schedule:
+    # Check for new releases daily at 06:00 UTC
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-release:
+    runs-on: [self-hosted, riscv64]
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Check for new Moby release
+        id: check
+        run: |
+          # Get latest moby release
+          LATEST=$(gh api repos/moby/moby/releases/latest --jq '.tag_name')
+          echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
+          
+          # Check if we've already built this
+          if gh release view "moby-$LATEST" >/dev/null 2>&1; then
+            echo "already_built=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_built=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "Latest Moby release: $LATEST"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Create issue for new release
+        if: steps.check.outputs.already_built == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+          gh issue create \
+            --title "Build Docker for Moby $LATEST" \
+            --body "New Moby release detected: **$LATEST**
+
+Please trigger the weekly build workflow with this release:
+\`\`\`bash
+gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST
+\`\`\`
+
+Or manually:
+\`\`\`bash
+cd moby
+git fetch origin
+git checkout $LATEST
+cd ..
+# Run build
+\`\`\`
+
+Release notes: https://github.com/moby/moby/releases/tag/$LATEST" \
+            --label "build-request,moby-release"

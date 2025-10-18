@@ -1,0 +1,63 @@
+name: Track Runner Releases
+
+on:
+  schedule:
+    # Check for new releases daily at 07:00 UTC
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+jobs:
+  check-release:
+    runs-on: [self-hosted, riscv64]
+    
+    steps:
+      - name: Check for new github-act-runner release
+        id: check
+        run: |
+          # Get latest runner release
+          LATEST=$(gh api repos/ChristopherHX/github-act-runner/releases/latest --jq '.tag_name')
+          echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
+          
+          # Check current version
+          CURRENT=$(~/github-act-runner-test/github-act-runner --version 2>&1 | grep -oP 'v\d+\.\d+\.\d+' || echo "unknown")
+          echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
+          
+          if [ "$LATEST" != "$CURRENT" ]; then
+            echo "needs_update=true" >> $GITHUB_OUTPUT
+          else
+            echo "needs_update=false" >> $GITHUB_OUTPUT
+          fi
+          
+          echo "Latest runner: $LATEST"
+          echo "Current runner: $CURRENT"
+        env:
+          GH_TOKEN: ${{ github.token }}
+      
+      - name: Create issue for new runner
+        if: steps.check.outputs.needs_update == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+          CURRENT=${{ steps.check.outputs.current_version }}
+          
+          gh issue create \
+            --title "Update github-act-runner to $LATEST" \
+            --body "New runner version available!
+
+**Current version:** $CURRENT  
+**New version:** $LATEST
+
+**Update steps:**
+\`\`\`bash
+ssh poddingue@192.168.1.185
+cd ~/github-act-runner-test
+git pull
+go build -v -o github-act-runner .
+
+# Restart runner service
+sudo systemctl restart github-runner
+\`\`\`
+
+Release notes: https://github.com/ChristopherHX/github-act-runner/releases/tag/$LATEST" \
+            --label "maintenance,runner-update"
