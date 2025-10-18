@@ -45,14 +45,52 @@ jobs:
       - name: Apply RISC-V patches
         run: |
           cd moby
-          # Comment out frozen-images (no riscv64 manifests)
-          sed -i '116,123s/^/# /' Dockerfile
-          sed -i '123a\RUN mkdir -p /build' Dockerfile
+
+          # Comment out frozen-images section (no riscv64 manifests)
+          # Find the FROM stage and comment it out along with its continuation lines
+          awk '
+            /^FROM.*frozen-images/ {
+              in_frozen = 1
+              print "# " $0
+              next
+            }
+            in_frozen && /\\$/ {
+              print "# " $0
+              next
+            }
+            in_frozen && !/\\$/ {
+              print "# " $0
+              print "RUN mkdir -p /build"
+              in_frozen = 0
+              next
+            }
+            { print }
+          ' Dockerfile > Dockerfile.tmp && mv Dockerfile.tmp Dockerfile
+
+          # Comment out COPY commands referencing frozen-images
           sed -i '/^COPY.*frozen-images/s/^/# /' Dockerfile
-          
-          # Comment out dockercli-integration (old CLI)
-          sed -i '243,248s/^/# /' Dockerfile
-          sed -i '248a\RUN mkdir -p /build' Dockerfile
+
+          # Comment out dockercli-integration section (old CLI)
+          awk '
+            /^FROM.*dockercli-integration/ {
+              in_dockercli = 1
+              print "# " $0
+              next
+            }
+            in_dockercli && /\\$/ {
+              print "# " $0
+              next
+            }
+            in_dockercli && !/\\$/ {
+              print "# " $0
+              print "RUN mkdir -p /build"
+              in_dockercli = 0
+              next
+            }
+            { print }
+          ' Dockerfile > Dockerfile.tmp && mv Dockerfile.tmp Dockerfile
+
+          # Comment out COPY commands referencing dockercli-integration
           sed -i '/^COPY.*dockercli-integration/s/^/# /' Dockerfile
       
       - name: Build Docker development image
