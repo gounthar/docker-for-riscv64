@@ -67,14 +67,18 @@ jobs:
           mkdir -p build-runc build-containerd build-docker
 
           # Copy binaries and debian configs to each build directory
+          # Also copy debian-* directories so rules files can reference them
           cp runc build-runc/
           cp -r debian-runc build-runc/debian
+          cp -r debian-runc build-runc/
 
           cp containerd containerd-shim-runc-v2 build-containerd/
           cp -r debian-containerd build-containerd/debian
+          cp -r debian-containerd build-containerd/
 
           cp dockerd docker-proxy build-docker/
           cp -r debian-docker build-docker/debian
+          cp -r debian-docker build-docker/
 
           # Build all three packages in parallel
           (cd build-runc && dpkg-buildpackage -us -uc -b) &
