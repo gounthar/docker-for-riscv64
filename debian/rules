@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-# Debian packaging rules for docker-engine-riscv64
+# Debian packaging rules for docker.io
 
 export DH_VERBOSE = 1
 
@@ -13,15 +13,15 @@ override_dh_auto_build:
 
 override_dh_auto_install:
 	# Install binaries
-	install -D -m 0755 dockerd debian/docker-engine-riscv64/usr/bin/dockerd
-	install -D -m 0755 docker-proxy debian/docker-engine-riscv64/usr/bin/docker-proxy
+	install -D -m 0755 dockerd debian/docker.io/usr/bin/dockerd
+	install -D -m 0755 docker-proxy debian/docker.io/usr/bin/docker-proxy
 
 	# Install systemd service files
-	install -D -m 0644 debian/docker.service debian/docker-engine-riscv64/lib/systemd/system/docker.service
-	install -D -m 0644 debian/docker.socket debian/docker-engine-riscv64/lib/systemd/system/docker.socket
+	install -D -m 0644 debian/docker.service debian/docker.io/lib/systemd/system/docker.service
+	install -D -m 0644 debian/docker.socket debian/docker.io/lib/systemd/system/docker.socket
 
 	# Install configuration example
-	install -D -m 0644 debian/daemon.json debian/docker-engine-riscv64/etc/docker/daemon.json
+	install -D -m 0644 debian/daemon.json debian/docker.io/etc/docker/daemon.json
 
 override_dh_installdeb:
 	dh_installdeb
