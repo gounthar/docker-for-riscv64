@@ -1,0 +1,53 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        # Create docker group if it doesn't exist
+        if ! getent group docker > /dev/null 2>&1; then
+            addgroup --system docker
+        fi
+
+        # Create docker user if it doesn't exist
+        if ! getent passwd docker > /dev/null 2>&1; then
+            adduser --system --ingroup docker --home /var/lib/docker --shell /bin/false docker
+        fi
+
+        # Create necessary directories
+        mkdir -p /etc/docker
+        mkdir -p /var/lib/docker
+        mkdir -p /var/run/docker
+
+        # Set permissions
+        chown root:docker /var/run/docker.sock 2>/dev/null || true
+        chmod 660 /var/run/docker.sock 2>/dev/null || true
+
+        # Reload systemd
+        if [ -d /run/systemd/system ]; then
+            systemctl --system daemon-reload >/dev/null || true
+            deb-systemd-helper enable docker.socket >/dev/null || true
+            deb-systemd-helper enable docker.service >/dev/null || true
+        fi
+
+        echo ""
+        echo "Docker Engine has been installed."
+        echo "To use Docker as a non-root user, add your user to the 'docker' group:"
+        echo "  sudo usermod -aG docker \$USER"
+        echo ""
+        echo "Start Docker with:"
+        echo "  sudo systemctl start docker"
+        echo ""
+        ;;
+
+    abort-upgrade|abort-remove|abort-deconfigure)
+        ;;
+
+    *)
+        echo "postinst called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

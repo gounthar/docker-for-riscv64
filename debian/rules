@@ -1,0 +1,34 @@
+#!/usr/bin/make -f
+
+# Debian packaging rules for docker-engine-riscv64
+
+export DH_VERBOSE = 1
+
+%:
+	dh $@ --with systemd
+
+override_dh_auto_build:
+	# Binaries are pre-built from GitHub releases
+	# Nothing to build here
+
+override_dh_auto_install:
+	# Install binaries
+	install -D -m 0755 dockerd debian/docker-engine-riscv64/usr/bin/dockerd
+	install -D -m 0755 docker-proxy debian/docker-engine-riscv64/usr/bin/docker-proxy
+
+	# Install systemd service files
+	install -D -m 0644 debian/docker.service debian/docker-engine-riscv64/lib/systemd/system/docker.service
+	install -D -m 0644 debian/docker.socket debian/docker-engine-riscv64/lib/systemd/system/docker.socket
+
+	# Install configuration example
+	install -D -m 0644 debian/daemon.json debian/docker-engine-riscv64/etc/docker/daemon.json
+
+override_dh_installdeb:
+	dh_installdeb
+
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+
+override_dh_strip:
+	# Don't strip binaries (already built)
+	dh_strip --no-automatic-dbgsym

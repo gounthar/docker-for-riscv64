@@ -1,0 +1,35 @@
+Source: docker-engine-riscv64
+Section: admin
+Priority: optional
+Maintainer: Bruno Verachten <gounthar@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/gounthar/docker-for-riscv64
+Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
+Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
+
+Package: docker-engine-riscv64
+Architecture: riscv64
+Depends: ${shlibc:Depends}, ${misc:Depends},
+         iptables,
+         containerd (>= 1.7.0) | containerd-riscv64,
+         runc (>= 1.1.0) | runc-riscv64,
+         systemd
+Recommends: ca-certificates,
+            git,
+            xz-utils
+Suggests: cgroupfs-mount | cgroup-lite
+Conflicts: docker, docker-ce, docker-engine
+Provides: docker-engine
+Description: Docker Engine for RISC-V64 architecture
+ Docker is an open-source project to easily create lightweight, portable,
+ self-sufficient containers from any application. The same container that a
+ developer builds and tests on a laptop can run at scale, in production, on
+ VMs, bare metal, OpenStack clusters, public clouds and more.
+ .
+ This package contains the Docker Engine daemon (dockerd) and docker-proxy,
+ built natively for RISC-V64 architecture from the official Moby project
+ source code.
+ .
+ This is an unofficial build specifically for RISC-V64 systems running
+ Debian Trixie.
