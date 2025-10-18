@@ -24,11 +24,11 @@ override_dh_auto_install:
 	install -D -m 0755 runc debian/runc/usr/bin/runc
 
 	# Install Docker systemd service files
-	install -D -m 0644 debian/docker.service debian/docker.io/lib/systemd/system/docker.service
-	install -D -m 0644 debian/docker.socket debian/docker.io/lib/systemd/system/docker.socket
+	install -D -m 0644 debian/docker.service debian/docker.io/usr/lib/systemd/system/docker.service
+	install -D -m 0644 debian/docker.socket debian/docker.io/usr/lib/systemd/system/docker.socket
 
 	# Install containerd systemd service file
-	install -D -m 0644 debian/containerd.service debian/containerd/lib/systemd/system/containerd.service
+	install -D -m 0644 debian/containerd.service debian/containerd/usr/lib/systemd/system/containerd.service
 
 	# Install Docker configuration example
 	install -D -m 0644 debian/daemon.json debian/docker.io/etc/docker/daemon.json
