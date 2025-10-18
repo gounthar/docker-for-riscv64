@@ -1,8 +1,8 @@
 # Patch series for RISC-V64 adaptation
 # Applied in order during build
 
-001-riscv64-architecture.patch
-002-remove-go-build-dependencies.patch
-003-simplify-rules-prebuilt.patch
-004-simplify-install-files.patch
-005-add-riscv64-changelog.patch
+001-riscv64-prebuilt-adaptations.patch
+# Following patches will be added as they're created:
+# 002-simplify-rules-prebuilt.patch
+# 003-simplify-install-files.patch
+# 004-add-riscv64-changelog.patch

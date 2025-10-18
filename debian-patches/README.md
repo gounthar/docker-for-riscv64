@@ -21,7 +21,7 @@ When Debian updates their packaging:
 git submodule update --remote upstream-debian-docker
 
 # Test if patches still apply cleanly
-./scripts/apply-patches.sh
+./scripts/apply-debian-patches.sh
 
 # If conflicts, resolve and regenerate patches
 ```

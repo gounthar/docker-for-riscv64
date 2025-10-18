@@ -8,7 +8,7 @@
 # 3. Prepares for dpkg-buildpackage
 #
 
-set -e
+set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -21,7 +21,7 @@ echo ""
 
 # Check submodule exists
 if [ ! -d "$DEBIAN_SOURCE/debian" ]; then
-    echo "Error: Debian source not found. Run 'git submodule update --init'"
+    echo "Error: Debian source not found. Run 'git submodule update --init'" >&2
     exit 1
 fi
 
@@ -47,15 +47,15 @@ if [ -f "$PATCHES_DIR/series" ]; then
         echo "   Applying: $patch"
         if [ -f "$PATCHES_DIR/$patch" ]; then
             patch -p1 < "$PATCHES_DIR/$patch" || {
-                echo "Error: Failed to apply $patch"
+                echo "Error: Failed to apply $patch" >&2
                 exit 1
             }
         else
-            echo "Warning: Patch file not found: $PATCHES_DIR/$patch"
+            echo "Warning: Patch file not found: $PATCHES_DIR/$patch" >&2
         fi
     done < "$PATCHES_DIR/series"
 else
-    echo "Warning: No series file found at $PATCHES_DIR/series"
+    echo "Warning: No series file found at $PATCHES_DIR/series" >&2
 fi
 
 echo ""
