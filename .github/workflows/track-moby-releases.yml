@@ -38,23 +38,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           LATEST=${{ steps.check.outputs.latest_release }}
+
+          cat > issue-body.md << EOF
+          New Moby release detected: **$LATEST**
+
+          Please trigger the weekly build workflow with this release:
+          \`\`\`bash
+          gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST
+          \`\`\`
+
+          Or manually:
+          \`\`\`bash
+          cd moby
+          git fetch origin
+          git checkout $LATEST
+          cd ..
+          # Run build
+          \`\`\`
+
+          Release notes: https://github.com/moby/moby/releases/tag/$LATEST
+          EOF
+
           gh issue create \
             --title "Build Docker for Moby $LATEST" \
-            --body "New Moby release detected: **$LATEST**
-
-Please trigger the weekly build workflow with this release:
-\`\`\`bash
-gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST
-\`\`\`
-
-Or manually:
-\`\`\`bash
-cd moby
-git fetch origin
-git checkout $LATEST
-cd ..
-# Run build
-\`\`\`
-
-Release notes: https://github.com/moby/moby/releases/tag/$LATEST" \
+            --body-file issue-body.md \
             --label "build-request,moby-release"
