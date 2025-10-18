@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+    configure)
+        if [ -z "$2" ]; then
+            # Make sure the "docker" system group exists for "docker.socket"
+	    # to apply it as the group on "docker.sock"
+            if ! getent group docker >/dev/null 2>&1 ; then
+                addgroup --system docker
+            fi
+        fi
+
+        # Ensure config directory permissions
+        #  On a fresh install, $2 = '' and dpkg "le-nl" treat that as a
+        #  greater version, so the body is not executed.
+        if dpkg --compare-versions "$2" le-nl '1.11.2~ds1-1'; then
+            if [ "$(stat -c '%a' /etc/docker)" = '700' ]; then
+                chmod 0755 /etc/docker
+            fi
+        fi
+        ;;
+    abort-*)
+        # How'd we get here??
+        exit 1
+        ;;
+    *)
+        ;;
+esac
+
+#DEBHELPER#

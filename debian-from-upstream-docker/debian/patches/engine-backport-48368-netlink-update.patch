@@ -1,0 +1,57 @@
+Description: changes needed for github.com/vishvananda/netlink v1.2.1+
+Applied-Upstream: https://github.com/moby/moby/pull/48368, v28+, https://github.com/moby/moby/pull/48938, v27.5+
+Origin: https://github.com/moby/moby/pull/48368
+
+diff --git a/engine/libnetwork/iptables/conntrack.go b/engine/libnetwork/iptables/conntrack.go
+index c77993e1055a6..37fd91528a4e0 100644
+--- a/engine/libnetwork/iptables/conntrack.go
++++ b/engine/libnetwork/iptables/conntrack.go
+@@ -75,13 +75,13 @@ func DeleteConntrackEntriesByPort(nlh *netlink.Handle, proto types.Protocol, por
+ 			continue
+ 		}
+ 
+-		v4FlowPurged, err := nlh.ConntrackDeleteFilter(netlink.ConntrackTable, syscall.AF_INET, filter)
++		v4FlowPurged, err := nlh.ConntrackDeleteFilters(netlink.ConntrackTable, syscall.AF_INET, filter)
+ 		if err != nil {
+ 			log.G(context.TODO()).Warnf("Failed to delete conntrack state for IPv4 %s port %d: %v", proto.String(), port, err)
+ 		}
+ 		totalIPv4FlowPurged += v4FlowPurged
+ 
+-		v6FlowPurged, err := nlh.ConntrackDeleteFilter(netlink.ConntrackTable, syscall.AF_INET6, filter)
++		v6FlowPurged, err := nlh.ConntrackDeleteFilters(netlink.ConntrackTable, syscall.AF_INET6, filter)
+ 		if err != nil {
+ 			log.G(context.TODO()).Warnf("Failed to delete conntrack state for IPv6 %s port %d: %v", proto.String(), port, err)
+ 		}
+@@ -102,5 +102,5 @@ func purgeConntrackState(nlh *netlink.Handle, family netlink.InetFamily, ipAddre
+ 	if err := filter.AddIP(netlink.ConntrackNatAnyIP, ipAddress); err != nil {
+ 		return 0, err
+ 	}
+-	return nlh.ConntrackDeleteFilter(netlink.ConntrackTable, family, filter)
++	return nlh.ConntrackDeleteFilters(netlink.ConntrackTable, family, filter)
+ }
+diff --git a/engine/libnetwork/netutils/utils_linux.go b/engine/libnetwork/netutils/utils_linux.go
+index fb7e8642113a3..51630e1e95286 100644
+--- a/engine/libnetwork/netutils/utils_linux.go
++++ b/engine/libnetwork/netutils/utils_linux.go
+@@ -28,7 +28,7 @@ func CheckRouteOverlaps(toCheck *net.IPNet) error {
+ 		return err
+ 	}
+ 	for _, network := range networks {
+-		if network.Dst != nil && network.Scope == netlink.SCOPE_LINK && NetworkOverlaps(toCheck, network.Dst) {
++		if network.Scope == netlink.SCOPE_LINK && network.Dst != nil && !network.Dst.IP.IsUnspecified() && NetworkOverlaps(toCheck, network.Dst) {
+ 			return ErrNetworkOverlaps
+ 		}
+ 	}
+diff --git a/engine/libnetwork/osl/interface_linux.go b/engine/libnetwork/osl/interface_linux.go
+index 2f95a54721b8a..28e1ac32fa113 100644
+--- a/engine/libnetwork/osl/interface_linux.go
++++ b/engine/libnetwork/osl/interface_linux.go
+@@ -531,7 +531,7 @@ func checkRouteConflict(nlh *netlink.Handle, address *net.IPNet, family int) err
+ 		return err
+ 	}
+ 	for _, route := range routes {
+-		if route.Dst != nil {
++		if route.Dst != nil && !route.Dst.IP.IsUnspecified() {
+ 			if route.Dst.Contains(address.IP) || address.Contains(route.Dst.IP) {
+ 				return fmt.Errorf("cannot program address %v in sandbox interface because it conflicts with existing route %s",
+ 					address, route)

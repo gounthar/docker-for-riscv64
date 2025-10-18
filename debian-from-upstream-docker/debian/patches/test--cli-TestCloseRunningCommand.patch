@@ -1,0 +1,15 @@
+From: Reinhard Tartler <siretart@tauware.de>
+Description: Not suitable for package tests
+
+Index: docker.io/cli/cli/connhelper/commandconn/commandconn_unix_test.go
+===================================================================
+--- docker.io.orig/cli/cli/connhelper/commandconn/commandconn_unix_test.go
++++ docker.io/cli/cli/connhelper/commandconn/commandconn_unix_test.go
+@@ -43,6 +43,7 @@ func TestEOFWithoutError(t *testing.T) {
+ }
+ 
+ func TestCloseRunningCommand(t *testing.T) {
++	t.Skip("Debian-local: Not suitable for package tests")
+ 	ctx := context.TODO()
+ 	done := make(chan struct{})
+ 	defer close(done)

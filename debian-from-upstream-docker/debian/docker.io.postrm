@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+#DEBHELPER#
+
+case "$1" in
+	purge)
+		# if we have our saved "nuke-graph-directory.sh", let's use it
+		# see also docker.io.prerm
+		if [ -x /var/lib/docker/nuke-graph-directory.sh ]; then
+			/var/lib/docker/nuke-graph-directory.sh /var/lib/docker
+		fi
+		;;
+
+	*)
+		;;
+esac

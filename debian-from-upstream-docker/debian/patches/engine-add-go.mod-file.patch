@@ -1,0 +1,18 @@
+From: Arnaud Rebillout <elboulangero@gmail.com>
+Date: Tue, 24 Nov 2020 09:14:00 +0700
+Subject: Add go.mod file to engine
+
+Fix build issue with
++ github.com/coreos/go-systemd/v22
++ gotest.tools/v3
+---
+ go.mod | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100644 go.mod
+
+Index: docker.io/engine/go.mod
+===================================================================
+--- /dev/null
++++ docker.io/engine/go.mod
+@@ -0,0 +1 @@
++module github.com/docker/docker

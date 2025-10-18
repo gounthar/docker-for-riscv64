@@ -1,0 +1,51 @@
+Author: Badrikesh Prusty <badrikesh.prusty@siemens.com>
+Description: fix minor string issues in cli unit-test
+
+Index: docker.io/cli/cli/command/container/opts_test.go
+===================================================================
+--- docker.io.orig/cli/cli/command/container/opts_test.go
++++ docker.io/cli/cli/command/container/opts_test.go
+@@ -372,8 +372,8 @@ func TestParseWithExpose(t *testing.T) {
+ 	invalids := map[string]string{
+ 		":":                   "invalid port format for --expose: :",
+ 		"8080:9090":           "invalid port format for --expose: 8080:9090",
+-		"/tcp":                "invalid range format for --expose: /tcp, error: empty string specified for ports",
+-		"/udp":                "invalid range format for --expose: /udp, error: empty string specified for ports",
++		"/tcp":                "invalid range format for --expose: /tcp, error: Empty string specified for ports.",
++		"/udp":                "invalid range format for --expose: /udp, error: Empty string specified for ports.",
+ 		"NaN/tcp":             `invalid range format for --expose: NaN/tcp, error: strconv.ParseUint: parsing "NaN": invalid syntax`,
+ 		"NaN-NaN/tcp":         `invalid range format for --expose: NaN-NaN/tcp, error: strconv.ParseUint: parsing "NaN": invalid syntax`,
+ 		"8080-NaN/tcp":        `invalid range format for --expose: 8080-NaN/tcp, error: strconv.ParseUint: parsing "NaN": invalid syntax`,
+Index: docker.io/cli/opts/port_test.go
+===================================================================
+--- docker.io.orig/cli/opts/port_test.go
++++ docker.io/cli/opts/port_test.go
+@@ -291,23 +291,23 @@ func TestPortOptInvalidSimpleSyntax(t *t
+ 	}{
+ 		{
+ 			value:         "9999999",
+-			expectedError: "invalid containerPort: 9999999",
++			expectedError: "Invalid containerPort: 9999999",
+ 		},
+ 		{
+ 			value:         "80/xyz",
+-			expectedError: "invalid proto: xyz",
++			expectedError: "Invalid proto: xyz",
+ 		},
+ 		{
+ 			value:         "tcp",
+-			expectedError: "invalid containerPort: tcp",
++			expectedError: "Invalid containerPort: tcp",
+ 		},
+ 		{
+ 			value:         "udp",
+-			expectedError: "invalid containerPort: udp",
++			expectedError: "Invalid containerPort: udp",
+ 		},
+ 		{
+ 			value:         "",
+-			expectedError: "no port specified: <empty>",
++			expectedError: "No port specified: <empty>",
+ 		},
+ 		{
+ 			value:         "1.1.1.1:80:80",

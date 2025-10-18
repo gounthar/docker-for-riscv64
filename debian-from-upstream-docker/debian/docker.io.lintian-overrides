@@ -1,0 +1,14 @@
+docker.io: spelling-error-in-binary
+docker.io: typo-in-manual-page
+docker.io: groff-message
+
+## Libnetwork binaries have no manual pages:
+docker.io: no-manual-page [usr/bin/dnet]
+docker.io: no-manual-page [usr/sbin/docker-proxy]
+docker.io: no-manual-page [usr/sbin/ovrouter]
+
+## docker-init is actually a symlink:
+docker.io: no-manual-page [usr/bin/docker-init]
+
+## Heavy package, many dependencies:
+docker.io: field-too-long Built-Using *

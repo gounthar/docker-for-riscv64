@@ -1,0 +1,23 @@
+#!/bin/sh
+set -e
+
+case "$1" in
+	remove)
+		# if we're removing, we need to save "nuke-graph-directory.sh" so that
+		# we can still purge "/var/lib/docker" later if necessary
+		# see also docker.io.postrm
+		if \
+			[ -d /var/lib/docker ] \
+			&& [ -x /usr/share/docker.io/contrib/nuke-graph-directory.sh ] \
+		; then
+			if cp -v /usr/share/docker.io/contrib/nuke-graph-directory.sh /var/lib/docker/; then
+				chmod +x /var/lib/docker/nuke-graph-directory.sh || :
+			fi
+		fi
+		;;
+
+	*)
+		;;
+esac
+
+#DEBHELPER#

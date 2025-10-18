@@ -1,0 +1,29 @@
+---
+# https://docs.gitlab.com/ce/ci/yaml/#include
+include:
+  - remote: https://salsa.debian.org/onlyjob/ci/raw/master/onlyjob-ci.yml
+
+## "amd64-unstable" always runs by default followed by lintian.
+
+## Only for arch:all packages:
+binary-indep:
+  extends: .build-indep
+
+## Job to check Build-Depends versioning:
+amd64-testing_unstable:
+  extends: .build
+  variables:
+    arch: amd64
+    dist: testing_unstable
+
+i386-unstable:
+  extends: .build
+  variables:
+    arch: i386
+    dist: unstable
+
+amd64-experimental:
+  extends: .build
+  variables:
+    arch: amd64
+    dist: experimental

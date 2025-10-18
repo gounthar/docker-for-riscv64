@@ -1,0 +1,24 @@
+Last-Update: 2018-06-09
+Bug-Debian: https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=853258
+Forwarded: not-needed
+Author: Dmitry Smirnov <onlyjob@debian.org>
+Description: remove prompt and delay
+
+Index: docker.io/engine/contrib/nuke-graph-directory.sh
+===================================================================
+--- docker.io.orig/engine/contrib/nuke-graph-directory.sh
++++ docker.io/engine/contrib/nuke-graph-directory.sh
+@@ -28,13 +28,6 @@ dir="$(readlink -f "$dir")"
+ 
+ echo
+ echo "Nuking $dir ..."
+-echo '  (if this is wrong, press Ctrl+C NOW!)'
+-echo
+-
+-(
+-	set -x
+-	sleep 10
+-)
+ echo
+ 
+ dir_in_dir() {

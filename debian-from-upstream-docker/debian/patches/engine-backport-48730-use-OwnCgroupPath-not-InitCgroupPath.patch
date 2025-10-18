@@ -1,0 +1,27 @@
+Description: daemon: use OwnCgroupPath in withCgroups
+Author: Kir Kolyshkin <kolyshkin@gmail.com>
+Origin: https://github.com/moby/moby/pull/48730
+Applied-Upstream: 28+, 27.4+
+
+diff --git a/engine/daemon/oci_linux.go b/engine/daemon/oci_linux.go
+index 75beed4e578e4..ca77940f3e623 100644
+--- a/engine/daemon/oci_linux.go
++++ b/engine/daemon/oci_linux.go
+@@ -829,15 +829,11 @@ func withCgroups(daemon *Daemon, daemonCfg *dconfig.Config, c *container.Contain
+ 
+ 		p := cgroupsPath
+ 		if useSystemd {
+-			initPath, err := cgroups.GetInitCgroup("cpu")
++			path, err := cgroups.GetOwnCgroup("cpu")
+ 			if err != nil {
+ 				return errors.Wrap(err, "unable to init CPU RT controller")
+ 			}
+-			_, err = cgroups.GetOwnCgroup("cpu")
+-			if err != nil {
+-				return errors.Wrap(err, "unable to init CPU RT controller")
+-			}
+-			p = filepath.Join(initPath, s.Linux.CgroupsPath)
++			p = filepath.Join(path, s.Linux.CgroupsPath)
+ 		}
+ 
+ 		// Clean path to guard against things like ../../../BAD

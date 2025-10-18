@@ -1,0 +1,26 @@
+From: Tianon Gravi <tianon@debian.org>
+Description: Fix FTBFS on mips
+Bug-Upstream: https://github.com/moby/buildkit/issues/5129
+
+Index: docker.io/buildkit/snapshot/diffapply_unix.go
+===================================================================
+--- docker.io.orig/buildkit/snapshot/diffapply_unix.go
++++ docker.io/buildkit/snapshot/diffapply_unix.go
+@@ -128,7 +128,7 @@ func statInode(stat *syscall.Stat_t) ino
+ 	}
+ 	return inode{
+ 		ino: stat.Ino,
+-		dev: stat.Dev,
++		dev: uint64(stat.Dev), // TODO figure out the "correct" solution for mips64le (where "stat.Dev" is a uint32)
+ 	}
+ }
+ 
+@@ -297,7 +297,7 @@ func (a *applier) applyDelete(ctx contex
+ 			if ca.srcStat == nil {
+ 				ca.srcStat = &syscall.Stat_t{
+ 					Mode: syscall.S_IFCHR,
+-					Rdev: unix.Mkdev(0, 0),
++					Rdev: 0, // TODO figure out the "correct" solution for mips64le (where "stat.Dev" is a uint32, but "unix.Mkdev" always returns uint64...); https://cs.opensource.google/go/x/sys/+/refs/tags/v0.10.0:unix/dev_linux.go;l=36
+ 				}
+ 				ca.srcPath = ""
+ 			}

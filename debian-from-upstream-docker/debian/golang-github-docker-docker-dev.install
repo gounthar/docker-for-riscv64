@@ -1,0 +1,60 @@
+## CLI:
+_build/src/github.com/docker/cli/cli                     usr/share/gocode/src/github.com/docker/cli/
+_build/src/github.com/docker/cli/cli-plugins             usr/share/gocode/src/github.com/docker/cli/
+_build/src/github.com/docker/cli/opts                    usr/share/gocode/src/github.com/docker/cli/
+_build/src/github.com/docker/cli/templates               usr/share/gocode/src/github.com/docker/cli/
+
+
+## Legacy / compatibility with older Docker:
+_build/src/github.com/docker/cli/cli/config/*      usr/share/gocode/src/github.com/docker/docker/cliconfig/
+#_build/src/github.com/docker/cli/cli/config/*      usr/share/gocode/src/github.com/docker/docker/cli/config/
+
+
+## Engine
+engine/dockerversion                               usr/share/gocode/src/github.com/docker/docker/
+engine/daemon                                      usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/api            usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/builder        usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/cli            usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/client         usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/container      usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/errdefs        usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/image          usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/internal       usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/libnetwork     usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/oci            usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/opts           usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/pkg            usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/plugin         usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/profiles       usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/reference      usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/registry       usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/runconfig      usr/share/gocode/src/github.com/docker/docker/
+_build/src/github.com/docker/docker/volume         usr/share/gocode/src/github.com/docker/docker/
+
+## Buildkit
+_build/src/github.com/moby/buildkit/api            usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/cache          usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/client         usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/cmd            usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/control        usr/share/gocode/src/github.com/moby/buildkit/
+#_build/src/github.com/moby/buildkit/docs           usr/share/gocode/src/github.com/moby/buildkit/
+#_build/src/github.com/moby/buildkit/examples       usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/executor       usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/exporter       usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/frontend       usr/share/gocode/src/github.com/moby/buildkit/
+#_build/src/github.com/moby/buildkit/hack           usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/identity       usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/session        usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/snapshot       usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/solver         usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/source         usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/sourcepolicy   usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/tools          usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/util           usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/version        usr/share/gocode/src/github.com/moby/buildkit/
+_build/src/github.com/moby/buildkit/worker         usr/share/gocode/src/github.com/moby/buildkit/
+
+## Moby
+engine/vendor/github.com/moby/ipvs                 usr/share/gocode/src/github.com/moby/
+

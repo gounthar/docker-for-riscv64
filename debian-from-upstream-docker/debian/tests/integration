@@ -1,0 +1,41 @@
+#!/bin/bash
+set -eux
+
+# apply patches
+dpkg-source --before-build .
+
+# prepare the environment
+./debian/rules dh_configure
+export GOPATH="$PWD/_build"
+export DOCKER_GITCOMMIT="$(./debian/helpers/gitcommit.sh)"
+
+# docker's tests need an unprivileged user available at this username
+useradd --system --gid docker --comment 'Docker Test Suite Unprivileged User' unprivilegeduser
+
+# https://github.com/docker/docker/blob/7307998a44237a8943792c279b81ff5a387a86fa/builder/dockerfile/builder.go#L34-L44
+proxyArgs=(
+	http_proxy
+	https_proxy
+	ftp_proxy
+	no_proxy
+)
+DOCKER_BUILD_ARGS=
+for proxyArgBase in "${proxyArgs[@]}"; do
+	for proxyArg in "${proxyArgBase^^}" "$proxyArgBase"; do
+		if [ -n "${!proxyArg}" ]; then
+			[ -z "$DOCKER_BUILD_ARGS" ] || DOCKER_BUILD_ARGS+=' '
+			DOCKER_BUILD_ARGS+="--build-arg ${proxyArg}=${!proxyArg}"
+		fi
+	done
+done
+export DOCKER_BUILD_ARGS
+
+# run the tests
+./hack/make.sh test-integration-cli
+
+# clean up cruft we've created
+./debian/rules clean
+userdel --force unprivilegeduser
+
+# unapply patches
+dpkg-source --after-build .

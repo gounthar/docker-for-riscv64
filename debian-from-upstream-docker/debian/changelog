@@ -1,0 +1,1727 @@
+docker.io (26.1.5+dfsg1-10) unstable; urgency=medium
+
+  * Backport a couple patches (FTBFS due to runc upload; Closes: #1115952)
+    - https://github.com/moby/moby/pull/48730
+      "daemon: use OwnCgroupPath in withCgroups"
+    - https://github.com/moby/moby/pull/49562
+      "switch to github.com/opencontainers/cgroups"
+
+ -- Tianon Gravi <tianon@debian.org>  Thu, 25 Sep 2025 13:10:41 -0700
+
+docker.io (26.1.5+dfsg1-9) unstable; urgency=medium
+
+  * Add buildx to Recommends of cli (Closes: #1087370)
+
+ -- Tianon Gravi <tianon@debian.org>  Fri, 21 Feb 2025 11:17:16 -0800
+
+docker.io (26.1.5+dfsg1-8) unstable; urgency=medium
+
+  * Fix netlink via moby/moby#48368 + moby/moby#48407 (Closes: #1092165)
+  * Update "basic-smoke" test to validate #1092165 fix
+  * Update "basic-smoke" test to use bookworm (instead of bullseye)
+
+ -- Tianon Gravi <tianon@debian.org>  Thu, 20 Feb 2025 14:27:26 -0800
+
+docker.io (26.1.5+dfsg1-7) unstable; urgency=medium
+
+  * Upload to unstable
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sun, 16 Feb 2025 15:27:11 -0500
+
+docker.io (26.1.5+dfsg1-6) experimental; urgency=medium
+
+  [ Nicolas Peugnet ]
+  * Add more docker/cli packages to golang-github-docker-docker-dev
+  * Add the importpaths of other modules present in golang-github-docker-docker-dev
+  * Selectively install packages from buildkit
+
+  [ Reinhard Tartler ]
+  * Package buildkit as extra component in the upstream tarball
+  * buildkit: avoid hcsshim, jaeger dependencies
+
+ -- Reinhard Tartler <siretart@tauware.de>  Mon, 10 Feb 2025 10:27:05 -0500
+
+docker.io (26.1.5+dfsg1-5) experimental; urgency=medium
+
+  [ Nicolas Peugnet ]
+  * Fix location of libnetwork in golang-github-docker-docker-dev
+  * Add github.com/docker/cli/cli/connhelper to golang-github-docker-docker-dev
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sat, 01 Feb 2025 12:06:39 -0500
+
+docker.io (26.1.5+dfsg1-4) unstable; urgency=medium
+
+  * Upload to unstable
+
+ -- Reinhard Tartler <siretart@tauware.de>  Thu, 31 Oct 2024 19:17:51 -0400
+
+docker.io (26.1.5+dfsg1-3) experimental; urgency=medium
+
+  * Rebuild against opentelemetry, containerd in experimental
+
+ -- Reinhard Tartler <siretart@tauware.de>  Tue, 29 Oct 2024 15:11:22 -0400
+
+docker.io (26.1.5+dfsg1-2) unstable; urgency=medium
+
+  * Upload to unstable.
+
+ -- Reinhard Tartler <siretart@tauware.de>  Tue, 03 Sep 2024 07:35:40 -0400
+
+docker.io (26.1.5+dfsg1-1) experimental; urgency=medium
+
+  * New upstream release [26.1.5]
+    - Fixes: CVE-2024-41110
+  * Unvendor "dario.cat/mergo"
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sat, 31 Aug 2024 13:40:58 -0400
+
+docker.io (26.1.4+dfsg3-1) unstable; urgency=medium
+
+  * Unvendor "distribution/reference"
+
+ -- Reinhard Tartler <siretart@tauware.de>  Thu, 15 Aug 2024 17:57:23 -0400
+
+docker.io (26.1.4+dfsg2-1) unstable; urgency=medium
+
+  * Use packaged golang-github-moby-docker-image-spec (Closes: #1078435)
+  * Copy relative grpc-middleware v1 function (Closes: #1078280)
+    grpc-middleware has been updated to v2.
+
+ -- Shengjing Zhu <zhsj@debian.org>  Tue, 13 Aug 2024 15:57:09 +0800
+
+docker.io (26.1.4+dfsg1-9) unstable; urgency=medium
+
+  * Team upload
+  * Upload changes from experimental to unstable
+
+ -- Mathias Gibbens <gibmat@debian.org>  Fri, 26 Jul 2024 08:28:37 +0000
+
+docker.io (26.1.4+dfsg1-8) experimental; urgency=medium
+
+  * Declare Proper conflicts/replaces/breaks, Closes: #1076373
+  * Fix FTBFS on mips64el
+
+ -- Reinhard Tartler <siretart@tauware.de>  Tue, 23 Jul 2024 09:41:02 +0200
+
+docker.io (26.1.4+dfsg1-7) experimental; urgency=medium
+
+  [ Tianon Gravi ]
+  * Add "docker-cli" binary package, Closes: #1035338
+
+  [ Reinhard Tartler ]
+  * Install docker/{plugin,volume} golang packages, Closes: #1001918
+
+ -- Reinhard Tartler <siretart@tauware.de>  Fri, 12 Jul 2024 19:07:13 -0400
+
+docker.io (26.1.4+dfsg1-6) experimental; urgency=medium
+
+  * Depend on golang-github-containerd-typeurl-dev, it is an other indirect
+    build dependency of buildkit
+
+ -- Reinhard Tartler <siretart@tauware.de>  Wed, 10 Jul 2024 21:45:58 -0400
+
+docker.io (26.1.4+dfsg1-5) experimental; urgency=medium
+
+  * Add back golang-github-mitchellh-hashstructure-dev, it is an indirect
+    build dependency of buildkit
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sun, 07 Jul 2024 07:32:58 -0400
+
+docker.io (26.1.4+dfsg1-4) experimental; urgency=medium
+
+  * drop golang-github-mitchellh-hashstructure-dev
+  * docker-docker-dev: Add depends on moby/{locker,patternmatcher,pubsub,sys}
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sat, 06 Jul 2024 20:10:47 -0400
+
+docker.io (26.1.4+dfsg1-3) experimental; urgency=medium
+
+  * golang-github-docker-docker-dev: add opentelemetry deps
+  * install vendored dependencies, specifically:
+    - docker/internal
+    - moby/docker-image-spec
+    - distribution/reference
+
+ -- Reinhard Tartler <siretart@tauware.de>  Fri, 05 Jul 2024 17:26:42 -0400
+
+docker.io (26.1.4+dfsg1-2) experimental; urgency=medium
+
+  * Add myself to uploaders
+  * Restore setting GOCACHE, fixes FTBFS
+
+ -- Reinhard Tartler <siretart@tauware.de>  Thu, 04 Jul 2024 10:24:08 -0400
+
+docker.io (26.1.4+dfsg1-1) experimental; urgency=medium
+
+  * Team upload
+  * New upstream release [24.0.9]
+  * New upstream release [26.1.4], closes: #1051202, #1051202, #1033839
+    - libnetwork: Add docker interfaces to firewalld docker zone,
+      closes: #913664
+    - engine: CVE-2024-29018, closes: #1068460
+    - engine: CVE-2024-24557, closes: #1071745
+    - engine: CVE-2024-32473, closes: #1070378
+    - engine: reportedly no longer randomly kills containers, cf.
+      https://github.com/moby/moby/issues/38768#issuecomment-688518332,
+      closes: #979316
+  * Recommend dbus-user-session, closes: #992486
+  * Make failing unit tests not fail the package build
+    Closes: #1070821, #1038902
+    rationale: Unit tests are written to be run in well-controlled
+    containers, which are hard to replicate in a package build. Instead,
+    run a smoke test that ensures the executables are linked correctly.
+  * Skip Failing test Can't find mount point of /, Closes: #1072145
+
+ -- Reinhard Tartler <siretart@tauware.de>  Thu, 04 Jul 2024 07:42:06 -0400
+
+docker.io (20.10.25+dfsg1-4) experimental; urgency=medium
+
+  * Team Upload
+  * Compile against golang/protobuf@1.5
+
+ -- Reinhard Tartler <siretart@tauware.de>  Sun, 09 Jun 2024 16:04:49 -0400
+
+docker.io (20.10.25+dfsg1-3) unstable; urgency=medium
+
+  * Team upload.
+  * Backport
+    https://github.com/moby/moby/commit/97921915a801dd82b1f5a70e0a69353539c1e3ae.patch
+    to fix FTBFS, (Closes: #1068755).
+
+ -- Reinhard Tartler <siretart@tauware.de>  Tue, 07 May 2024 06:33:18 -0400
+
+docker.io (20.10.25+dfsg1-2) unstable; urgency=medium
+
+  * Backport https://github.com/moby/buildkit/pull/3104 to fix FTBFS (due to
+    updated opencontainers/image-spec)
+
+ -- Tianon Gravi <tianon@debian.org>  Fri, 22 Sep 2023 16:09:48 -0700
+
+docker.io (20.10.25+dfsg1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release [20.10.25]
+  * Backport patch to fix building with Go 1.20.6 (Closes: #1041254)
+
+ -- Shengjing Zhu <zhsj@debian.org>  Mon, 17 Jul 2023 16:24:02 +0800
+
+docker.io (20.10.24+dfsg1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release [20.10.24]
+    + CVE-2023-28840: Encrypted overlay network may be unauthenticated
+    + CVE-2023-28841: Encrypted overlay network traffic may be unencrypted
+    + CVE-2023-28842: Encrypted overlay network with a single endpoint is
+      unauthenticated
+  * Bump golang-github-containerd-fifo-dev to 1.1.0. Fix potential panic.
+
+ -- Shengjing Zhu <zhsj@debian.org>  Wed, 05 Apr 2023 23:19:59 +0800
+
+docker.io (20.10.23+dfsg1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release [20.10.23]
+  * Drop merged btrfs-progs 6.1 patch
+
+ -- Shengjing Zhu <zhsj@debian.org>  Fri, 20 Jan 2023 16:04:03 +0800
+
+docker.io (20.10.22+dfsg1-2) unstable; urgency=medium
+
+  * Team upload.
+  * No-change rebuild against golang-github-golang-protobuf-1-3 for
+    testing migration.
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 14 Jan 2023 17:09:27 +0800
+
+docker.io (20.10.22+dfsg1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release [20.10.22]
+    + Temperory vendor etcd 3.3 library.
+  * Add patch for btrfs-progs 6.1 (Closes: #1027114)
+
+ -- Shengjing Zhu <zhsj@debian.org>  Mon, 02 Jan 2023 00:36:21 +0800
+
+docker.io (20.10.21+dfsg1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release [20.10.21]
+    - Fixes TestCheckoutGit failure (Closes: #1024506)
+    - Build-depend on golang-github-armon-circbuf-dev
+  * Remove ancient NEWS file.
+  * Update lintian overrides.
+
+ -- Felix Geyer <fgeyer@debian.org>  Fri, 25 Nov 2022 18:47:24 +0100
+
+docker.io (20.10.19+dfsg1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release [20.10.19]
+    - Fixes CVE-2022-36109 (Closes: #1019601)
+  * Drop test--cli-skip-TestRemoveForce.patch, race condition has been fixed
+    upstream.
+  * Adapt watch file to GitHub changes.
+
+ -- Felix Geyer <fgeyer@debian.org>  Sat, 15 Oct 2022 17:47:37 +0200
+
+docker.io (20.10.17+dfsg1-1) unstable; urgency=medium
+
+  * Team upload.
+
+  [ Reinhard Tartler ]
+  * unbreak FTBFS, avoid dependencies on consul
+  * add missing dependency
+
+  [ Arnaud Rebillout ]
+  * New upstream release [20.10.17]
+
+ -- Reinhard Tartler <siretart@tauware.de>  Mon, 15 Aug 2022 08:54:41 +0200
+
+docker.io (20.10.14+dfsg1-1) unstable; urgency=medium
+
+  [ Felix Geyer ]
+  * Order docker.service after containerd.service to fix shutdown of
+    containers (Closes: #989490)
+
+  [ Arnaud Rebillout ]
+  * New upstream release [20.10.14]
+
+ -- Arnaud Rebillout <arnaudr@kali.org>  Wed, 30 Mar 2022 23:07:00 +0700
+
+docker.io (20.10.11+dfsg1-2) unstable; urgency=medium
+
+  * Team upload.
+  * Fix default seccomp on mips (Closes: #1000318)
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 04 Dec 2021 17:06:15 +0800
+
+docker.io (20.10.11+dfsg1-1) unstable; urgency=medium
+
+  * New upstream release [20.10.11]
+
+ -- Arnaud Rebillout <arnaudr@kali.org>  Mon, 22 Nov 2021 16:56:50 +0700
+
+docker.io (20.10.10+dfsg1-1) unstable; urgency=medium
+
+  * New upstream release [20.10.10]
+
+ -- Arnaud Rebillout <arnaudr@kali.org>  Tue, 26 Oct 2021 14:22:48 +0700
+
+docker.io (20.10.8+dfsg1-2) unstable; urgency=medium
+
+  * Team upload.
+
+  [ Shengjing Zhu ]
+  * Add patch to build against runc 1.0 (Closes: #996166)
+
+ -- Anthony Fok <foka@debian.org>  Fri, 22 Oct 2021 01:50:50 -0600
+
+docker.io (20.10.8+dfsg1-1) unstable; urgency=medium
+
+  * Backport upstream patches to fix the build
+  * Backport upstream patch to skip a cli test that segfaults
+  * Drop unused Lintian override (field-too-long)
+  * Update my email address
+  * New upstream release [20.10.8]
+  * Update debian/watch
+  * Build-Depends += moby-locker-dev, drop obsolete vendoring
+  * Drop patches applied upstream
+  * Use leading tabs consistently in d/rules
+  * Update date format for the cli build time
+  * Build cli with dh-golang, don't use upstream Makefile anymore
+  * Use variables for package names in d/rules
+  * Bump standards version
+  * tests: Bump debootstrap suite to bullseye
+
+ -- Arnaud Rebillout <arnaudr@kali.org>  Wed, 22 Sep 2021 13:31:10 +0700
+
+docker.io (20.10.5+dfsg1-1) unstable; urgency=medium
+
+  * Team upload.
+  * New upstream release 20.10.5
+    Same as 20.10.4 but a patch in docker/cli is reverted to fix hanging in
+    "docker start --attach" and remove spurious "Unsupported signal: <nil>.
+    Discarding" messages.
+
+ -- Shengjing Zhu <zhsj@debian.org>  Wed, 10 Mar 2021 00:53:21 +0800
+
+docker.io (20.10.4+dfsg1-1) unstable; urgency=medium
+
+  * Team upload
+  * New upstream release 20.10.4
+  * Remove patch which is applied in new upstream version:
+    cli-build-man-pages-with-go-md2man.patch
+  * Add patch to skip TestUntarParentPathPermissions which requires root
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sat, 27 Feb 2021 21:16:16 +0800
+
+docker.io (20.10.3+dfsg1-2) unstable; urgency=medium
+
+  * Drop manual run of engine tests
+  * Update a patch that is now applied upstream
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Wed, 10 Feb 2021 09:13:49 +0700
+
+docker.io (20.10.3+dfsg1-1) unstable; urgency=medium
+
+  * Team upload
+  * New upstream release 20.10.3
+    + CVE-2021-21285 Prevent an invalid image from crashing docker daemon
+    + CVE-2021-21284 Lock down file permissions to prevent remapped root
+      from accessing docker state
+  * Try to run basic-smoke tests in autopkgtest isolation-container
+
+ -- Shengjing Zhu <zhsj@debian.org>  Tue, 09 Feb 2021 00:26:14 +0800
+
+docker.io (20.10.2+dfsg1-2) unstable; urgency=medium
+
+  * Add patch to fix flaky test
+  * Rename test-related patches for clarity
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Fri, 08 Jan 2021 14:08:51 +0700
+
+docker.io (20.10.2+dfsg1-1) unstable; urgency=medium
+
+  * Build-Depends += fvbommel-sortorder-dev, unvendor
+  * New upstream release [20.10.2]
+  * Drop patches applied upstream
+  * Drop selinux build tag, no longer needed
+  * Move the package to the Go Team
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Thu, 07 Jan 2021 08:40:41 +0700
+
+docker.io (20.10.1+dfsg1-1) unstable; urgency=medium
+
+  * Drop obsolete patches for good
+  * Don't clean the file manager_linux_test.go, patch it instead
+  * Update patches that are upstream
+  * Add patch to skip failing test on mips64
+  * Add dep-3 header to last patch
+  * Build-Depends += golang-golang-x-term-dev, drop vendoring
+  * New upstream release [20.10.1]
+  * Update patches
+  * Fix gbp.conf debian branch
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Mon, 04 Jan 2021 11:25:41 +0700
+
+docker.io (20.10.0+dfsg2-1) unstable; urgency=medium
+
+  * Drop hack for oci fixtures, fixed upstream
+  * No need to clean manager_linux_test
+  * Use a variable for docker testflags
+  * No need to export DOCKER_BUILDTAGS
+  * Depends: Fix incorrect requirement on golang-dbus-dev
+  * Build-Depends: Make libseccomp-dev explicit
+  * Drop useless vendored directories
+  * Drop Build-Depends that are obviously not used anymore
+  * Group swarmkit Build-Depends for tests, not needed
+  * Group k8s.io Build-Depends
+  * Override dh_golang to produce better Built-Using
+  * Nitpick, simplify a bit dh_install
+  * Rework BUILDTIME, only needed for cli
+  * Rework KEEPBUNDLE, only needed for engine
+  * Nitpick, rename some variables
+  * Bump dfsg in watch file
+  * Big rename, build in _build instead of .gopath
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Mon, 14 Dec 2020 19:39:22 +0700
+
+docker.io (20.10.0+dfsg1-1) experimental; urgency=medium
+
+  * Build-Depends: git is only needed for tests, document that
+  * Depends: Drop undefined ${perl:Depends}
+  * Add patch to fix container creation time in tests
+  * Drop test--skip-TestResumableRequestHeaderTooMuchFailures.patch
+  * Drop test--skip-TestClientWithRequestTimeout.patch
+  * Drop test--skip-TestAdapterReadLogs.patch
+  * Update description for test--skip-pkg-signal-flaky-tests.patch
+  * Cosmetics in d/watch
+  * get-orig-source: Remove all the logs regarding the vendor tree
+  * get-orig-source: Rework to mimic uscan output
+  * uscan-summary: New helper to parse uscan+get-orig-source logs
+  * ls-vendor: New helper to quickly list the vendor directories
+  * real-upstream-version: New (tiny) helper to get original upst version
+  * helpers/docker: Be a bit more verbose
+  * helpers/docker: Add description, re-indent
+  * Cleanup, remove obsolete build deps and Files-Excluded
+  * Rework exported Go env variables in d/rules
+  * Simplify GOPATH handling in d/rules
+  * Add package update instructions to d/README.source
+  * Move -dev package to golang Section
+  * New upstream release [20.10.0]
+  * ls-vendor: More granularity for golang.org
+  * Vendor golang.org/x/term
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Wed, 09 Dec 2020 14:37:26 +0700
+
+docker.io (20.10.0~rc1+dfsg3-1) experimental; urgency=medium
+
+  * Bump standards version
+  * Mark docker-doc with Multi-Arch: foreign
+  * Remove ISC license from d/copyright
+  * Minor updates in d/control
+  * Add patch to skip test in pbuilder
+  * Rename the bash-completion patch
+  * Add moby-term-dev to the docker-dev dependencies
+  * Vendor armon-go-radix (Closes: #918375)
+  * Bump dfsg in d/watch
+  * Fix dockerd path in docker.io.docker.init
+  * Remove docker/distribution from the MUT
+  * Fix lintian override in d/source
+  * Update lintian tags
+  * Add lintian overrides regarding missing manual pages
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Wed, 02 Dec 2020 13:26:52 +0700
+
+docker.io (20.10.0~rc1+dfsg2-3) experimental; urgency=medium
+
+  * Fix my mistakes
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Tue, 01 Dec 2020 08:59:44 +0700
+
+docker.io (20.10.0~rc1+dfsg2-2) experimental; urgency=medium
+
+  * Fix cli binary name, it is arch specific
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Mon, 30 Nov 2020 21:48:20 +0700
+
+docker.io (20.10.0~rc1+dfsg2-1) experimental; urgency=medium
+
+  * Bump containerd version to 1.4.2
+  * Forbid circular dependencies during build
+  * Remove commented-out block in d/rule
+  * Enable part of the patch that disables the cli network tests
+  * Update the patch for bash completion shebang
+  * Rework apparmor, recommend it unconditionally
+  * Install contrib/dockerd-rootless-setuptool.sh
+  * Suggest rootlesskit
+  * Conflicts with docker-ce-rootless-extras
+  * Nitpicks in docker.io.install
+  * docker.default: Update URLs
+  * docker.init: Update according to changes upstream
+  * docker.io.postinst: Add comment and indent
+  * Replace dh-exec usage with manual renaming in d/rules
+  * Simplify client installation: no more symlink
+  * Install bash completion from docker.io.install file
+  * Remove obsolete golang-github-docker-libnetwork-dev
+  * Unvendor containerd step 1: Depend on containerd
+  * Unvendor containerd step 2: Build-Depend on containerd
+  * Unvendor containerd step 3: Bump dfsg
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Mon, 30 Nov 2020 15:48:02 +0700
+
+docker.io (20.10.0~rc1+dfsg1-1) experimental; urgency=medium
+
+  * New upstream release [20.10.0~rc1] (Closes: #840829, #974857)
+  * Bump containerd version to 1.4.1
+  * Revert dfsg version to 1 in d/watch
+  * Update d/watch for moby/moby 20.10.0~rc1
+  * Update d/copyright for {cli,engine} 20.10.0~rc1
+  * Add MUT components in d/copyright
+  * Rewrite the gitcommit logic completely, get docker version from control file
+  * get-orig-source: Rework to support moby tarball + cli as a MUT component
+  * get-orig-source: Rewrite get_vendor_tree()
+  * get-orig-source: Log the vendor tree for each component
+  * get-orig-source: Log the vendor tree left after removal of Files-Excluded
+  * Completely rework the dependency tree for 20.10.0~rc1
+  * Drop patches that are obsolete or applied upstream
+  * Drop patch test--fix-test-errors.patch
+  * Update patches, rename a few of them
+  * Add patches to add go.mod files for {cli,engine,libnetwork}
+  * Add patch to remove shebang from bash completion
+  * Add containerd patches from Debian's containerd package
+  * Backport containerd patches from upstream (fix FTBFS moby/buildkit)
+  * Rework and split the big patch that skips privileged tests
+  * Drop various hacks in d/rules dh_auto_configure
+  * New hacks in d/rules dh_auto_configure
+  * Set GO111MODULE=off to build
+  * Remove vim-syntax-docker package
+  * Remove *-integration from docker.io.install
+  * Update containerd binary names in docker.io.install
+  * Remove docker-runc symlink, obsolete it seems
+  * Update libnetwork/ipvs to moby/ipvs in golang-...-docker-dev.install
+  * Install only the docker.io package in the testbed (rather than @)
+  * Clean d/gbp.conf, only keep the name of the debian branch
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Fri, 27 Nov 2020 14:09:53 +0700
+
+docker.io (19.03.13+dfsg3-1) unstable; urgency=medium
+
+  * d/control: Remove mention to golang-github-theupdateframework-notary-dev
+  * d/watch: Remove 's{\-ce}{}' from uversionmangle
+  * d/watch: Use dversionmangle=auto
+  * Stop vendoring sigs.k8s.io
+  * Move d/unpack-components to d/helpers
+  * Minor fix in d/helpers/docker.sh
+  * Remove old Replaces/Conflicts/Breaks statements
+  * Document briefly why we keep some vendored directories
+  * Vendor tonistiigi/fsutil again
+  * Add my name in d/copyright, after all
+  * No more split between indep/arch in d/rules
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Fri, 27 Nov 2020 00:08:07 +0700
+
+docker.io (19.03.13+dfsg2-1) unstable; urgency=medium
+
+  * Unvendor spf13/{cobra,pflag}
+  * Add Rules-Requires-Root
+  * Bump Standards-Version to 4.5.0
+  * Bump debhelper-compat to 13
+  * Add a note that unpack-components is now deprecated
+  * Document a bit how MUT works for docker.io
+  * Unvendor tonistiigi/{fsutil,units}
+  * Remove docker/go-events from MUT
+  * Add copyright mention for moby/buildkit
+  * get-orig-source: Put components in a variable
+  * get-orig-source: Allow to specify the version of a component
+  * Build with containerd 1.3.7
+  * Disable patches that are not relevant for containerd 1.3.7
+  * Update patches for containerd 1.3.7
+  * Add patches for buildkit to build against containerd 1.3.7
+  * Add patches for cli tests to build against containerd 1.3.7
+  * Remove 'ambient' from docker build tags
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Thu, 19 Nov 2020 15:29:30 +0700
+
+docker.io (19.03.13+dfsg1-4) unstable; urgency=medium
+
+  * Fix FTBFS due to go-md2man v2 (Closes: #973084)
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Tue, 10 Nov 2020 21:31:26 +0700
+
+docker.io (19.03.13+dfsg1-3) unstable; urgency=medium
+
+  * Add patch to fix spf13/cobra (tianon) (Closes: #971789)
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Wed, 14 Oct 2020 11:38:00 +0700
+
+docker.io (19.03.13+dfsg1-2) unstable; urgency=medium
+
+  * Fix user.GetExecUser interface runc 1.0.0~rc92 (zhsj) (Closes: #970525)
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Tue, 22 Sep 2020 16:21:48 +0700
+
+docker.io (19.03.13+dfsg1-1) unstable; urgency=medium
+
+  * Move package build instructions in the right README.source file
+  * New upstream release [19.03.13]
+  * Drop build-dep vbom.ml/util, vendor fvbommel/sortorder
+  * Add upstream patch to fix FTBFS with go 1.15
+  * lintian-overrides: Drop tag source-contains-empty-directory
+  * Stop shipping the mkimage contrib scripts (Closes: #969940)
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Fri, 18 Sep 2020 14:35:25 +0700
+
+docker.io (19.03.12+dfsg1-4) unstable; urgency=medium
+
+  * Fix build against runc 1.0.0~rc92 (zhsj) (Closes: #969227)
+  * Update helper to allow giving commands to docker run
+  * Update README.Debian with build instructions
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Mon, 31 Aug 2020 12:46:39 +0700
+
+docker.io (19.03.12+dfsg1-3) unstable; urgency=medium
+
+  * Add patch to disable TestRunLabel
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Mon, 13 Jul 2020 13:49:29 +0700
+
+docker.io (19.03.12+dfsg1-2) unstable; urgency=medium
+
+  * Add upstream patch to silence systemd warning (/var/run → /run)
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Mon, 13 Jul 2020 08:56:49 +0700
+
+docker.io (19.03.12+dfsg1-1) unstable; urgency=medium
+
+  * Rework dockerfile, add a helper to use docker to build the package
+  * d/copyright: Indent and sort a few things
+  * d/rules: Remove old comments
+  * d/control: Update my email address in the maintainer field
+  * New upstream release [19.03.12].
+  * d/tests/basic-smoke: Debootstrap from buster (Closes: #946313)
+  * d/tests/basic-smoke: Use systemctl to start/stop docker
+  * d/tests/basic-smoke: More lines to the tail command
+  * d/tests/basic-smoke: Use deb.debian.org to debootstrap
+  * d/tests/basic-smoke: Style nitpicks
+  * Install dockerd-rootless.sh in usr/share/docker.io/contrib (Closes: #964071)
+  * d/rules: Silence lintian warnings regarding executable text files
+  * docker-dev: Install containerd -dev files from build directory
+  * docker-dev: Re-order the file d/...-dev.install
+
+ -- Arnaud Rebillout <elboulangero@gmail.com>  Fri, 03 Jul 2020 12:09:20 +0700
+
+docker.io (19.03.11+dfsg1-1) unstable; urgency=medium
+
+  * New upstream release [19.03.11].
+  * Update Files-Excluded list (ie. exclude archive vendoring)
+  * Update and drop patches
+  * Use gotest.tools import path in docker cli (without v3)
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Fri, 19 Jun 2020 13:41:28 +0700
+
+docker.io (19.03.7+dfsg1-3) unstable; urgency=medium
+
+  * dev: provide "rootless" component (Closes: #960827).
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sun, 17 May 2020 17:07:15 +1000
+
+docker.io (19.03.7+dfsg1-2) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * Added missing-pre-depends. Thanks, Lintian.
+  * debian/TODO.Debian --> debian/TODO.
+  * L:Override "field-too-long Built-Using" on binary package also.
+
+  [ Arnaud Rebillout ]
+  * d/clean: Remove lines that are obsolete.
+  * d/clean: Update for doc files.
+  * Add upstream patch to fix panic in libnetwork resolver (Closes: #958312).
+  * Add patch to skip flaky signal tests.
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Tue, 21 Apr 2020 13:32:19 +0700
+
+docker.io (19.03.7+dfsg1-1) unstable; urgency=medium
+
+  * New upstream release [19.03.7].
+  * Drop test--disable-containerizedengine-update-test.patch.
+  * Unvendor vbom.ml/util and grpc-ecosystem/grpc-opentracing
+    (now packaged in Debian).
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Tue, 14 Apr 2020 13:17:23 +0700
+
+docker.io (19.03.6+dfsg1-4) unstable; urgency=medium
+
+  * Do not use bundled "golang-github-stevvooe-ttrpc-dev" (Closes: #956502).
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Mon, 13 Apr 2020 22:19:11 +1000
+
+docker.io (19.03.6+dfsg1-3) unstable; urgency=medium
+
+  * New patch to disable failing test (Closes: #954727).
+  * New upstream patch to fix FTBFS with xeipuuv-gojsonschema (>= 1.2.0~).
+  * Lintian-override for "field-too-long Built-Using".
+  * DH to version 12.
+  * Build-Depends:
+    - golang-github-tinylib-msgp-dev
+    + golang-github-xeipuuv-gojsonschema-dev (>= 1.2.0~)
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sat, 11 Apr 2020 18:57:29 +1000
+
+docker.io (19.03.6+dfsg1-2) unstable; urgency=medium
+
+  * New upstream patch to fix FTBFS in "libnetwork" (Closes: #952311).
+  * Build-Depends:
+    = golang-github-miekg-dns-dev (>= 1.1.26~)
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Wed, 26 Feb 2020 11:20:11 +1100
+
+docker.io (19.03.6+dfsg1-1) unstable; urgency=medium
+
+  * New upstream release [19.03.6].
+  * Drop patches applied upstream.
+  * Vendor containerd-cgroups.
+  * d/copyright: Remove unused snippets.
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 19 Feb 2020 13:52:28 +0700
+
+docker.io (19.03.5+dfsg1-2) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * Removed unused "golang-github-rsc-letsencrypt-dev" from Build-Depends.
+  * Removed unused "golang-github-xenolf-lego-dev" from Build-Depends.
+  * Build-Depends += "golang-github-codegangsta-cli-dev"
+  * Don't run Btrfs tests ('chown' is not permitted).
+  * Removed unused "golang-github-vaughan0-go-ini-dev" fron Build-Depends.
+
+  [ Arnaud Rebillout ]
+  * Build-Depends += "gotestsum", drop related patches
+  * Drop buildkit patch
+  * Update patch that disables hcsshim
+  * Add patch to build against vishvananda/libnetwork 1.1.x
+  * Add upstream patch to fix test against imdario/mergo 0.3.8
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Thu, 06 Feb 2020 16:00:33 +0700
+
+docker.io (19.03.5+dfsg1-1) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * Added Conflicts with Docker's vendor packages (docker-ce, containerd.io)
+
+  [ Arnaud Rebillout ]
+  * New upstream release [19.03.5].
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 18 Dec 2019 17:51:41 +0700
+
+docker.io (19.03.4+dfsg2-2) unstable; urgency=medium
+
+  * Removed unused package from Build-Depends.
+  * Standards-Version: 4.4.1.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Tue, 12 Nov 2019 12:18:22 +1100
+
+docker.io (19.03.4+dfsg2-1) unstable; urgency=medium
+
+  * Bump dfsg version to update orig tarball in the pool.
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Mon, 04 Nov 2019 16:06:27 +0700
+
+docker.io (19.03.4+dfsg1-3) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * get-orig-source.sh: minor shellcheck correction.
+  * get-orig-source.sh: consistent/reproducible tarball generation.
+  * dev: install "libnetwork/ipvs", as required by Kubernetes.
+  * drop "github.com/marstr/guid" (indirect dependency).
+  * Un-vendor "golang-github-graylog2-go-gelf-dev".
+
+  [ Arnaud Rebillout ]
+  * Stop vendoring docker-go-metrics.
+  * Add a patch to fix reverse build-deps against docker/cli.
+
+  [ Dmitry Smirnov ]
+  * tighten build-dep
+  * disabled unreliable test "TestClientWithRequestTimeout".
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Mon, 04 Nov 2019 14:26:10 +0700
+
+docker.io (19.03.4+dfsg1-2) experimental; urgency=medium
+
+  [ Arnaud Rebillout ]
+  * Add patch to fix build against prometheus-client-golang 1.2.1-1
+
+  [ Dmitry Smirnov ]
+  * dev to depend on "golang-github-morikuni-aec-dev" (used in
+    "pkg/jsonmessage").
+  * dev: provide "containerd/labels".
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 30 Oct 2019 12:19:58 +0700
+
+docker.io (19.03.4+dfsg1-1) experimental; urgency=medium
+
+  * New upstream release [19.03.4].
+  * Unvendor a few build dependencies.
+  * Drop golang-docker-dev transitional package.
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Sat, 26 Oct 2019 10:39:45 +0700
+
+docker.io (19.03.3+dfsg1-1) experimental; urgency=medium
+
+  * New upstream release [19.03.3].
+  * Drop & refresh patches.
+  * Update build dependencies.
+  * Vendor every dependencies that are missing/outdated in debian.
+  * Cherry-pick changes from master (18.09.9+dfsg1-4 to 18.09.9+dfsg2-6).
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Mon, 21 Oct 2019 11:06:43 +0700
+
+docker.io (18.09.9+dfsg2-7) unstable; urgency=medium
+
+  [ Arnaud Rebillout ]
+  * Add patch to fix build against prometheus-client-golang 1.2.1-1
+
+  [ Dmitry Smirnov ]
+  * get-orig-source.sh: consistent/reproducible tarball generation.
+  * dev/install:
+    + containerd/labels
+    + libnetwork/ipvs
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Thu, 31 Oct 2019 19:22:25 +1100
+
+docker.io (18.09.9+dfsg2-6) unstable; urgency=medium
+
+  * (Build-)Depends:
+    + golang-github-appc-cni-dev (>= 0.7.1~)
+    + golang-github-containerd-go-cni-dev (>= 0.0~git20190904~)
+    + golang-github-containernetworking-plugins-dev
+    + golang-github-morikuni-aec-dev
+  * dev: provide few more containerd components.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Fri, 18 Oct 2019 00:05:06 +1100
+
+docker.io (18.09.9+dfsg1-5) unstable; urgency=medium
+
+  [ Arnaud Rebillout ]
+  * Drop unused build depends
+
+  [ Dmitry Smirnov ]
+  * Patch Docker to use jwt-go v3.
+  * Use golang-github-dgrijalva-jwt-go-dev (not -v3).
+  * dev: install new "containerd/*" files
+         (as required by "singularity-container").
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Tue, 08 Oct 2019 14:37:25 +1100
+
+docker.io (18.09.9+dfsg1-4) unstable; urgency=medium
+
+  * d/control: Break/replace/provide containerd-dev (Closes: #941091)
+  * d/control: Order and indent a few things
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 25 Sep 2019 08:07:12 +0700
+
+docker.io (18.09.9+dfsg1-3) unstable; urgency=medium
+
+  [ Arnaud Rebillout ]
+  * d/control: Remove duplicate comma in build depends (Closes: #935488)
+  * d/control: Standards Version 4.4.0
+
+  [ Dmitry Smirnov ]
+  * Provides += golang-github-docker-go-metrics-dev
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Tue, 24 Sep 2019 12:45:51 +1000
+
+docker.io (18.09.9+dfsg1-2) unstable; urgency=medium
+
+  * Re-enable engine unit tests again.
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Mon, 16 Sep 2019 13:35:15 +0700
+
+docker.io (18.09.9+dfsg1-1) unstable; urgency=medium
+
+  [ Arnaud Rebillout ]
+  * New upstream release [18.09.9].
+  * Disable engine unit tests (tmp, until gotestsum makes it to Debian).
+
+  [ Dawid Dziurla ]
+  * Install fish completions
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Mon, 16 Sep 2019 11:18:11 +0700
+
+docker.io (18.09.8+dfsg1-1) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * New upstream release [18.09.8].
+  * Tighten various dependencies.
+  * Update -dev dependencies (for libpod).
+  * Backport oci/caps from 19.03.2 (for libpod).
+  * Un-vendor golang-github-ishidawataru-sctp-dev.
+  * Add upstream patch for libnetwork to build against newer sctp.
+  * Add upstream patch to build against
+    golang-github-opencontainers-selinux-dev (>= 1.3.0~).
+  * No longer disable Go cache to prevent FTBFS with Go 1.12.
+
+  [ Arnaud Rebillout ]
+  * github-golang-docker-docker-dev: fix go-metrics install path.
+  * github-golang-docker-docker-dev: add replaces/breaks on docker-go-metrics-dev.
+  * Add patch to fix Debian security presence check (Closes: #925224).
+
+  [ Reinhard Tartler ]
+  * github-golang-docker-docker-dev: add missing sources (Closes: #924257)
+  * Additional missing sources for openshift/imagebuilder
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Sat, 14 Sep 2019 10:10:55 +0700
+
+docker.io (18.09.1+dfsg1-9) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * rules: no longer disable Go cache to prevent FTBFS with Go 1.12.
+
+  [ Felix Geyer ]
+  * Cherry-pick upstream commits to fix test failures with golang >= 1.11.6-1+deb10u1
+  * Add upstream patch for CVE-2019-14271
+  * Fix build failure with gogo/protobuf >= 1.2
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Wed, 04 Sep 2019 14:54:29 +0700
+
+docker.io (18.09.1+dfsg1-8) unstable; urgency=medium
+
+  * Make myself the maintainer, and Dmitry uploader.
+    (see https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=908868)
+  * Add upstream patches for CVE-2019-13509 (Closes: #932673).
+  * Add upstream patch for CVE-2019-13139 (Closes: #933002).
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Mon, 05 Aug 2019 15:27:57 +0700
+
+docker.io (18.09.1+dfsg1-7.1) unstable; urgency=medium
+
+  * Non-maintainer upload.
+
+  [ Hideki Yamane ]
+  * upstream site moved to mobyproject.org
+
+  [ Arnaud Rebillout ]
+  * Add patch for CVE-2018-15664 (Closes: #929662).
+
+ -- Shengjing Zhu <zhsj@debian.org>  Sun, 23 Jun 2019 01:25:10 +0800
+
+docker.io (18.09.1+dfsg1-7) unstable; urgency=medium
+
+  * Add patch to revert using iptables-legacy (Closes: #921600).
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Mon, 13 May 2019 09:34:45 +0700
+
+docker.io (18.09.1+dfsg1-6) unstable; urgency=medium
+
+  * Add patch to fix Debian security presence check (Closes: #925224).
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Tue, 16 Apr 2019 09:56:17 +0700
+
+docker.io (18.09.1+dfsg1-5) unstable; urgency=medium
+
+  * Install "containerd-shim" as "docker-containerd-shim" (Closes: #920935).
+  * Update containerd-name patch.
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Sat, 02 Feb 2019 10:00:35 +1100
+
+docker.io (18.09.1+dfsg1-4) unstable; urgency=medium
+
+  * Updated "containerd" executable name patch;
+    renamed "containerd-shim" executable (Closes: #920597).
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Mon, 28 Jan 2019 10:16:28 +1100
+
+docker.io (18.09.1+dfsg1-3) unstable; urgency=medium
+
+  * New patch to fix name of the "containerd" executable (Closes: #920597).
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sun, 27 Jan 2019 23:43:53 +1100
+
+docker.io (18.09.1+dfsg1-2) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * Standards-Version: 4.3.0.
+  * Upload to unstable.
+
+  [ Arnaud Rebillout ]
+  * Bump runc requirement to 1.0.0~rc6.
+  * Add patch to skip flaky test.
+  * Tidy up patches.
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Sat, 26 Jan 2019 10:58:39 +1100
+
+docker.io (18.09.1+dfsg1-1) experimental; urgency=medium
+
+  * New upstream release [January 2019].
+  * Remove obsolete patches, refresh remaining ones.
+  * New notable patches:
+    - build against the runc debian package.
+    - build against google-grpc 1.11.
+    - attempt to fix mips build.
+    - disable a test file that fails to build (known issue upstream).
+  * Remove various build dependencies, add new ones.
+  * Bump some build dependencies:
+    - golang-github-coreos-bbolt-dev (>= 1.3.1-coreos.5-3~).
+  * Vendor some build dependencies:
+    - docker/licensing (no debian package, no upstream release).
+    - golang-github-spf13-cobra/pflag-dev (docker has internal fork).
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Tue, 22 Jan 2019 19:48:15 +1100
+
+docker.io (18.06.1+dfsg1-3) unstable; urgency=medium
+
+  * Import upstream patch to use iptables-legacy (Closes: #911808).
+  * Un-vendor opencontainers-runtime-tools.
+  * Import numerous patches from upstream for go 1.11.
+
+ -- Arnaud Rebillout <arnaud.rebillout@collabora.com>  Thu, 17 Jan 2019 15:37:54 +1100
+
+docker.io (18.06.1+dfsg1-2) unstable; urgency=medium
+
+  * Tighten versioned dependency on "runc".
+  * dev: install "libnetwork/ipamutils".
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sun, 16 Sep 2018 13:21:33 +1000
+
+docker.io (18.06.1+dfsg1-1) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * New upstream release [August 2018].
+  * Upload to unstable (Closes: #906999).
+
+  [ Arnaud Rebillout ]
+  * Cleanup /etc/init/docker.conf (Closes: #907455)
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Tue, 11 Sep 2018 14:03:46 +1000
+
+docker.io (18.06.0+dfsg1-1) experimental; urgency=medium
+
+  * New upstream release [July 2018].
+
+  [ Arnaud Rebillout ]
+  * get-orig-source: print the list of directories vendored by upstream.
+
+  [ Dmitry Smirnov ]
+  * README.source: noted duration of upstream support.
+  * README.Debian: added note about restart dilemma.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Fri, 10 Aug 2018 19:07:41 +1000
+
+docker.io (18.03.1+dfsg1-6) unstable; urgency=medium
+
+  * Removed obsolete "golang-ed25519-dev" from Build-Depends.
+  * Standards-Version: 4.1.5.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Wed, 11 Jul 2018 20:15:24 +1000
+
+docker.io (18.03.1+dfsg1-5) unstable; urgency=medium
+
+  * New upstream patch to prevent needless calls to `pass` (Closes: #902258).
+  * Do not automatically restart daemon on upgrade (Closes: #786724).
+  * Recommends += "needrestart".
+
+    "needrestart" prompts to restart "docker" daemon on upgrade. This way
+    running containers won't be killed on upgrade until user choses to
+    restart Docker.
+    Not restarting Docker on upgrade may break CLI when it disagrees with
+    running daemon regarding API version.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Mon, 02 Jul 2018 14:56:46 +1000
+
+docker.io (18.03.1+dfsg1-4) unstable; urgency=medium
+
+  * Suggests += "e2fsprogs, xfsprogs" (Closes: #887222).
+  * rules: fixed test failure on binary-indep build (Closes: #902206).
+    Thanks, Santiago Vila.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sun, 24 Jun 2018 23:22:51 +1000
+
+docker.io (18.03.1+dfsg1-3) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * Replaced upstream SysV init file with an improved one.
+      * --remove-pidfile on stop (Closes: #764921)
+      * don't fail when removed (Closes: #841282)
+      * fixed exit status:
+          + don't fail to stop when already stopped
+          + don't fail to start when already started
+      * removed useless check_init()
+    Thanks, Sam Morris.
+  * postinst: create "docker" group when needed (Closes: #821078).
+  * README.source: added comment to clarify upstream version numbering.
+    Thanks, Tianon Gravi
+  * README.source: added link describing upstream life cycle & release
+    policy. Thanks, Tianon Gravi.
+
+  [ Arnaud Rebillout ]
+  * Added myself to uploaders.
+  * Bumped compat to 11 to allow installling the systemd socket
+    file automatically with dh_installsystemd.
+  * Installed systemd socket through dh_installsystemd.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Thu, 21 Jun 2018 21:27:32 +1000
+
+docker.io (18.03.1+dfsg1-2) unstable; urgency=medium
+
+  [ Dmitry Smirnov ]
+  * Upload to unstable.
+  * Un-bundle "googleapis-gnostic-dev" and "docker-notary-dev".
+  * Removed "golang-github-hashicorp-consul-dev" from Build-Depends.
+
+  [ Arnaud Rebillout ]
+  * Fix bash completion install.
+  * d/control: depend on golang-any.
+  * d/README.source: re-write part about docker-ce upstream workflow.
+  * Set required version for imdario-mergo and hashicorp-memberlist.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Wed, 20 Jun 2018 23:40:47 +1000
+
+docker.io (18.03.1+dfsg-1) experimental; urgency=medium
+
+  * New upstream release [April 2018].
+  * rules:
+    + properly pass daemon version.
+    + re-work override_dh_auto_configure with important fixes.
+  * New patch to disable unreliable TestAdapterReadLogs.
+  * Use packaged "tini", don't build it.
+    Thanks, Arnaud Rebillout.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Tue, 19 Jun 2018 13:43:57 +1000
+
+docker.io (17.12.1+dfsg-4) experimental; urgency=medium
+
+  * golang-github-docker-docker-dev:
+    + install only selected "libnetwork" components.
+    + install missing "docker/cli" components.
+    + install "docker/docker/cli".
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Mon, 18 Jun 2018 19:32:51 +1000
+
+docker.io (17.12.1+dfsg-3) experimental; urgency=medium
+
+  * Removed versioning from -dev Breaks/Replaces: libnetwork-dev
+    (Closes: #901694).
+  * Build with consistent tags "apparmor seccomp selinux ambient"
+    (Closes: #901743).
+    Thanks, Laurent Bigonville.
+  * New patch to fix FTBFS on mips* architectures.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Mon, 18 Jun 2018 12:05:10 +1000
+
+docker.io (17.12.1+dfsg-2) experimental; urgency=medium
+
+  * New patch to disable TestGetRootUIDGID, failing in sbuild.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sat, 16 Jun 2018 21:31:51 +1000
+
+docker.io (17.12.1+dfsg-1) experimental; urgency=medium
+
+  * Team upload.
+  * New upstream release [February 2018] (Closes: #850753).
+  * Restart on upgrade, like most daemons (Closes: #792327).
+    Docker's upgrade tip from 17.12.0 release notes:
+      "You must stop all containers and plugins BEFORE upgrading".
+  * New multi-upstream-tarball (MUT) layout, building all docker components
+    (containerd, libnetwork, swarmkit) at once;
+    incorporated binaries of docker-containerd and libnetwork.
+  * docker-dev to provide libnetwork-dev (a part of Docker).
+  * New patches to build on go-1.10; build with latest Go compiler.
+  * Declared myself as Maintainer.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sat, 16 Jun 2018 20:05:48 +1000
+
+docker.io (1.13.1~ds3-4) unstable; urgency=medium
+
+  * Build with go-1.7 as later versions cause [archive,tarsum] failures
+    (Closes: #901317).
+  * Re-enabled [archive,tarsum] tests.
+  * Build-Depends:
+    = golang-1.7-go | golang-go (>= 2:1.6~)
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Tue, 12 Jun 2018 00:02:27 +1000
+
+docker.io (1.13.1~ds3-3) unstable; urgency=medium
+
+  * Removed invalid team email from Uploaders (Closes: #899285).
+  * B-D: "libbtrfs-dev | btrfs-progs (<< 4.16.1~)" (Closes: #898876).
+    Thanks, Dimitri John Ledkov.
+  * (Build-)Depends:
+    - removed unused "golang-github-aanand-compose-file-dev".
+    - removed needless versioning and unknown alternatives.
+  * dev: install "runconfig" (used by "github.com/aanand/compose-file").
+  * repack.sh: use correct compression type, depending on file name.
+  * watch file to version 4; updated "repack.sh".
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sun, 10 Jun 2018 19:49:42 +1000
+
+docker.io (1.13.1~ds3-2) unstable; urgency=medium
+
+  * Team upload.
+  * Install -dev files from build directory.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sat, 09 Jun 2018 20:20:53 +1000
+
+docker.io (1.13.1~ds3-1) unstable; urgency=medium
+
+  * Team upload.
+
+  [ Tianon Gravi ]
+  * Remove gccgo support.
+    Removed upstream in commit eda90f63446253f97d2011926555306f2417d208
+    (https://github.com/moby/moby/pull/25978)
+  * Update upstream-version-gitcommits with more upstream versions
+
+  [ Dmitry Smirnov ]
+  * New patch to fix CVE-2017-16539 (Closes: #900140).
+  * New patch to remove 10 seconds delay on purge (Closes: #853258).
+  * debhelper to version 11; compat to version 10.
+  * copyright format URL to HTTPS; bump copyright years.
+  * Standards-Version: 4.1.4.
+  * Vcs URLs to Salsa.
+  * Included "cliconfig" to -dev package (used by "gitlab-runner").
+  * Included "reference" and "registry" into -dev package (used by "nomad").
+  * Removed obsolete "golang-github-docker-engine-api-dev" from Build-Depends.
+  * Use more private libraries to fix build and break circular dependencies:
+    + github.com/docker/swarmkit
+    + github.com/docker/libnetwork
+    + github.com/docker/go-events
+    + github.com/docker/go-metrics
+  * Removed Upstart .conf file.
+  * rules:
+    + better clean, remove generated file(s).
+    + fixed "sirupsen/logrus" imports.
+    + DH_GOLANG_GO_GENERATE = 1
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sat, 09 Jun 2018 14:50:13 +1000
+
+docker.io (1.13.1~ds2-3) unstable; urgency=medium
+
+  * Switch from "runc" to "docker-runc" and "containerd" to
+    "docker-containerd", removing prefix-removing patch
+    (Closes: #877329, #877892)
+  * Update patches, especially test-disablers
+
+ -- Tianon Gravi <tianon@debian.org>  Sat, 14 Oct 2017 08:58:11 -0700
+
+docker.io (1.13.1~ds1-2) unstable; urgency=medium
+
+  * Make test suite pass by using assorted patches to fix or disable
+    tests that don't work under pbuilder. (Closes: #858269)
+  * Suppress some unfixable Lintian warnings.
+  * Verify CVE-2016-9962 is fixed. (Closes: #850952)
+
+ -- Tim Potter <tpot@hpe.com>  Wed, 07 Jun 2017 11:43:14 +1000
+
+docker.io (1.13.1~ds1-1) unstable; urgency=medium
+
+  * New upstream release.
+
+ -- Tim Potter <tpot@hpe.com>  Wed, 24 May 2017 11:44:10 +1000
+
+docker.io (1.13.0~ds1-3) unstable; urgency=medium
+
+  * Add api and client directories to dev package.
+
+ -- Tim Potter <tpot@hpe.com>  Mon, 24 Apr 2017 16:02:32 +1000
+
+docker.io (1.13.0~ds1-2) unstable; urgency=medium
+
+  * Re-enable logfiles.com logging support after upstream license
+    change.
+  * Run nuke-graph-directory.sh using bash instead of regular sh.
+  * Fix dockerd location for sysvinit and upstart scripts. (Closes: #858249)
+
+ -- Tim Potter <tpot@hpe.com>  Tue, 28 Mar 2017 15:41:55 +1100
+
+docker.io (1.13.0~ds1-1) experimental; urgency=medium
+
+  [ Paul Tagliamonte ]
+  * Remove myself as maintainer, and swap out tpot. Sadly, these days, I'm
+    mostly just in the way, and not actually helping all that much with
+    the Docker packaging. My last upload was basically forever ago, and
+    tianon and tpot have been doing all the work since than. As such, I'm
+    going to make an unilateral executive decision to tell everyone who
+    listens to actually just listen to tpot. I plan to continue to be around in
+    the form of cruft and chaos monkey. You should also listen to tianon.
+
+  [ Tianon Gravi ]
+  * Update basic-smoke test with "set -x" for debuggability and proper Depends
+  * Build from within GOPATH so Go packages are resolved properly
+  * Split "dh_auto_build-arch" from "dh_auto_build-indep"
+  * Update "debian/watch" to use "uscan.tianon.xyz" so older versions are still
+    easily fetchable without excess work outside uscan
+  * Fix d/copyright text about Apache version 2.0 being in
+    "/usr/share/common-licenses/GPL-2" (Closes: #835440); thanks cascardo!
+  * Add Tim Potter to Uploaders ♥
+  * Add a bit more formatting to README.Debian (and a short intro to explain
+    what kinds of things this file includes)
+  * Add an explicit note about "systemd.legacy_systemd_cgroup_controller=yes"
+    in README.Debian (Closes: #843530)
+  * Add explicit new "golang-golang-x-oauth2-google-dev" package to Depends
+
+  [ Tim Potter ]
+  * Add missing "golang-github-docker-go-events-dev" B-D (Closes: #850793)
+  * New upstream version.
+  * Refresh patches and remove obsolete ones.
+  * Remove logentries.com log driver as upstream module is unlicensed.
+
+ -- Tianon Gravi <tianon@debian.org>  Fri, 19 Aug 2016 12:52:55 -0700
+
+docker.io (1.11.2~ds1-6) unstable; urgency=medium
+
+  [ Tianon Gravi ]
+  * Add DEP-3 headers for "skip-racy-unit-tests.patch"
+  * Add a note about "check-config.sh" to README.Debian; thanks Tincho!
+  * Add "docker-doc" to Suggests (Closes: #831748); thanks Ben!
+  * Remove "lxc" from Suggests (no longer a supported execution backend)
+
+  [ Nicolas Braud-Santoni ]
+  * Fix /etc/docker permissions (Closes: #831324)
+
+ -- Tianon Gravi <tianon@debian.org>  Wed, 20 Jul 2016 16:34:52 -0700
+
+docker.io (1.11.2~ds1-5) unstable; urgency=medium
+
+  * Skip racy "TestRunCommandWithOutputAndTimeoutKilled" during build (see also
+    https://github.com/docker/docker/issues/22965)
+
+ -- Tianon Gravi <tianon@debian.org>  Tue, 12 Jul 2016 07:46:35 -0700
+
+docker.io (1.11.2~ds1-4) unstable; urgency=medium
+
+  [ Tianon Gravi ]
+  * Add new script to generate Build-Depends based on "go list" instead of
+    "hack/vendor.sh" (and update Build-Depends using it)
+  * Update "/etc/default/docker" text to aggressively discourage use, linking to
+    upstream's documentation for the recommended alternatives
+    ("/etc/docker/daemon.json" and systemd drop-ins)
+  * Update gbp.conf for pristine-tar usage now that we're no longer multi-orig
+  * Remove "/var/lib/docker" upon purge (Closes: #739257)
+
+  [ Dmitry Smirnov ]
+  * Add support for DEB_BUILD_OPTIONS=nocheck in debian/rules
+
+ -- Tianon Gravi <tianon@debian.org>  Mon, 11 Jul 2016 22:09:01 -0700
+
+docker.io (1.11.2~ds1-3) unstable; urgency=medium
+
+  * Team upload.
+  * Updated "skip-privileged-unit-tests.patch" to skip more privileged
+    tests in order to fix FTBFS in pbuilder.
+  * Install "opts" directory to -dev package.
+
+ -- Dmitry Smirnov <onlyjob@debian.org>  Sat, 09 Jul 2016 13:49:02 +1000
+
+docker.io (1.11.2~ds1-2) unstable; urgency=medium
+
+  * Add Tim Potter (tpot) and Dmitry Smirnov (onlyjob) to debian/copyright; they
+    were instrumental in getting 1.11 into the archive!
+  * Fix golang-github-docker-docker-dev install location (Closes: #830478);
+    thanks nicoo!
+
+ -- Tianon Gravi <tianon@debian.org>  Fri, 08 Jul 2016 08:47:44 -0700
+
+docker.io (1.11.2~ds1-1) unstable; urgency=medium
+
+  * Update to 1.11.2 upstream release
+    (Closes: #806887, #820149, #822628, #812838)
+  * Add NEWS file describing the AUFS issue and the unfortunate possible
+    "solutions" (Closes: #799386, #805725)
+  * Add "/etc/docker" to the directories explicitly installed by the package
+    to help combat issues like #806261
+  * Update "Homepage" to "dockerproject.org" (versus ".com" which now redirects)
+  * Update "Vcs-Browser" to use https
+  * Shrink the Ubuntu delta by pulling in many of the changes
+  * Replace "btrfs-tools" relations with "btrfs-progs" (Closes: #824833)
+  * Adjust "repack.sh" to allow keeping minor bits of vendor/
+  * Fix bad URL in README (Closes: #816844); thanks Clint!
+  * Move documentation to dedicated "docker-doc" package
+  * Refresh patches, add minor patch to get unit tests running
+  * Use gccgo on non-golang architectures (Closes: #785093)
+  * Use "dh-golang" to calculate "Built-Using" more accurately
+  * Add simple "basic-smoke" DEP8 test
+
+ -- Tianon Gravi <tianon@debian.org>  Mon, 04 Jul 2016 09:59:44 -0700
+
+docker.io (1.8.3~ds1-2) unstable; urgency=medium
+
+  * Move "overlay" higher in priority (Closes: #799087)
+  * Adjust "native.cgroupdriver" to default to "cgroupfs" (Closes: #798778)
+
+ -- Tianon Gravi <tianon@debian.org>  Wed, 04 Nov 2015 00:09:02 -0800
+
+docker.io (1.8.3~ds1-1) unstable; urgency=medium
+
+  * Update to 1.8.3 upstream release (CVE-2014-8178, CVE-2014-8179)
+
+ -- Tianon Gravi <tianon@debian.org>  Thu, 29 Oct 2015 19:40:51 -0700
+
+docker.io (1.8.2~ds1-2) unstable; urgency=medium
+
+  * Swap Build-Depends order to appease buildds (Closes: #803136)
+
+ -- Tianon Gravi <tianon@debian.org>  Thu, 29 Oct 2015 07:23:10 -0700
+
+docker.io (1.8.2~ds1-1) unstable; urgency=medium
+
+  * Update to 1.8.2 upstream release
+  * Rename golang-docker-dev package to golang-github-docker-docker-dev
+  * Add SELinux support (Closes: #799620)
+
+ -- Tianon Gravi <tianon@debian.org>  Wed, 28 Oct 2015 14:21:00 -0700
+
+docker.io (1.7.1~dfsg1-1) unstable; urgency=medium
+
+  * Update to 1.7.1 upstream release
+  * Remove patches applied upstream; refresh other patches
+  * Update Build-Depends
+
+ -- Tianon Gravi <tianon@debian.org>  Wed, 26 Aug 2015 10:13:48 -0700
+
+docker.io (1.6.2~dfsg1-2) unstable; urgency=medium
+
+  * Add DEP8 tests
+    - integration: runs upstream's integration tests
+  * Replace "code.google.com/p/go.net" with canonical "golang.org/x/net"
+    (Closes: #789736)
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Wed, 01 Jul 2015 07:45:19 -0600
+
+docker.io (1.6.2~dfsg1-1) unstable; urgency=medium
+
+  * Update to 1.6.2 upstream release
+  * Update deps in d/control to match upstream's hack/vendor.sh specifications
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Thu, 21 May 2015 00:47:43 -0600
+
+docker.io (1.6.1+dfsg1-2) unstable; urgency=medium
+
+  * Add --no-restart-on-upgrade to dh_installinit so that we don't force
+    a stop on upgrade, which can cause other units to fall over. Many thanks
+    to Michael Stapelberg (sECuRE) for the tip!
+
+ -- Paul Tagliamonte <paultag@debian.org>  Sun, 10 May 2015 13:02:54 -0400
+
+docker.io (1.6.1+dfsg1-1) unstable; urgency=high
+
+  * Update to 1.6.1 upstream release (Closes: #784726)
+    - CVE-2015-3627
+      Insecure opening of file-descriptor 1 leading to privilege escalation
+    - CVE-2015-3629
+      Symlink traversal on container respawn allows local privilege escalation
+    - CVE-2015-3630
+      Read/write proc paths allow host modification & information disclosure
+    - CVE-2015-3631
+      Volume mounts allow LSM profile escalation
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Fri, 08 May 2015 17:57:10 -0600
+
+docker.io (1.6.0+dfsg1-1) unstable; urgency=medium
+
+  * Upload to unstable
+  * Backport PR 12943 to support golang-go-patricia 2.*
+  * Remove convenience copies of cgroupfs-mount in init.d / upstart scripts
+    (Re: #783143)
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Tue, 05 May 2015 15:10:49 -0600
+
+docker.io (1.6.0+dfsg1-1~exp1) experimental; urgency=medium
+
+  * Update to 1.6.0 upstream release
+  * Adjust "repack.sh" to be more tolerant of "dfsg" suffixes
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Thu, 16 Apr 2015 18:00:21 -0600
+
+docker.io (1.6.0~rc7~dfsg1-1~exp1) experimental; urgency=low
+
+  * Update to 1.6.0-rc7 upstream release
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Wed, 15 Apr 2015 19:35:46 -0600
+
+docker.io (1.6.0~rc4~dfsg1-1) experimental; urgency=low
+
+  [ Tianon Gravi ]
+  * Update to 1.6.0-rc4 upstream release
+    - drop golang 1.2 support (no longer supported upstream)
+    - update Homepage to https://dockerproject.com
+    - add check-config.sh to /usr/share/docker.io/contrib
+    - add "distribution" as a new multitarball orig
+    - backport auto "btrfs_noversion" patch from
+      https://github.com/docker/docker/pull/12048
+      (simplifying our logic for detecting whether to use it)
+    - switch from dh-golang to direct install since we're not actually using the
+      features it offers (due to upstream's build system)
+    - enable "docker.service" on boot by default for restart policies to work
+
+  [ Felipe Sateler ]
+  * Add Built-Using for glibc (Closes: #769351).
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Mon, 06 Apr 2015 17:11:33 -0600
+
+docker.io (1.5.0~dfsg1-1) experimental; urgency=low
+
+  * Update to 1.5.0 upstream release (Closes: #773495)
+  * Remove several patches applied upstream!
+    - 9637-fix-nuke-bashism.patch
+    - enable-non-amd64-arches.patch
+  * Fix btrfs-tools handling to allow for building with btrfs-tools < 1.16.1
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Tue, 10 Mar 2015 22:58:49 -0600
+
+docker.io (1.3.3~dfsg1-2) unstable; urgency=medium
+
+  * Add fatal-error-old-kernels.patch to make Docker refuse to start on old,
+    unsupported kernels (Closes: #774376)
+  * Fix dh_auto_clean to clean up after the build properly, especially to avoid
+    FTBFS when built twice (Closes: #774482)
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Sat, 03 Jan 2015 00:11:47 -0700
+
+docker.io (1.3.3~dfsg1-1) unstable; urgency=medium
+
+  [ Tianon Gravi ]
+  * Update to 1.3.3 upstream release (Closes: #772909)
+    - Fix for CVE-2014-9356 (Path traversal during processing of absolute
+      symlinks)
+    - Fix for CVE-2014-9357 (Escalation of privileges during decompression of
+      LZMA (.xz) archives)
+    - Fix for CVE-2014-9358 (Path traversal and spoofing opportunities presented
+      through image identifiers)
+  * Fix bashism in nuke-graph-directory.sh (Closes: #772261)
+
+  [ Didier Roche ]
+  * Support starting systemd service without /etc/default/docker
+    (Closes: #770293)
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Thu, 18 Dec 2014 21:54:12 -0700
+
+docker.io (1.3.2~dfsg1-1) unstable; urgency=high
+
+  * Severity is set to high due to the sensitive nature of the CVEs this
+    upload fixes.
+  * Update to 1.3.2 upstream release
+    - Fix for CVE-2014-6407 (Archive extraction host privilege escalation)
+    - Fix for CVE-2014-6408 (Security options applied to image could lead
+                             to container escalation)
+  * Remove Daniel Mizyrycki from Uploaders. Thanks for all your work!
+
+ -- Paul Tagliamonte <paultag@debian.org>  Mon, 24 Nov 2014 19:14:28 -0500
+
+docker.io (1.3.1~dfsg1-2) unstable; urgency=medium
+
+  * Remove deprecated /usr/bin/docker.io symlink
+    - added as a temporary shim in 1.0.0~dfsg1-1 (13 Jun 2014)
+    - unused by package-installed files in 1.2.0~dfsg1-1 (13 Sep 2014)
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Fri, 07 Nov 2014 13:11:34 -0700
+
+docker.io (1.3.1~dfsg1-1) unstable; urgency=high
+
+  * Update to 1.3.1 upstream release
+    - fix for CVE-2014-5277
+    - https://groups.google.com/d/topic/docker-user/oYm0i3xShJU/discussion
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Mon, 03 Nov 2014 08:26:29 -0700
+
+docker.io (1.3.0~dfsg1-1) unstable; urgency=medium
+
+  * Updated to 1.3.0 upstream release.
+  * Enable systemd socket activation (Closes: #752555).
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Fri, 17 Oct 2014 00:56:07 -0600
+
+docker.io (1.2.0~dfsg1-2) unstable; urgency=medium
+
+  * Added "golang-docker-dev" package for the reusable bits of Docker's source.
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Thu, 09 Oct 2014 00:08:11 +0000
+
+docker.io (1.2.0~dfsg1-1) unstable; urgency=medium
+
+  * Updated to 1.2.0 upstream release (Closes: #757183, #757023, #757024).
+  * Added upstream man pages.
+  * Updated bash and zsh completions to be installed as "docker" and "_docker".
+  * Updated init scripts to also be installed as "docker".
+  * Fixed "equivalent" typo in README.Debian (Closes: #756395). Thanks Reuben!
+  * Removed "docker.io" mention in README.Debian (Closes: #756290). Thanks
+    Olivier!
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Sat, 13 Sep 2014 11:43:17 -0600
+
+docker.io (1.0.0~dfsg1-1) unstable; urgency=medium
+
+  * Updated to 1.0.0 upstream release. Huzzah!
+  * I've removed what is commonly called a `button' of patches against
+    the docker package. Exact patches:
+     - bash-completion-docker.io.patch
+     - systemd-docker.io.patch
+     - sysvinit-provides-docker.io.patch
+     - zsh-completion-docker.io.patch
+     - mkimage-docker.io.patch
+  * I know y'all are guessing why; and the answer's pretty simple -- we're
+    no longer docker.io(1). Since the src:docker package now ships wmdocker(1),
+    we can safely declare a breaks/replaces on the pre-wmdocker version of the
+    package, allowing existing users to safely update, both src:docker and
+    src:docker.io side. This brings us into line with other distros, which
+    now ship wmdocker(1) and docker(1).
+  * As a stop-gap, I'm still shipping a docker.io(1) symlink to allow
+    migration away.
+
+ -- Paul Tagliamonte <paultag@debian.org>  Fri, 13 Jun 2014 21:04:53 -0400
+
+docker.io (0.11.1~dfsg1-1) unstable; urgency=medium
+
+  [ Paul Tagliamonte ]
+  * Use EnvironmentFile with the systemd unit file. (Closes: #746774)
+  * Patch out version checking code. (Closes: #747140)
+  * Remove all host checking for non-amd64 host arches. Let docker build
+    and run on all platforms now. (Closes: #747139, #739914)
+
+  [ Tianon Gravi ]
+  * Updated to 0.11.1 upstream release.
+  * Added backported upstream patch for removing RemoteAddr assumptions
+    that cause events to not be delivered to more than one unix socket
+    listener.
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Fri, 09 May 2014 17:30:45 -0400
+
+docker.io (0.9.1~dfsg1-2) unstable; urgency=medium
+
+  * Added upstream apparmor patch to fix newer apparmor versions (such as the
+    version appearing in Ubuntu 14.04).
+  * Added mkimage-* docker.io binary name patches (Closes: #740855).
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Tue, 08 Apr 2014 23:19:08 -0400
+
+docker.io (0.9.1~dfsg1-1) unstable; urgency=medium
+
+  * Updated to 0.9.1 upstream release (Closes: #743424).
+  * Added cgroupfs-mount dependency (Closes: #742641).
+  * Added Suggests entries for optional features, chiefly lxc (Closes: #742081).
+  * Added notes about "root-equivalence" to README.Debian (Closes: #742387).
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Thu, 03 Apr 2014 21:38:30 -0400
+
+docker.io (0.9.0+dfsg1-1) unstable; urgency=medium
+
+  * Updated README.Debian to not be quite so outdated (Closes: #740850).
+  * Updated to 0.9.0 upstream release.
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Tue, 11 Mar 2014 22:24:31 -0400
+
+docker.io (0.8.1+dfsg1-1) unstable; urgency=medium
+
+  * Updated to 0.8.1 upstream release.
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Tue, 25 Feb 2014 20:56:31 -0500
+
+docker.io (0.8.0+dfsg1-2) unstable; urgency=medium
+
+  [ Tianon Gravi ]
+  * Added more license notes to debian/copyright (Closes: #738627).
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Sat, 15 Feb 2014 17:51:58 -0500
+
+docker.io (0.8.0+dfsg1-1) unstable; urgency=medium
+
+  [ Prach Pongpanich ]
+  * Added zsh completion.
+
+  [ Tianon Gravi ]
+  * Updated to 0.8.0 upstream release.
+  * Added vim syntax files in new vim-syntax-docker package.
+  * Added note about minimum recommended kernel version to Description.
+  * Added contrib/*-integration files in /usr/share/docker.io/contrib.
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Mon, 10 Feb 2014 20:41:10 -0500
+
+docker.io (0.7.6+dfsg1-1) unstable; urgency=medium
+
+  [ Johan Euphrosine ]
+  * Updated to 0.7.6.
+  * Added dependency to gocapability.
+  * Clean patches.
+
+  [ Tianon Gravi ]
+  * Added contrib/mk* scripts from upstream into /usr/share/docker.io/contrib
+    (Closes: #736068).
+  * Added upstream udev rules file to stop device-mapper devices and mounts from
+    appearing in desktop environments through udisks.
+
+ -- Johan Euphrosine <proppy@google.com>  Wed, 22 Jan 2014 22:50:47 -0500
+
+docker.io (0.7.1+dfsg1-1) unstable; urgency=medium
+
+  [ Prach Pongpanich ]
+  * Fixed "docker: command not found" errors while using bash tab completion
+    (Closes: #735372).
+
+  [ Tianon Gravi ]
+  * Updated to 0.7.1 upstream release (while we wait for gocapability to be
+    packaged).
+  * Added xz-utils recommend which is required for decompressing certain images
+    from the index.
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Wed, 15 Jan 2014 20:22:34 -0500
+
+docker.io (0.6.7+dfsg1-3) unstable; urgency=medium
+
+  * Fixed FTBFS on non-amd64 platforms by setting the correct GOPATH.
+  * Fixed issues with Docker finding a valid dockerinit (Closes: #734758).
+  * Added aufs-tools dependency.
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Thu, 09 Jan 2014 20:10:20 -0500
+
+docker.io (0.6.7+dfsg1-2) unstable; urgency=medium
+
+  * Added iptables dependency required for Docker to start.
+  * Added ca-certificates recommend required for pulling from the index.
+
+ -- Tianon Gravi <admwiggin@gmail.com>  Wed, 08 Jan 2014 19:14:02 -0500
+
+docker.io (0.6.7+dfsg1-1) unstable; urgency=medium
+
+  * Initial release (Closes: #706060, #730569)
+  * Document missing licenses in the source tree. Bad, paultag. Thanks
+    alteholz.
+
+ -- Paul Tagliamonte <paultag@debian.org>  Tue, 07 Jan 2014 21:06:10 -0500

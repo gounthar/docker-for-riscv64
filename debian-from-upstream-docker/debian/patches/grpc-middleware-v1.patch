@@ -1,0 +1,349 @@
+Description: copy grpc-middleware v1
+Author: Shengjing Zhu <zhsj@debian.org>
+Forwarded: not-needed
+Last-Update: 2024-08-13
+---
+This patch header follows DEP-3: http://dep.debian.net/deps/dep3/
+Index: docker.io/engine/api/server/router/grpc/grpc.go
+===================================================================
+--- docker.io.orig/engine/api/server/router/grpc/grpc.go
++++ docker.io/engine/api/server/router/grpc/grpc.go
+@@ -5,7 +5,6 @@ import (
+ 	"strings"
+ 
+ 	"github.com/docker/docker/api/server/router"
+-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+ 	"github.com/moby/buildkit/util/grpcerrors"
+ 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+ 	"golang.org/x/net/http2"
+@@ -20,8 +19,8 @@ type grpcRouter struct {
+ 
+ // NewRouter initializes a new grpc http router
+ func NewRouter(backends ...Backend) router.Router {
+-	unary := grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(unaryInterceptor(), grpcerrors.UnaryServerInterceptor))
+-	stream := grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(otelgrpc.StreamServerInterceptor(), grpcerrors.StreamServerInterceptor)) //nolint:staticcheck // TODO(thaJeztah): ignore SA1019 for deprecated options: see https://github.com/moby/moby/issues/47437
++	unary := grpc.UnaryInterceptor(grpc_middleware_ChainUnaryServer(unaryInterceptor(), grpcerrors.UnaryServerInterceptor))
++	stream := grpc.StreamInterceptor(grpc_middleware_ChainStreamServer(otelgrpc.StreamServerInterceptor(), grpcerrors.StreamServerInterceptor)) //nolint:staticcheck // TODO(thaJeztah): ignore SA1019 for deprecated options: see https://github.com/moby/moby/issues/47437
+ 
+ 	r := &grpcRouter{
+ 		h2Server:   &http2.Server{},
+Index: docker.io/engine/api/server/router/grpc/grpc_middleware_v1.go
+===================================================================
+--- /dev/null
++++ docker.io/engine/api/server/router/grpc/grpc_middleware_v1.go
+@@ -0,0 +1,60 @@
++// Copyright 2016 Michal Witkowski. All Rights Reserved.
++// See LICENSE for licensing terms.
++
++// gRPC Server Interceptor chaining middleware.
++
++package grpc
++
++import (
++	"context"
++
++	"google.golang.org/grpc"
++)
++
++// ChainUnaryServer creates a single interceptor out of a chain of many interceptors.
++//
++// Execution is done in left-to-right order, including passing of context.
++// For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
++// will see context changes of one and two.
++func grpc_middleware_ChainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
++	n := len(interceptors)
++
++	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
++		chainer := func(currentInter grpc.UnaryServerInterceptor, currentHandler grpc.UnaryHandler) grpc.UnaryHandler {
++			return func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
++				return currentInter(currentCtx, currentReq, info, currentHandler)
++			}
++		}
++
++		chainedHandler := handler
++		for i := n - 1; i >= 0; i-- {
++			chainedHandler = chainer(interceptors[i], chainedHandler)
++		}
++
++		return chainedHandler(ctx, req)
++	}
++}
++
++// ChainStreamServer creates a single interceptor out of a chain of many interceptors.
++//
++// Execution is done in left-to-right order, including passing of context.
++// For example ChainUnaryServer(one, two, three) will execute one before two before three.
++// If you want to pass context between interceptors, use WrapServerStream.
++func grpc_middleware_ChainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
++	n := len(interceptors)
++
++	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
++		chainer := func(currentInter grpc.StreamServerInterceptor, currentHandler grpc.StreamHandler) grpc.StreamHandler {
++			return func(currentSrv interface{}, currentStream grpc.ServerStream) error {
++				return currentInter(currentSrv, currentStream, info, currentHandler)
++			}
++		}
++
++		chainedHandler := handler
++		for i := n - 1; i >= 0; i-- {
++			chainedHandler = chainer(interceptors[i], chainedHandler)
++		}
++
++		return chainedHandler(srv, ss)
++	}
++}
+Index: docker.io/buildkit/session/session.go
+===================================================================
+--- docker.io.orig/buildkit/session/session.go
++++ docker.io/buildkit/session/session.go
+@@ -6,7 +6,6 @@ import (
+ 	"strings"
+ 	"sync"
+ 
+-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+ 	"github.com/moby/buildkit/identity"
+ 	"github.com/moby/buildkit/util/grpcerrors"
+ 	"github.com/pkg/errors"
+@@ -69,13 +68,13 @@ func NewSession(ctx context.Context, nam
+ 	if len(unary) == 1 {
+ 		serverOpts = append(serverOpts, grpc.UnaryInterceptor(unary[0]))
+ 	} else if len(unary) > 1 {
+-		serverOpts = append(serverOpts, grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(unary...)))
++		serverOpts = append(serverOpts, grpc.UnaryInterceptor(grpc_middleware_ChainUnaryServer(unary...)))
+ 	}
+ 
+ 	if len(stream) == 1 {
+ 		serverOpts = append(serverOpts, grpc.StreamInterceptor(stream[0]))
+ 	} else if len(stream) > 1 {
+-		serverOpts = append(serverOpts, grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(stream...)))
++		serverOpts = append(serverOpts, grpc.StreamInterceptor(grpc_middleware_ChainStreamServer(stream...)))
+ 	}
+ 
+ 	s := &Session{
+Index: docker.io/buildkit/session/grpc_middleware_v1.go
+===================================================================
+--- /dev/null
++++ docker.io/buildkit/session/grpc_middleware_v1.go
+@@ -0,0 +1,106 @@
++// Copyright 2016 Michal Witkowski. All Rights Reserved.
++// See LICENSE for licensing terms.
++
++// gRPC Server Interceptor chaining middleware.
++
++package session
++
++import (
++	"context"
++
++	"google.golang.org/grpc"
++)
++
++// ChainUnaryServer creates a single interceptor out of a chain of many interceptors.
++//
++// Execution is done in left-to-right order, including passing of context.
++// For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
++// will see context changes of one and two.
++func grpc_middleware_ChainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
++	n := len(interceptors)
++
++	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
++		chainer := func(currentInter grpc.UnaryServerInterceptor, currentHandler grpc.UnaryHandler) grpc.UnaryHandler {
++			return func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
++				return currentInter(currentCtx, currentReq, info, currentHandler)
++			}
++		}
++
++		chainedHandler := handler
++		for i := n - 1; i >= 0; i-- {
++			chainedHandler = chainer(interceptors[i], chainedHandler)
++		}
++
++		return chainedHandler(ctx, req)
++	}
++}
++
++// ChainStreamServer creates a single interceptor out of a chain of many interceptors.
++//
++// Execution is done in left-to-right order, including passing of context.
++// For example ChainUnaryServer(one, two, three) will execute one before two before three.
++// If you want to pass context between interceptors, use WrapServerStream.
++func grpc_middleware_ChainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
++	n := len(interceptors)
++
++	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
++		chainer := func(currentInter grpc.StreamServerInterceptor, currentHandler grpc.StreamHandler) grpc.StreamHandler {
++			return func(currentSrv interface{}, currentStream grpc.ServerStream) error {
++				return currentInter(currentSrv, currentStream, info, currentHandler)
++			}
++		}
++
++		chainedHandler := handler
++		for i := n - 1; i >= 0; i-- {
++			chainedHandler = chainer(interceptors[i], chainedHandler)
++		}
++
++		return chainedHandler(srv, ss)
++	}
++}
++
++// ChainUnaryClient creates a single interceptor out of a chain of many interceptors.
++//
++// Execution is done in left-to-right order, including passing of context.
++// For example ChainUnaryClient(one, two, three) will execute one before two before three.
++func grpc_middleware_ChainUnaryClient(interceptors ...grpc.UnaryClientInterceptor) grpc.UnaryClientInterceptor {
++	n := len(interceptors)
++
++	return func(ctx context.Context, method string, req, reply interface{}, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
++		chainer := func(currentInter grpc.UnaryClientInterceptor, currentInvoker grpc.UnaryInvoker) grpc.UnaryInvoker {
++			return func(currentCtx context.Context, currentMethod string, currentReq, currentRepl interface{}, currentConn *grpc.ClientConn, currentOpts ...grpc.CallOption) error {
++				return currentInter(currentCtx, currentMethod, currentReq, currentRepl, currentConn, currentInvoker, currentOpts...)
++			}
++		}
++
++		chainedInvoker := invoker
++		for i := n - 1; i >= 0; i-- {
++			chainedInvoker = chainer(interceptors[i], chainedInvoker)
++		}
++
++		return chainedInvoker(ctx, method, req, reply, cc, opts...)
++	}
++}
++
++// ChainStreamClient creates a single interceptor out of a chain of many interceptors.
++//
++// Execution is done in left-to-right order, including passing of context.
++// For example ChainStreamClient(one, two, three) will execute one before two before three.
++func grpc_middleware_ChainStreamClient(interceptors ...grpc.StreamClientInterceptor) grpc.StreamClientInterceptor {
++	n := len(interceptors)
++
++	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
++		chainer := func(currentInter grpc.StreamClientInterceptor, currentStreamer grpc.Streamer) grpc.Streamer {
++			return func(currentCtx context.Context, currentDesc *grpc.StreamDesc, currentConn *grpc.ClientConn, currentMethod string, currentOpts ...grpc.CallOption) (grpc.ClientStream, error) {
++				return currentInter(currentCtx, currentDesc, currentConn, currentMethod, currentStreamer, currentOpts...)
++			}
++		}
++
++		chainedStreamer := streamer
++		for i := n - 1; i >= 0; i-- {
++			chainedStreamer = chainer(interceptors[i], chainedStreamer)
++		}
++
++		return chainedStreamer(ctx, desc, cc, method, opts...)
++	}
++}
+Index: docker.io/buildkit/session/grpc.go
+===================================================================
+--- docker.io.orig/buildkit/session/grpc.go
++++ docker.io/buildkit/session/grpc.go
+@@ -8,7 +8,6 @@ import (
+ 	"time"
+ 
+ 	"github.com/containerd/containerd/defaults"
+-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+ 	"github.com/moby/buildkit/util/bklog"
+ 	"github.com/moby/buildkit/util/grpcerrors"
+ 	"github.com/pkg/errors"
+@@ -60,13 +59,13 @@ func grpcClientConn(ctx context.Context,
+ 	if len(unary) == 1 {
+ 		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(unary[0]))
+ 	} else if len(unary) > 1 {
+-		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(grpc_middleware.ChainUnaryClient(unary...)))
++		dialOpts = append(dialOpts, grpc.WithUnaryInterceptor(grpc_middleware_ChainUnaryClient(unary...)))
+ 	}
+ 
+ 	if len(stream) == 1 {
+ 		dialOpts = append(dialOpts, grpc.WithStreamInterceptor(stream[0]))
+ 	} else if len(stream) > 1 {
+-		dialOpts = append(dialOpts, grpc.WithStreamInterceptor(grpc_middleware.ChainStreamClient(stream...)))
++		dialOpts = append(dialOpts, grpc.WithStreamInterceptor(grpc_middleware_ChainStreamClient(stream...)))
+ 	}
+ 
+ 	cc, err := grpc.DialContext(ctx, "localhost", dialOpts...)
+Index: docker.io/buildkit/cmd/buildkitd/main.go
+===================================================================
+--- docker.io.orig/buildkit/cmd/buildkitd/main.go
++++ docker.io/buildkit/cmd/buildkitd/main.go
+@@ -23,7 +23,6 @@ import (
+ 	sddaemon "github.com/coreos/go-systemd/v22/daemon"
+ 	"github.com/docker/docker/pkg/reexec"
+ 	"github.com/gofrs/flock"
+-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+ 	"github.com/moby/buildkit/cache/remotecache"
+ 	"github.com/moby/buildkit/cache/remotecache/azblob"
+ 	"github.com/moby/buildkit/cache/remotecache/gha"
+@@ -277,8 +276,8 @@ func main() {
+ 			otelgrpc.WithPropagators(propagators),
+ 		)
+ 
+-		unary := grpc_middleware.ChainUnaryServer(unaryInterceptor(ctx, tp, mp), grpcerrors.UnaryServerInterceptor)
+-		stream := grpc_middleware.ChainStreamServer(streamTracer, grpcerrors.StreamServerInterceptor)
++		unary := grpc_middleware_ChainUnaryServer(unaryInterceptor(ctx, tp, mp), grpcerrors.UnaryServerInterceptor)
++		stream := grpc_middleware_ChainStreamServer(streamTracer, grpcerrors.StreamServerInterceptor)
+ 
+ 		opts := []grpc.ServerOption{grpc.UnaryInterceptor(unary), grpc.StreamInterceptor(stream)}
+ 		server := grpc.NewServer(opts...)
+Index: docker.io/buildkit/cmd/buildkitd/grpc_middleware_v1.go
+===================================================================
+--- /dev/null
++++ docker.io/buildkit/cmd/buildkitd/grpc_middleware_v1.go
+@@ -0,0 +1,60 @@
++// Copyright 2016 Michal Witkowski. All Rights Reserved.
++// See LICENSE for licensing terms.
++
++// gRPC Server Interceptor chaining middleware.
++
++package main
++
++import (
++	"context"
++
++	"google.golang.org/grpc"
++)
++
++// ChainUnaryServer creates a single interceptor out of a chain of many interceptors.
++//
++// Execution is done in left-to-right order, including passing of context.
++// For example ChainUnaryServer(one, two, three) will execute one before two before three, and three
++// will see context changes of one and two.
++func grpc_middleware_ChainUnaryServer(interceptors ...grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
++	n := len(interceptors)
++
++	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
++		chainer := func(currentInter grpc.UnaryServerInterceptor, currentHandler grpc.UnaryHandler) grpc.UnaryHandler {
++			return func(currentCtx context.Context, currentReq interface{}) (interface{}, error) {
++				return currentInter(currentCtx, currentReq, info, currentHandler)
++			}
++		}
++
++		chainedHandler := handler
++		for i := n - 1; i >= 0; i-- {
++			chainedHandler = chainer(interceptors[i], chainedHandler)
++		}
++
++		return chainedHandler(ctx, req)
++	}
++}
++
++// ChainStreamServer creates a single interceptor out of a chain of many interceptors.
++//
++// Execution is done in left-to-right order, including passing of context.
++// For example ChainUnaryServer(one, two, three) will execute one before two before three.
++// If you want to pass context between interceptors, use WrapServerStream.
++func grpc_middleware_ChainStreamServer(interceptors ...grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
++	n := len(interceptors)
++
++	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
++		chainer := func(currentInter grpc.StreamServerInterceptor, currentHandler grpc.StreamHandler) grpc.StreamHandler {
++			return func(currentSrv interface{}, currentStream grpc.ServerStream) error {
++				return currentInter(currentSrv, currentStream, info, currentHandler)
++			}
++		}
++
++		chainedHandler := handler
++		for i := n - 1; i >= 0; i-- {
++			chainedHandler = chainer(interceptors[i], chainedHandler)
++		}
++
++		return chainedHandler(srv, ss)
++	}
++}

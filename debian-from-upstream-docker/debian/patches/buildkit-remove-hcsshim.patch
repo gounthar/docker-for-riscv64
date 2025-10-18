@@ -1,0 +1,31 @@
+Index: docker.io/buildkit/cmd/buildkitd/main_containerd_worker.go
+===================================================================
+--- docker.io.orig/buildkit/cmd/buildkitd/main_containerd_worker.go
++++ docker.io/buildkit/cmd/buildkitd/main_containerd_worker.go
+@@ -11,7 +11,6 @@ import (
+ 	"strings"
+ 	"time"
+ 
+-	runhcsoptions "github.com/Microsoft/hcsshim/cmd/containerd-shim-runhcs-v1/options"
+ 	ctd "github.com/containerd/containerd"
+ 	"github.com/containerd/containerd/defaults"
+ 	runtimeoptions "github.com/containerd/containerd/pkg/runtimeoptions/v1"
+@@ -33,9 +32,6 @@ import (
+ 
+ const (
+ 	defaultContainerdNamespace = "buildkit"
+-
+-	// runtimeRunhcsV1 is the runtime type for runhcs.
+-	runtimeRunhcsV1 = "io.containerd.runhcs.v1"
+ )
+ 
+ func init() {
+@@ -379,8 +375,6 @@ func getRuntimeOptionsType(t string) int
+ 	switch t {
+ 	case plugin.RuntimeRuncV2:
+ 		return &runcoptions.Options{}
+-	case runtimeRunhcsV1:
+-		return &runhcsoptions.Options{}
+ 	default:
+ 		return &runtimeoptions.Options{}
+ 	}

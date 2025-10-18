@@ -1,0 +1,6 @@
+mv_conffile /etc/bash_completion.d/docker.io /etc/bash_completion.d/docker 1.2.0~
+mv_conffile /etc/default/docker.io /etc/default/docker 1.2.0~
+mv_conffile /etc/init.d/docker.io /etc/init.d/docker 1.2.0~
+mv_conffile /etc/init/docker.io.conf /etc/init/docker.conf 1.2.0~
+rm_conffile /etc/bash_completion.d/docker 1.11.2~
+rm_conffile /etc/init/docker.conf 18.06.0~

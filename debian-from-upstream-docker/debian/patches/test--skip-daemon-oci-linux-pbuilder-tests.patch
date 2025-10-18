@@ -1,0 +1,18 @@
+From: Arnaud Rebillout <elboulangero@gmail.com>
+Date: Tue, 1 Dec 2020 10:30:25 +0700
+Subject: Skip failing test TestGetSourceMount: "Can't find mount point of /"
+
+Forwarded: not-needed, Debian-specific
+
+Index: docker.io/engine/daemon/oci_linux_test.go
+===================================================================
+--- docker.io.orig/engine/daemon/oci_linux_test.go
++++ docker.io/engine/daemon/oci_linux_test.go
+@@ -204,6 +204,7 @@ func TestSysctlOverrideHost(t *testing.T
+ }
+ 
+ func TestGetSourceMount(t *testing.T) {
++	t.Skip("Debian-local: Skip test unsuitable for use in package builds")
+ 	// must be able to find source mount for /
+ 	mnt, _, err := getSourceMount("/")
+ 	assert.NilError(t, err)

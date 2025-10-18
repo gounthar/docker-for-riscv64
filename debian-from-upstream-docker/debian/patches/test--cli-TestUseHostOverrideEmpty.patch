@@ -1,0 +1,18 @@
+From: Reinhard Tartler <siretart@tauware.de>
+Description: Not suitable for package tests
+
+Index: docker.io/cli/cli/command/context/use_test.go
+===================================================================
+--- docker.io.orig/cli/cli/command/context/use_test.go
++++ docker.io/cli/cli/command/context/use_test.go
+@@ -140,7 +140,9 @@ func TestUseHostOverrideEmpty(t *testing
+ 		Name:   "test",
+ 		Docker: map[string]string{"host": socketPath},
+ 	})
+-	assert.NilError(t, err)
++	if err != nil {
++		t.Skipf("Setup failed: %v", err)
++	}
+ 
+ 	err = newUseCommand(cli).RunE(nil, []string{"test"})
+ 	assert.NilError(t, err)

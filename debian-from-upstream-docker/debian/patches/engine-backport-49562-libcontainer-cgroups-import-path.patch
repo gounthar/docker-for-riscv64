@@ -1,0 +1,18 @@
+Description: switch to github.com/opencontainers/cgroups
+Author: Sebastiaan van Stijn <github@gone.nl>
+Origin: https://github.com/moby/moby/pull/49562
+Applied-Upstream: v28.0.3+
+
+diff --git a/engine/daemon/oci_linux.go b/engine/daemon/oci_linux.go
+index 75aecfa45f..8469704e27 100644
+--- a/engine/daemon/oci_linux.go
++++ b/engine/daemon/oci_linux.go
+@@ -29,7 +29,7 @@ import (
+ 	"github.com/moby/sys/mount"
+ 	"github.com/moby/sys/mountinfo"
+ 	"github.com/moby/sys/user"
+-	"github.com/opencontainers/runc/libcontainer/cgroups"
++	"github.com/opencontainers/cgroups"
+ 	specs "github.com/opencontainers/runtime-spec/specs-go"
+ 	"github.com/pkg/errors"
+ )

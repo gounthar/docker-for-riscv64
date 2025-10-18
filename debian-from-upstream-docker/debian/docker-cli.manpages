@@ -1,0 +1,2 @@
+_build/src/github.com/docker/cli/man/man1/*
+_build/src/github.com/docker/cli/man/man5/*

@@ -1,0 +1,14 @@
+## Debian CI:
+debian/.gitlab-ci.yml
+
+## Useless non-doc files:
+cli/docs/yaml/*
+
+## generated:
+engine/dockerversion/version_autogen_unix.go
+engine/dockerversion/version_autogen.go
+
+## Privileged tests:
+engine/daemon/graphdriver/btrfs/btrfs_test.go
+engine/daemon/graphdriver/devmapper/devmapper_test.go
+engine/daemon/graphdriver/vfs/vfs_test.go

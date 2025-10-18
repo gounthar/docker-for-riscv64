@@ -1,0 +1,42 @@
+From: Reinhard Tartler <siretart@tauware.de>
+Description: TestNewClientWithOpsFromEnv expects different response
+
+=== FAIL: client TestNewClientWithOpsFromEnv/invalid_cert_path (0.00s)
+    client_test.go:96: assertion failed: expected error "could not load X509 key pair: open invalid/path/cert.pem: no such file or directory", got "Could not load X509 key pair: open invalid/path/cert.pem: no such file or directory"
+        open invalid/path/cert.pem: no such file or directory
+        Could not load X509 key pair
+        github.com/docker/go-connections/tlsconfig.getCert
+        	/<<PKGBUILDDIR>>/_build/src/github.com/docker/go-connections/tlsconfig/config.go:183
+        github.com/docker/go-connections/tlsconfig.Client
+        	/<<PKGBUILDDIR>>/_build/src/github.com/docker/go-connections/tlsconfig/config.go:216
+        github.com/docker/docker/client.FromEnv.WithTLSClientConfigFromEnv.func1
+        	/<<PKGBUILDDIR>>/_build/src/github.com/docker/docker/client/options.go:174
+        github.com/docker/docker/client.FromEnv
+        	/<<PKGBUILDDIR>>/_build/src/github.com/docker/docker/client/options.go:40
+        github.com/docker/docker/client.NewClientWithOpts
+        	/<<PKGBUILDDIR>>/_build/src/github.com/docker/docker/client/client.go:201
+        github.com/docker/docker/client.TestNewClientWithOpsFromEnv.func1
+        	/<<PKGBUILDDIR>>/_build/src/github.com/docker/docker/client/client_test.go:94
+        testing.tRunner
+        	/usr/lib/go-1.22/src/testing/testing.go:1689
+        runtime.goexit
+        	/usr/lib/go-1.22/src/runtime/asm_amd64.s:1695
+
+Index: docker.io/engine/client/client_test.go
+===================================================================
+--- docker.io.orig/engine/client/client_test.go
++++ docker.io/engine/client/client_test.go
+@@ -34,13 +34,6 @@ func TestNewClientWithOpsFromEnv(t *test
+ 			expectedVersion: api.DefaultVersion,
+ 		},
+ 		{
+-			doc: "invalid cert path",
+-			envs: map[string]string{
+-				"DOCKER_CERT_PATH": "invalid/path",
+-			},
+-			expectedError: "could not load X509 key pair: open invalid/path/cert.pem: no such file or directory",
+-		},
+-		{
+ 			doc: "default api version with cert path",
+ 			envs: map[string]string{
+ 				"DOCKER_CERT_PATH": "testdata/",

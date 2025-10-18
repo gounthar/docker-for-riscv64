@@ -1,0 +1,351 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Source: https://github.com/moby/moby
+Upstream-Name: Docker
+Upstream-Contact: Docker, Inc. <support@docker.com>
+Comment:
+ "~B~" Breaks something (apart from the build).
+ "~C~" induce a Circular dependency.
+ "~F~" upstream uses an internal Fork.
+ "~~"  does not build with system library.
+ "~"   not packaged or not available (e.g. removed).
+ .
+ Thanks to custom repack script, Files-Excluded section is applied to all
+ components otherwise individual Files-Excluded-{component} sections would
+ contain too much duplication.
+ .
+ armon/go-radix v1 causes libnetwork to segfault, cf. #918375
+ .
+ Temperory vendor etcd library, to upgrade etcd to 3.5 in unstable.
+Files-Excluded:
+    .github
+    .gitignore
+    vendor/cloud.google.com
+   ~vendor/code.cloudfoundry.org
+    vendor/github.com/agext/levenshtein
+    vendor/github.com/armon/circbuf
+    vendor/github.com/armon/go-metrics
+ ~B~vendor/github.com/armon/go-radix
+    vendor/github.com/aws/aws-sdk-go-v2
+    vendor/github.com/aws/smithy-go
+    vendor/github.com/AdaLogics/go-fuzz-headers
+    vendor/github.com/Azure/go-ansiterm
+    vendor/github.com/beorn7/perks
+    vendor/github.com/cenkalti/backoff
+    vendor/github.com/cespare/xxhash
+    vendor/github.com/cilium/ebpf
+    vendor/github.com/cloudflare/cfssl
+    vendor/github.com/containerd/cgroups
+    vendor/github.com/containerd/errdefs
+    vendor/github.com/containerd/log
+    vendor/github.com/containerd/console
+    vendor/github.com/containerd/containerd
+    vendor/github.com/containerd/continuity
+    vendor/github.com/containerd/fifo
+    vendor/github.com/containerd/go-cni
+    vendor/github.com/containerd/go-runc
+ ~C~vendor/github.com/containerd/stargz-snapshotter
+    vendor/github.com/containerd/ttrpc
+    vendor/github.com/containerd/typeurl
+    vendor/github.com/containernetworking/cni
+  ~~vendor/github.com/coreos/etcd
+    vendor/github.com/coreos/go-systemd
+    vendor/github.com/creack/pty
+    vendor/github.com/cyphar/filepath-securejoin
+    vendor/dario.cat/mergo
+    vendor/github.com/davecgh/go-spew
+    vendor/github.com/deckarep/golang-set
+    vendor/github.com/dimchansky/utfbom
+    vendor/github.com/distribution/reference
+   ~vendor/github.com/docker/compose-on-kubernetes
+    vendor/github.com/docker/distribution
+    vendor/github.com/docker/docker
+    vendor/github.com/docker/docker-credential-helpers
+    vendor/github.com/docker/go
+    vendor/github.com/docker/go-connections
+    vendor/github.com/docker/go-events
+    vendor/github.com/docker/go-metrics
+    vendor/github.com/docker/go-units
+    vendor/github.com/docker/libtrust
+    vendor/github.com/dustin/go-humanize
+    vendor/github.com/fernet/fernet-go
+    vendor/github.com/felixge/httpsnoop
+    vendor/github.com/fluent/fluent-logger-golang
+    vendor/github.com/fsnotify/fsnotify
+    vendor/github.com/fvbommel/sortorder
+    vendor/github.com/godbus/dbus
+    vendor/github.com/gofrs/flock
+    vendor/github.com/gogo/googleapis
+    vendor/github.com/gogo/protobuf
+   ~vendor/github.com/golang/gddo
+    vendor/github.com/golang/groupcache
+    vendor/github.com/golang/protobuf
+    vendor/github.com/googleapis/gax-go
+    vendor/github.com/google/btree
+    vendor/github.com/google/certificate-transparency-go
+    vendor/github.com/google/go-cmp
+    vendor/github.com/google/shlex
+    vendor/github.com/google/uuid
+    vendor/github.com/gorilla/mux
+    vendor/github.com/Graylog2/go-gelf
+    vendor/github.com/grpc-ecosystem/go-grpc-middleware
+    vendor/github.com/grpc-ecosystem/go-grpc-prometheus
+    vendor/github.com/grpc-ecosystem/grpc-gateway
+    vendor/github.com/hashicorp/errwrap
+ ~F~vendor/github.com/hashicorp/go-immutable-radix
+    vendor/github.com/hashicorp/golang-lru
+    vendor/github.com/hashicorp/go-immutable-radix
+    vendor/github.com/hashicorp/go-memdb
+    vendor/github.com/hashicorp/go-msgpack
+    vendor/github.com/hashicorp/go-multierror
+    vendor/github.com/hashicorp/go-sockaddr
+    vendor/github.com/hashicorp/memberlist
+    vendor/github.com/hashicorp/serf
+    vendor/github.com/in-toto/in-toto-golang
+    vendor/github.com/inconshreveable/mousetrap
+    vendor/github.com/ishidawataru/sctp
+ ~F~vendor/github.com/jaguilar/vt100
+    vendor/github.com/klauspost/compress
+    vendor/github.com/golang-jwt/jwt 
+    vendor/github.com/go-logr/logr
+    vendor/github.com/go-logr/stdr
+    vendor/github.com/mattn/go-runewidth
+    vendor/github.com/matttproud/golang_protobuf_extensions
+    vendor/github.com/Microsoft/go-winio
+    vendor/github.com/Microsoft/hcsshim
+    vendor/github.com/miekg/dns
+    vendor/github.com/miekg/pkcs11
+    vendor/github.com/mistifyio/go-zfs
+    vendor/github.com/mitchellh/hashstructure
+    vendor/github.com/mitchellh/mapstructure
+    vendor/github.com/moby/buildkit
+    vendor/github.com/moby/docker-image-spec
+   ~vendor/github.com/moby/ipvs
+    vendor/github.com/moby/locker
+    vendor/github.com/moby/patternmatcher
+    vendor/github.com/moby/pubsub
+   ~vendor/github.com/moby/swarmkit
+    vendor/github.com/moby/sys
+    vendor/github.com/moby/term
+    vendor/github.com/morikuni/aec
+    vendor/github.com/opencontainers/go-digest
+    vendor/github.com/opencontainers/image-spec
+    vendor/github.com/opencontainers/runc
+    vendor/github.com/opencontainers/runtime-spec
+    vendor/github.com/opencontainers/selinux
+    vendor/github.com/pelletier/go-toml
+   ~vendor/github.com/phayes/permbits
+    vendor/github.com/philhofer/fwd
+    vendor/github.com/pkg/errors
+    vendor/github.com/prometheus/client_golang
+    vendor/github.com/prometheus/client_model
+    vendor/github.com/prometheus/common
+    vendor/github.com/prometheus/procfs
+    vendor/github.com/RackSec/srslog
+    vendor/github.com/rivo/uniseg
+    vendor/github.com/rootless-containers/rootlesskit
+    vendor/github.com/secure-systems-lab/go-securesystemslib
+    vendor/github.com/sean-/seed
+    vendor/github.com/shibumi/go-pathspec
+    vendor/github.com/sirupsen/logrus
+    vendor/github.com/spf13/cobra
+    vendor/github.com/spf13/pflag
+    vendor/github.com/stretchr/testify
+    vendor/github.com/theupdateframework/notary
+    vendor/github.com/tinylib/msgp
+ ~C~vendor/github.com/tonistiigi/fsutil
+   ~vendor/github.com/tonistiigi/go-rosetta
+    vendor/github.com/tonistiigi/units
+    vendor/github.com/vbatts/tar-split
+    vendor/github.com/vishvananda/netlink
+    vendor/github.com/vishvananda/netns
+    vendor/github.com/xeipuuv/gojsonpointer
+    vendor/github.com/xeipuuv/gojsonreference
+    vendor/github.com/xeipuuv/gojsonschema
+    vendor/go.etcd.io/bbolt
+  ~~vendor/go.etcd.io/etcd
+    vendor/go.opencensus.io
+    vendor/go.opentelemetry.io
+    vendor/golang.org
+    vendor/google.golang.org
+    vendor/gopkg.in
+    vendor/gotest.tools
+    vendor/k8s.io
+Files-Excluded-distribution:
+    */docs
+
+Files: *
+Copyright: 2012-2018 Docker, Inc. <support@docker.com>
+License: Apache-2.0
+
+Files:
+    cli/contrib/completion/zsh/*
+Copyright: 2013-2014 Felix Riedel
+License: BSD-3-clause-Generic
+
+Files:
+    engine/contrib/busybox/*
+Copyright: 2015 John Howard (Microsoft)
+License: Expat
+
+Files:
+    engine/contrib/init/openrc/docker.initd
+Copyright: 1999-2013 Gentoo Foundation
+License: GPL-2
+
+Files:
+    libnetwork/client/mflag/*
+Copyright: 2014-2016 The Docker & Go Authors
+License: BSD-3-clause-Google
+
+Files:
+    buildkit/*
+Copyright:
+    The BuildKit Authors
+    The containerd authors
+License: Apache-2.0
+
+Files:
+    */vendor/github.com/moby/ipvs/*
+Copyright: 2015 Docker, inc.
+License: Apache-2.0
+
+Files:
+    */vendor/github.com/phayes/permbits/*
+Copyright: 2016 Patrick D Hayes
+License: Expat
+
+Files:
+    */vendor/github.com/tonistiigi/go-rosetta/*
+Copyright: 2020 Tõnis Tiigi
+License: Expat
+
+Files:
+    */vendor/github.com/tonistiigi/fsutil/*
+Copyright: 2017 Tõnis Tiigi <tonistiigi@gmail.com>
+License: Expat
+
+Files:
+    */vendor/k8s.io/*
+Copyright: 2014-2018 The Kubernetes Authors.
+License: Apache-2.0
+
+Files:
+    */vendor/k8s.io/apimachinery/third_party/forked/golang/reflect/deep_equal.go
+Copyright: 2009 The Go Authors
+License: BSD-3-clause-Google
+
+Files: debian/*
+Copyright:
+    2018-2021 Arnaud Rebillout <arnaudr@kali.org>
+    2016-2018 Dmitry Smirnov <onlyjob@debian.org>
+    2013-2014 Daniel Mizyrycki <daniel@docker.com>
+    2013-2014 Paul Tagliamonte <paultag@debian.org>
+    2012-2014 Michael Stapelberg <stapelberg@debian.org>
+    2013-2016 Tianon Gravi <tianon@debian.org>
+    2013-2014 Johan Euphrosine <proppy@google.com>
+    2014      Prach Pongpanich <prachpub@gmail.com>
+    2016      Tim Potter <timothy.potter@hpe.com>
+    2016      Michael Hudson-Doyle <michael.hudson@ubuntu.com>
+License: Apache-2.0
+
+License: Apache-2.0
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+ .
+ http://www.apache.org/licenses/LICENSE-2.0
+ .
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ .
+ On Debian systems, the complete text of the Apache version 2.0 license
+ can be found in "/usr/share/common-licenses/Apache-2.0".
+
+License: BSD-3-clause-Generic
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are met:
+     * Redistributions of source code must retain the above copyright
+       notice, this list of conditions and the following disclaimer.
+     * Redistributions in binary form must reproduce the above copyright
+       notice, this list of conditions and the following disclaimer in the
+       documentation and/or other materials provided with the distribution.
+     * Neither the name of the <organization> nor the
+       names of its contributors may be used to endorse or promote products
+       derived from this software without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> BE LIABLE FOR ANY
+ DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: BSD-3-clause-Google
+ Redistribution and use in source and binary forms, with or without
+ modification, are permitted provided that the following conditions are
+ met:
+ .
+    * Redistributions of source code must retain the above copyright
+ notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+ copyright notice, this list of conditions and the following disclaimer
+ in the documentation and/or other materials provided with the
+ distribution.
+    * Neither the name of Google Inc. nor the names of its
+ contributors may be used to endorse or promote products derived from
+ this software without specific prior written permission.
+ .
+ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+ "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+ LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+ A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+ OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+License: Expat
+ Permission is hereby granted, free of charge, to any person obtaining a copy
+ of this software and associated documentation files (the "Software"), to deal
+ in the Software without restriction, including without limitation the rights
+ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ copies of the Software, and to permit persons to whom the Software is
+ furnished to do so, subject to the following conditions:
+ .
+  The above copyright notice and this permission notice shall be included in
+  all copies or substantial portions of the Software.
+ .
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ THE SOFTWARE.
+
+License: GPL-2
+ This file is part of Buildbot.  Buildbot is free software: you can
+ redistribute it and/or modify it under the terms of the GNU General Public
+ License as published by the Free Software Foundation, version 2.
+ .
+ This program is distributed in the hope that it will be useful, but WITHOUT
+ ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ details.
+ .
+ You should have received a copy of the GNU General Public License along with
+ this program; if not, write to the Free Software Foundation, Inc., 51
+ Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ .
+ On Debian systems, the complete text of the GNU GPL v2 license can be found in
+ "/usr/share/common-licenses/GPL-2".

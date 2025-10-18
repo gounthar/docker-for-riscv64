@@ -1,0 +1,20 @@
+Author: Paul R. Tagliamonte <paultag@debian.org>
+Last-Update: 2014-05-07
+Description: Use EnvironmentFile with the systemd unit file.
+Bug-Debian: http://bugs.debian.org/746774
+Forwarded: no
+
+Index: docker.io/engine/contrib/init/systemd/docker.service
+===================================================================
+--- docker.io.orig/engine/contrib/init/systemd/docker.service
++++ docker.io/engine/contrib/init/systemd/docker.service
+@@ -10,7 +10,8 @@ Type=notify
+ # the default is not to use systemd for cgroups because the delegate issues still
+ # exists and systemd currently does not support the cgroup feature set required
+ # for containers run by docker
+-ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
++EnvironmentFile=-/etc/default/docker
++ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock $DOCKER_OPTS
+ ExecReload=/bin/kill -s HUP $MAINPID
+ TimeoutStartSec=0
+ RestartSec=2

@@ -1,0 +1,37 @@
+debian-bash-completion-no-shebang.patch
+# If upstream ever adds EnvFile, remove this patch.
+# (see also https://github.com/docker/docker/pull/7220#issuecomment-50076589)
+debian-systemd-unit-environment-file.patch
+debian-dockerd-binary-location.patch
+debian-nuke-no-prompt.patch
+
+cli-add-go.mod-file.patch
+
+engine-add-go.mod-file.patch
+engine-avoid-hcsshim.patch
+engine-ftbfs-mips.patch
+engine-backport-48368-netlink-update.patch
+engine-backport-48407-netlink-EINTR.patch
+engine-backport-48730-use-OwnCgroupPath-not-InitCgroupPath.patch
+engine-backport-49562-libcontainer-cgroups-import-path.patch
+
+#libnetwork_proto.patch
+
+test--cli-skip-network-tests.patch
+#test--cli-skip-TestRunLabel.patch
+test--cli-skip-TestSignCommandLocalFlag.patch
+test--skip-daemon-oci-linux-pbuilder-tests.patch
+test--skip-pkg-system-chtimes-mips64.patch
+test--skip-TestGetRootUIDGID.patch
+test--skip-TestStateRunStop.patch
+cli-fix-generate-man.patch
+test_invalid_cert_pem.patch
+test-disable-tests-that-require-root.patch
+test-docker-pull-error.patch
+test--cli-fix-string-issues.patch
+test--cli-TestInitializeFromClientHangs.patch
+test--cli-TestUseHostOverrideEmpty.patch
+test--cli-TestCloseRunningCommand.patch
+grpc-middleware-v1.patch
+buildkit-remove-hcsshim.patch
+buildkit-remove-jaeger.patch

@@ -1,0 +1,59 @@
+From: Arnaud Rebillout <elboulangero@gmail.com>
+Date: Mon, 04 Jan 2021 10:39:35 +0700
+Subject: Skip pkg/system chtimes tests on mips64
+
+    === RUN   TestChtimesLinux
+        chtimes_linux_test.go:87: Expected: 2262-04-11 23:47:16 +0000 UTC, got: 1990-01-27 10:50:44 +0000 UTC
+    --- FAIL: TestChtimesLinux (0.00s)
+    === RUN   TestChtimes
+        chtimes_test.go:92: Expected: 2262-04-11 23:47:16 +0000 UTC, got: 1990-01-27 10:50:44 +0000 UTC
+    --- FAIL: TestChtimes (0.00s)
+
+Bug: https://github.com/moby/moby/issues/41850
+
+Index: docker.io/engine/pkg/system/chtimes_linux_test.go
+===================================================================
+--- docker.io.orig/engine/pkg/system/chtimes_linux_test.go
++++ docker.io/engine/pkg/system/chtimes_linux_test.go
+@@ -4,6 +4,8 @@ import (
+ 	"os"
+ 	"path/filepath"
+ 	"syscall"
++	"runtime"
++	"strings"
+ 	"testing"
+ 	"time"
+ )
+@@ -74,6 +76,9 @@ func TestChtimesATime(t *testing.T) {
+ 
+ 	// Test both aTime and mTime set to after Unix Epoch (valid time)
+ 	t.Run("both aTime and mTime set to after Unix Epoch (valid time)", func(t *testing.T) {
++		if strings.HasPrefix(runtime.GOARCH, "mips64") {
++			t.Skip("Doesn't work on mips64, as stat struct has 32-bits types")
++		}
+ 		if err := Chtimes(file, afterUnixEpochTime, afterUnixEpochTime); err != nil {
+ 			t.Error(err)
+ 		}
+Index: docker.io/engine/pkg/system/chtimes_test.go
+===================================================================
+--- docker.io.orig/engine/pkg/system/chtimes_test.go
++++ docker.io/engine/pkg/system/chtimes_test.go
+@@ -3,6 +3,8 @@ package system // import "github.com/doc
+ import (
+ 	"os"
+ 	"path/filepath"
++	"runtime"
++	"strings"
+ 	"testing"
+ 	"time"
+ )
+@@ -84,6 +86,9 @@ func TestChtimesModTime(t *testing.T) {
+ 
+ 	// Test both aTime and mTime set to Unix max time
+ 	t.Run("both aTime and mTime set to Unix max time", func(t *testing.T) {
++		if strings.HasPrefix(runtime.GOARCH, "mips64") {
++			t.Skip("Doesn't work on mips64, as stat struct has 32-bits types")
++		}
+ 		if err := Chtimes(file, unixMaxTime, unixMaxTime); err != nil {
+ 			t.Error(err)
+ 		}

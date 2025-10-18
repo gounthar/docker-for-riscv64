@@ -1,0 +1,31 @@
+From: Dmitry Smirnov <onlyjob@debian.org>
+Last-Update: 2020-11-27
+Forwarded: not-needed
+Description: cli/command: Skip network tests
+ Interestingly, the last time I tried, only the test
+ 'TestRunBuildFromGitHubSpecialCase' failed,  and it failed only
+ for the armel architecture. Which makes absolutely no sense,
+ given that it's supposed to fail when there's no network, and
+ it should have nothing to do with the architecture.
+ .
+ Anyway. Let's disable this test.
+ .
+ Build error below:
+ .
+ === FAIL: cli/command/image TestRunBuildFromGitHubSpecialCase (0.10s)
+ Error: unable to prepare context: unable to 'git clone' to temporary context directory: error fetching: fatal: unable to access 'https://github.com/docker/for-win/': Couldn't connect to server
+ : exit status 128
+     build_test.go:136: assertion failed: expected error to contain "docker-build-git", got "unable to prepare context: unable to 'git clone' to temporary context directory: error fetching: fatal: unable to access 'https://github.com/docker/for-win/': Couldn't connect to server\n: exit status 128"
+
+Index: docker.io/cli/cli/command/image/build_test.go
+===================================================================
+--- docker.io.orig/cli/cli/command/image/build_test.go
++++ docker.io/cli/cli/command/image/build_test.go
+@@ -122,6 +122,7 @@ COPY data /data
+ // TODO: test "context selection" logic directly when runBuild is refactored
+ // to support testing (ex: docker/cli#294)
+ func TestRunBuildFromGitHubSpecialCase(t *testing.T) {
++	t.Skip("DM - disabled due to network access")
+ 	t.Setenv("DOCKER_BUILDKIT", "0")
+ 	cmd := NewBuildCommand(test.NewFakeCli(&fakeClient{}))
+ 	// Clone a small repo that exists so git doesn't prompt for credentials

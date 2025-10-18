@@ -1,0 +1,18 @@
+From: Reinhard Tartler <siretart@tauware.de>
+Description: Not suitable for package tests
+
+Index: docker.io/cli/cli/command/cli_test.go
+===================================================================
+--- docker.io.orig/cli/cli/command/cli_test.go
++++ docker.io/cli/cli/command/cli_test.go
+@@ -174,7 +174,9 @@ func TestInitializeFromClientHangs(t *te
+ 	dir := t.TempDir()
+ 	socket := filepath.Join(dir, "my.sock")
+ 	l, err := net.Listen("unix", socket)
+-	assert.NilError(t, err)
++	if err != nil {
++		t.Skipf("Setup failed: %v", err)
++	}
+ 
+ 	receiveReqCh := make(chan bool)
+ 	timeoutCtx, cancel := context.WithTimeout(context.Background(), time.Second)

@@ -1,0 +1,57 @@
+#!/bin/bash
+
+set -eux
+set -o pipefail
+
+DEBOOTSTRAP_SUITE=bookworm
+
+
+## exit helpers
+
+exit_traps=( 'true' )
+
+defer() {
+	exit_traps=( "$@" "${exit_traps[@]}" )
+}
+
+do_exit() {
+	for exit_trap in "${exit_traps[@]}"; do
+		eval "$exit_trap" || true
+	done
+}
+
+trap 'do_exit' EXIT
+
+
+## main
+
+systemctl start docker
+defer 'systemctl stop docker'
+defer 'journalctl -u docker | tail -n 100'
+
+docker version
+
+tmpdir="$(mktemp -d)"
+defer "rm -rf '$tmpdir'"
+
+debootstrap \
+	--variant=minbase \
+	$DEBOOTSTRAP_SUITE \
+	"$tmpdir" \
+	http://deb.debian.org/debian
+
+tar -cC "$tmpdir" . | docker import - debian
+defer 'docker rmi debian'
+
+docker run --name test debian true
+defer 'docker rm -f test'
+
+# https://bugs.debian.org/1092165
+# https://github.com/moby/moby/issues/49197
+docker network create foo
+defer 'docker network rm foo'
+docker network create bar
+defer 'docker network rm bar'
+docker run -d --name test-1092165 --network foo debian sleep 10000
+defer 'docker rm -f test-1092165'
+docker network connect bar test-1092165

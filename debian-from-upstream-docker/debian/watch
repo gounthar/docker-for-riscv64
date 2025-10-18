@@ -1,0 +1,15 @@
+# https://salsa.debian.org/snippets/95
+# https://wiki.debian.org/debian/watch
+# uscan(1) configuration file.
+version=4
+
+opts="\
+pgpmode=none,\
+compression=xz,\
+repack,repacksuffix=+dfsg1,\
+dversionmangle=s{[+~]dfsg\d*}{},\
+uversionmangle=s{(\d)[\-]?((rc|beta)\d*)$}{$1~$2},\
+filenamemangle=s%v?@ANY_VERSION@%@PACKAGE@-$1.tar.xz%,\
+searchmode=plain,\
+" https://api.github.com/repos/moby/moby/releases?per_page=99 \
+  https://api.github.com/repos/[^/]+/[^/]+/tarball/v?(26[\d.]+) debian ./debian/get-orig-source.sh

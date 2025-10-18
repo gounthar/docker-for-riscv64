@@ -1,0 +1,29 @@
+Forwarded: not-needed
+Description: FHS compliance.
+
+Index: docker.io/engine/contrib/init/systemd/docker.service
+===================================================================
+--- docker.io.orig/engine/contrib/init/systemd/docker.service
++++ docker.io/engine/contrib/init/systemd/docker.service
+@@ -11,7 +11,7 @@ Type=notify
+ # exists and systemd currently does not support the cgroup feature set required
+ # for containers run by docker
+ EnvironmentFile=-/etc/default/docker
+-ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock $DOCKER_OPTS
++ExecStart=/usr/sbin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock $DOCKER_OPTS
+ ExecReload=/bin/kill -s HUP $MAINPID
+ TimeoutStartSec=0
+ RestartSec=2
+Index: docker.io/engine/contrib/init/sysvinit-debian/docker
+===================================================================
+--- docker.io.orig/engine/contrib/init/sysvinit-debian/docker
++++ docker.io/engine/contrib/init/sysvinit-debian/docker
+@@ -22,7 +22,7 @@ export PATH=/sbin:/bin:/usr/sbin:/usr/bi
+ BASE=docker
+ 
+ # modify these in /etc/default/$BASE (/etc/default/docker)
+-DOCKERD=/usr/bin/dockerd
++DOCKERD=/usr/sbin/dockerd
+ # This is the pid file managed by docker itself
+ DOCKER_PIDFILE=/var/run/$BASE.pid
+ # This is the pid file created/managed by start-stop-daemon

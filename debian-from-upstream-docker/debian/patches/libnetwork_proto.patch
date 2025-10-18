@@ -1,0 +1,30 @@
+Last-Update: 2018-06-15
+Forwarded: not-needed
+Author: Dmitry Smirnov <onlyjob@debian.org>
+Description: fix generation of .pb.go files.
+
+Index: docker.io/engine/libnetwork/drivers/overlay/overlay.go
+===================================================================
+--- docker.io.orig/engine/libnetwork/drivers/overlay/overlay.go
++++ docker.io/engine/libnetwork/drivers/overlay/overlay.go
+@@ -3,7 +3,7 @@
+ 
+ package overlay
+ 
+-//go:generate protoc -I.:../../Godeps/_workspace/src/github.com/gogo/protobuf  --gogo_out=import_path=github.com/docker/docker/libnetwork/drivers/overlay,Mgogoproto/gogo.proto=github.com/gogo/protobuf/gogoproto:. overlay.proto
++//go:generate protoc -I.:../../../../../github.com/gogo/protobuf  --gogo_out=import_path=github.com/docker/docker/libnetwork/drivers/overlay,Mgogoproto/gogo.proto=github.com/gogo/protobuf/gogoproto:. overlay.proto
+ 
+ import (
+ 	"fmt"
+Index: docker.io/engine/libnetwork/agent.go
+===================================================================
+--- docker.io.orig/engine/libnetwork/agent.go
++++ docker.io/engine/libnetwork/agent.go
+@@ -1,6 +1,6 @@
+ package libnetwork
+ 
+-//go:generate protoc -I.:Godeps/_workspace/src/github.com/gogo/protobuf  --gogo_out=import_path=github.com/docker/docker/libnetwork,Mgogoproto/gogo.proto=github.com/gogo/protobuf/gogoproto:. agent.proto
++//go:generate protoc -I.:../../../github.com/gogo/protobuf  --gogo_out=import_path=github.com/docker/docker/libnetwork,Mgogoproto/gogo.proto=github.com/gogo/protobuf/gogoproto:. agent.proto
+ 
+ import (
+ 	"encoding/json"
