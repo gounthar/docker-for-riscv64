@@ -16,6 +16,7 @@ This document describes how we set up a self-hosted GitHub Actions runner on a B
 
 - RISC-V64 machine (we used BananaPi F3)
 - Debian Trixie or similar (riscv64)
+- **Node.js 18+** (required for JavaScript-based GitHub Actions)
 - Go 1.24+ installed
 - Docker installed
 - GitHub repository admin access
@@ -25,11 +26,19 @@ This document describes how we set up a self-hosted GitHub Actions runner on a B
 ### 1. Install Dependencies
 
 ```bash
+# Install Node.js (required for GitHub Actions)
+sudo apt-get update
+sudo apt-get install -y nodejs npm
+
+# Verify Node.js is installed
+node --version  # Should show v20.19.2 or later
+npm --version   # Should show 9.2.0 or later
+
 # Verify Go is installed
 go version
 # Should show: go version go1.24.4 linux/riscv64
 
-# Verify Docker is installed  
+# Verify Docker is installed
 docker --version
 ```
 
