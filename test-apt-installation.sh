@@ -21,13 +21,25 @@ echo "  Kernel: $(uname -r)"
 echo "  OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
 echo ""
 
+# Check if GPG key is installed
+if [ ! -f /usr/share/keyrings/docker-riscv64.gpg ]; then
+    echo "🔑 Importing GPG key..."
+    curl -fsSL https://gounthar.github.io/docker-for-riscv64/docker-riscv64.gpg.key | \
+      sudo gpg --dearmor -o /usr/share/keyrings/docker-riscv64.gpg
+    echo "✅ GPG key imported"
+else
+    echo "✅ GPG key already installed"
+fi
+
+echo ""
+
 # Check if repository is already configured
 if [ -f /etc/apt/sources.list.d/docker-riscv64.list ]; then
     echo "✅ Repository already configured"
     cat /etc/apt/sources.list.d/docker-riscv64.list
 else
     echo "📦 Adding Docker RISC-V64 repository..."
-    echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+    echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
       sudo tee /etc/apt/sources.list.d/docker-riscv64.list
     echo "✅ Repository added"
 fi
