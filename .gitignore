@@ -1,0 +1,6 @@
+# reprepro database
+db/
+
+# Temporary files
+*.tmp
+*.lock

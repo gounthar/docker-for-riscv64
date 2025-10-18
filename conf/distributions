@@ -1,0 +1,7 @@
+Origin: docker-riscv64
+Label: Docker RISC-V64
+Codename: trixie
+Architectures: riscv64
+Components: main
+Description: Docker Engine for RISC-V64
+SignWith: no

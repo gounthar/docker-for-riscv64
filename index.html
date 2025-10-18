@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker RISC-V64 APT Repository</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #34495e;
+            margin-top: 30px;
+        }
+        code {
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 14px;
+        }
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            color: inherit;
+            padding: 0;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 12px;
+            margin: 20px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+            padding: 12px;
+            margin: 20px 0;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #3498db;
+            color: white;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐳 Docker RISC-V64 APT Repository</h1>
+
+        <p>
+            <span class="badge">RISC-V64</span>
+            <span class="badge">Debian Trixie</span>
+            <span class="badge">Docker 28.x</span>
+        </p>
+
+        <p>
+            Official APT repository for Docker Engine on RISC-V64 architecture.
+            Built from upstream <a href="https://github.com/moby/moby">moby</a> releases with native RISC-V64 compilation.
+        </p>
+
+        <div class="info">
+            <strong>📦 Package Name:</strong> <code>docker.io</code> (standard Debian package name)<br>
+            <strong>🏗️ Architecture:</strong> <code>riscv64</code><br>
+            <strong>📍 Repository:</strong> <a href="https://github.com/gounthar/docker-for-riscv64">gounthar/docker-for-riscv64</a>
+        </div>
+
+        <h2>🚀 Quick Installation</h2>
+
+        <pre><code># Add repository
+echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+  sudo tee /etc/apt/sources.list.d/docker-riscv64.list
+
+# Update package list
+sudo apt-get update
+
+# Install docker.io
+sudo apt-get install docker.io
+
+# Add your user to docker group
+sudo usermod -aG docker $USER
+
+# Enable and start service
+sudo systemctl enable --now docker</code></pre>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> Log out and back in for group changes to take effect, then test with: <code>docker run hello-world</code>
+        </div>
+
+        <h2>📋 What's Included</h2>
+
+        <p>The <code>docker.io</code> package includes the complete Docker runtime stack:</p>
+
+        <ul>
+            <li><strong>dockerd</strong> - Docker Engine daemon</li>
+            <li><strong>docker-proxy</strong> - Network proxy for container port mapping</li>
+            <li><strong>containerd</strong> - Container runtime (v1.7.28)</li>
+            <li><strong>runc</strong> - OCI runtime (v1.3.0)</li>
+            <li><strong>containerd-shim-runc-v2</strong> - Containerd shim</li>
+        </ul>
+
+        <h2>🔄 Updates</h2>
+
+        <p>The repository is automatically updated when new Docker releases are published. Update your system regularly:</p>
+
+        <pre><code>sudo apt-get update && sudo apt-get upgrade</code></pre>
+
+        <h2>💾 Alternative: Direct .deb Download</h2>
+
+        <p>You can also download and install the <code>.deb</code> package directly from GitHub releases:</p>
+
+        <pre><code># Download latest release
+wget https://github.com/gounthar/docker-for-riscv64/releases/latest/download/docker.io_VERSION_riscv64.deb
+
+# Install
+sudo dpkg -i docker.io_*.deb
+sudo apt-get install -f</code></pre>
+
+        <h2>📖 Documentation</h2>
+
+        <ul>
+            <li><a href="https://github.com/gounthar/docker-for-riscv64/blob/main/README.md">Main README</a></li>
+            <li><a href="https://github.com/gounthar/docker-for-riscv64/blob/main/RUNNER-SETUP.md">Runner Setup Guide</a></li>
+            <li><a href="https://github.com/gounthar/docker-for-riscv64/releases">Releases</a></li>
+            <li><a href="https://github.com/gounthar/docker-for-riscv64/issues">Report Issues</a></li>
+        </ul>
+
+        <h2>ℹ️ About</h2>
+
+        <p>
+            This is an <strong>unofficial</strong> build of Docker Engine specifically for RISC-V64 systems.
+            Built natively on BananaPi F3 hardware from official moby releases.
+        </p>
+
+        <p>
+            <strong>Maintainer:</strong> Bruno Verachten (<a href="https://github.com/gounthar">@gounthar</a>)<br>
+            <strong>License:</strong> Apache 2.0 (same as Docker/moby)
+        </p>
+
+        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e0e0e0;">
+
+        <p style="text-align: center; color: #7f8c8d; font-size: 14px;">
+            Generated from <a href="https://github.com/gounthar/docker-for-riscv64/tree/apt-repo">apt-repo branch</a> •
+            Powered by <a href="https://mirrorer.alioth.debian.org/">reprepro</a> •
+            Hosted on <a href="https://pages.github.com/">GitHub Pages</a>
+        </p>
+    </div>
+</body>
+</html>
