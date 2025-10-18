@@ -1,0 +1,23 @@
+Source: runc
+Section: admin
+Priority: optional
+Maintainer: Bruno Verachten <gounthar@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/opencontainers/runc
+Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
+Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
+
+Package: runc
+Architecture: riscv64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Conflicts: runc-nvidia
+Description: OCI container runtime for RISC-V64 architecture
+ runc is a CLI tool for spawning and running containers according to the
+ OCI specification. It is designed to be as minimal as possible, and is
+ the reference implementation of the OCI runtime specification.
+ .
+ This package contains the runc binary (v1.3.0), built natively for
+ RISC-V64 architecture from official upstream source.
+ .
+ Built on BananaPi F3 running Armbian Trixie.

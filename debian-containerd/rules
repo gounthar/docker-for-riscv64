@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Binaries are pre-built from GitHub releases
+
+override_dh_auto_install:
+	install -D -m 0755 containerd debian/containerd/usr/bin/containerd
+	install -D -m 0755 containerd-shim-runc-v2 debian/containerd/usr/bin/containerd-shim-runc-v2
+	install -D -m 0644 debian-containerd/containerd.service debian/containerd/usr/lib/systemd/system/containerd.service
+
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_dwz:
+	# Skip dwz (Go binaries, no debug symbols)

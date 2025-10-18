@@ -1,0 +1,10 @@
+docker.io (28.5.1-1) trixie; urgency=medium
+
+  * Initial RISC-V64 package for Docker Engine v28.5.1
+  * Built from upstream moby/moby v28.5.1 release
+  * Native compilation on BananaPi F3 (Armbian Trixie)
+  * Includes dockerd daemon and docker-proxy
+  * Depends on separate containerd and runc packages
+  * Modular packaging following Debian standards
+
+ -- Bruno Verachten <gounthar@gmail.com>  Sat, 18 Oct 2025 18:40:00 +0200

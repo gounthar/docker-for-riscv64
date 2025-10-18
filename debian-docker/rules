@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Binaries are pre-built from GitHub releases
+
+override_dh_auto_install:
+	install -D -m 0755 dockerd debian/docker.io/usr/bin/dockerd
+	install -D -m 0755 docker-proxy debian/docker.io/usr/bin/docker-proxy
+	install -D -m 0644 debian-docker/docker.service debian/docker.io/usr/lib/systemd/system/docker.service
+	install -D -m 0644 debian-docker/docker.socket debian/docker.io/usr/lib/systemd/system/docker.socket
+
+override_dh_shlibdeps:
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_dwz:
+	# Skip dwz (Go binaries, no debug symbols)

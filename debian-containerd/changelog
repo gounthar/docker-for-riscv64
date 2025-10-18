@@ -1,0 +1,9 @@
+containerd (1.7.28-1) trixie; urgency=medium
+
+  * Initial RISC-V64 package for containerd v1.7.28
+  * Built from upstream containerd/containerd v1.7.28 release
+  * Native compilation on BananaPi F3 (Armbian Trixie)
+  * Includes containerd daemon and containerd-shim-runc-v2
+  * Compiled with buildtags: no_btrfs (RISC-V64 compatibility)
+
+ -- Bruno Verachten <gounthar@gmail.com>  Sat, 18 Oct 2025 18:40:00 +0200

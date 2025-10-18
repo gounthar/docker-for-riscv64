@@ -1,0 +1,26 @@
+Source: containerd
+Section: admin
+Priority: optional
+Maintainer: Bruno Verachten <gounthar@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/containerd/containerd
+Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
+Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
+
+Package: containerd
+Architecture: riscv64
+Depends: ${shlibs:Depends}, ${misc:Depends},
+         runc (>= 1.3.0)
+Conflicts: containerd.io
+Provides: containerd.io
+Description: Container runtime for RISC-V64 architecture
+ containerd is an industry-standard container runtime with an emphasis on
+ simplicity, robustness and portability. It is available as a daemon for
+ Linux and Windows, which can manage the complete container lifecycle of
+ its host system.
+ .
+ This package contains containerd v1.7.28 and containerd-shim-runc-v2,
+ built natively for RISC-V64 architecture from official upstream source.
+ .
+ Built on BananaPi F3 running Armbian Trixie.

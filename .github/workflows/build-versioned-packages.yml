@@ -1,0 +1,117 @@
+name: Build Versioned Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to build packages from'
+        required: true
+        default: 'v28.5.1-riscv64'
+
+jobs:
+  build-packages:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y debhelper dh-make dpkg-dev lintian
+
+      - name: Download release binaries
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          echo "Building packages for release: $RELEASE_TAG"
+
+          for binary in dockerd docker-proxy containerd containerd-shim-runc-v2 runc; do
+            gh release download $RELEASE_TAG -p $binary
+          done
+
+          chmod +x *
+          ls -lh dockerd docker-proxy containerd containerd-shim-runc-v2 runc
+
+      - name: Extract versions from binaries
+        run: |
+          ./scripts/extract-versions.sh
+          source versions.env
+
+          echo "Detected versions:"
+          echo "  runc: $RUNC_VERSION"
+          echo "  containerd: $CONTAINERD_VERSION"
+          echo "  dockerd: $DOCKERD_VERSION"
+
+      - name: Update changelogs with detected versions
+        run: |
+          source versions.env
+
+          # Update runc changelog
+          sed -i "s/runc (1.3.0-1)/runc ($RUNC_VERSION-1)/" debian-runc/changelog
+
+          # Update containerd changelog
+          sed -i "s/containerd (1.7.28-1)/containerd ($CONTAINERD_VERSION-1)/" debian-containerd/changelog
+
+          # Update docker.io changelog (extract version from tag)
+          DOCKER_VERSION=$(echo "${{ github.event.inputs.release_tag }}" | sed 's/^v//; s/-riscv64$//')
+          sed -i "s/docker.io (28.5.1-1)/docker.io ($DOCKER_VERSION-1)/" debian-docker/changelog
+
+      - name: Build runc package
+        run: |
+          echo "Building runc package (v1.3.0-1)..."
+          cp -r debian-runc debian
+          dpkg-buildpackage -us -uc -b
+          mv ../runc_*.deb .
+          rm -rf debian
+
+      - name: Build containerd package
+        run: |
+          echo "Building containerd package (v1.7.28-1)..."
+          cp -r debian-containerd debian
+          dpkg-buildpackage -us -uc -b
+          mv ../containerd_*.deb .
+          rm -rf debian
+
+      - name: Build docker.io package
+        run: |
+          echo "Building docker.io package (v28.5.1-1)..."
+          cp -r debian-docker debian
+          dpkg-buildpackage -us -uc -b
+          mv ../docker.io_*.deb .
+          rm -rf debian
+
+      - name: Run lintian checks
+        run: |
+          lintian --info --display-info *.deb || true
+
+      - name: Package info
+        run: |
+          for deb in *.deb; do
+            echo "============================================"
+            echo "=== Package: $(basename $deb) ==="
+            echo "============================================"
+            dpkg-deb --info "$deb"
+            echo ""
+            dpkg-deb --contents "$deb" | head -30
+            ls -lh "$deb"
+            echo ""
+          done
+
+      - name: Upload packages to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+
+          echo "Uploading packages to release $RELEASE_TAG"
+          for deb in *.deb; do
+            echo "Uploading $(basename $deb)..."
+            gh release upload $RELEASE_TAG "$deb" --clobber
+          done
+
+          echo ""
+          echo "✅ All packages uploaded successfully!"
+          ls -lh *.deb
