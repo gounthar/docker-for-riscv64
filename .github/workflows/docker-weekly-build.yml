@@ -184,6 +184,15 @@ jobs:
           Automated build on RISC-V64 hardware
           EOF
 
+          # For development builds, delete existing release if it exists
+          if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
+            echo "Checking for existing development release..."
+            if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+              echo "Deleting existing release ${RELEASE_VERSION}..."
+              gh release delete "${RELEASE_VERSION}" --yes
+            fi
+          fi
+
           gh release create "${RELEASE_VERSION}" \
             --title "${RELEASE_TITLE}" \
             --notes-file release-notes.md \
