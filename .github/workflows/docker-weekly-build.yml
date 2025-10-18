@@ -35,9 +35,12 @@ jobs:
       - name: Update moby submodule
         run: |
           cd moby
-          git fetch origin
+          git fetch origin --tags
           git checkout ${{ github.event.inputs.moby_ref || 'master' }}
-          git pull origin ${{ github.event.inputs.moby_ref || 'master' }}
+          # Pull only if it's a branch (not a tag)
+          if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.inputs.moby_ref || 'master' }}; then
+            git pull origin ${{ github.event.inputs.moby_ref || 'master' }}
+          fi
       
       - name: Apply RISC-V patches
         run: |
