@@ -1,89 +1,81 @@
 Package: containerd
-Source: docker.io
-Version: 28.5.1-5
+Version: 1.7.28-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
-Installed-Size: 54068
+Installed-Size: 54066
 Depends: libc6 (>= 2.34), runc (>= 1.3.0)
 Conflicts: containerd.io
-Replaces: docker.io (<< 28.5.1-1~)
 Provides: containerd.io
-Homepage: https://github.com/gounthar/docker-for-riscv64
+Homepage: https://github.com/containerd/containerd
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/containerd_28.5.1-5_riscv64.deb
-Size: 12492744
-SHA256: 3dd5562860aefb2dcf1adcc4b38b140ceb9c3180c34eb13e52e89305ebe760f4
-SHA1: d54a5805d665b4ba85f494128d0676f34bed8c65
-MD5sum: b93b9fcd9b499b3a3db5cd7aa027ad6d
+Filename: pool/main/c/containerd/containerd_1.7.28-1_riscv64.deb
+Size: 12488876
+SHA256: 6daa85c6086a862b2fe4e503e7c8bd5aa43be353d34a4c12f42e4f78afac8f03
+SHA1: 2961b64525b3ad7a328575019e0423d165c86cf7
+MD5sum: 57e59a2af3b46d7e5bd1a174b1fef564
 Description: Container runtime for RISC-V64 architecture
  containerd is an industry-standard container runtime with an emphasis on
  simplicity, robustness and portability. It is available as a daemon for
  Linux and Windows, which can manage the complete container lifecycle of
  its host system.
  .
- This package contains containerd and containerd-shim-runc-v2, built
- natively for RISC-V64 architecture.
+ This package contains containerd v1.7.28 and containerd-shim-runc-v2,
+ built natively for RISC-V64 architecture from official upstream source.
  .
- This is an unofficial build specifically for RISC-V64 systems running
- Debian Trixie.
+ Built on BananaPi F3 running Armbian Trixie.
 
 Package: docker.io
-Version: 28.5.1-5
+Version: 28.5.1-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
-Installed-Size: 66516
+Installed-Size: 66508
 Depends: containerd (>= 1.7.28), runc (>= 1.3.0), iptables, systemd
 Recommends: ca-certificates, git, xz-utils, docker-cli
 Suggests: cgroupfs-mount | cgroup-lite
 Conflicts: docker, docker-ce, docker-engine
-Replaces: docker-engine-riscv64
 Provides: docker-engine
-Homepage: https://github.com/gounthar/docker-for-riscv64
+Homepage: https://github.com/moby/moby
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/docker.io_28.5.1-5_riscv64.deb
-Size: 15657544
-SHA256: 35dc56983d6e047e077a7eaebf2e477185fbf9e76c9af3b156cc422cee2914f9
-SHA1: 2a389fe39b06f6e9032a7ed2c5d481925530183e
-MD5sum: f0c12ef3a3a34352392db509043cd780
+Filename: pool/main/d/docker.io/docker.io_28.5.1-1_riscv64.deb
+Size: 15652024
+SHA256: 1fee854f6884039709400b505915762e8eae2038892df77d863202ff5af5c12a
+SHA1: b1660a4ded1ea2b8a562834865c8736ef4a64a73
+MD5sum: b327e9b151ed06a1996a042638bcfd7f
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
  developer builds and tests on a laptop can run at scale, in production, on
  VMs, bare metal, OpenStack clusters, public clouds and more.
  .
- This package contains the Docker Engine daemon (dockerd) and docker-proxy,
- built natively for RISC-V64 architecture from the official Moby project
- source code.
+ This package contains Docker Engine v28.5.1 daemon (dockerd) and
+ docker-proxy, built natively for RISC-V64 architecture from the official
+ Moby project source code.
  .
- This is an unofficial build specifically for RISC-V64 systems running
- Debian Trixie.
+ Built on BananaPi F3 running Armbian Trixie.
 
 Package: runc
-Source: docker.io
-Version: 28.5.1-5
+Version: 1.3.0-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
-Installed-Size: 10641
+Installed-Size: 10639
 Conflicts: runc-nvidia
-Replaces: docker.io (<< 28.5.1-1~)
-Homepage: https://github.com/gounthar/docker-for-riscv64
+Homepage: https://github.com/opencontainers/runc
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/runc_28.5.1-5_riscv64.deb
-Size: 3154204
-SHA256: ff3bb8cae87e27eecbca848cb2e331a98a29385ccde44fec7014ad2f0451b6fe
-SHA1: c41ce81536cda1999429ae965817307f35027176
-MD5sum: fc1cbc90c01d038922f4b9cf11ac9092
+Filename: pool/main/r/runc/runc_1.3.0-1_riscv64.deb
+Size: 3152884
+SHA256: 296362b02d7c1798b18cf30a060dd18b3f38b919be0a567cfb05903cee2446b2
+SHA1: 5f0ac8f412cfddae9bcf7bf6d283a7c20b6e1fd3
+MD5sum: 1e0c435688d7f6ba03a4be7245f046db
 Description: OCI container runtime for RISC-V64 architecture
  runc is a CLI tool for spawning and running containers according to the
  OCI specification. It is designed to be as minimal as possible, and is
  the reference implementation of the OCI runtime specification.
  .
- This package contains the runc binary, built natively for RISC-V64
- architecture.
+ This package contains the runc binary (v1.3.0), built natively for
+ RISC-V64 architecture from official upstream source.
  .
- This is an unofficial build specifically for RISC-V64 systems running
- Debian Trixie.
+ Built on BananaPi F3 running Armbian Trixie.
 
