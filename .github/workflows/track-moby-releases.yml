@@ -33,34 +33,44 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       
-      - name: Create issue for new release
+      - name: Trigger automatic build for new release
         if: steps.check.outputs.already_built == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           LATEST=${{ steps.check.outputs.latest_release }}
 
+          echo "New Moby release detected: $LATEST"
+          echo "Triggering automatic build..."
+
+          # Trigger the build workflow
+          gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST
+
+          # Create tracking issue
           cat > issue-body.md << EOF
           New Moby release detected: **$LATEST**
 
-          Please trigger the weekly build workflow with this release:
+          **Status:** Build automatically triggered
+
+          The docker-weekly-build workflow has been started automatically.
+          Expected completion time: ~35-40 minutes
+
+          **Monitor build progress:**
           \`\`\`bash
-          gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST
+          gh run list --workflow=docker-weekly-build.yml --limit 1
+          gh run watch
           \`\`\`
 
-          Or manually:
-          \`\`\`bash
-          cd moby
-          git fetch origin
-          git checkout $LATEST
-          cd ..
-          # Run build
-          \`\`\`
+          **Expected release:** ${LATEST}-riscv64
 
-          Release notes: https://github.com/moby/moby/releases/tag/$LATEST
+          **Upstream release notes:** https://github.com/moby/moby/releases/tag/$LATEST
+
+          This issue will track the build progress. Close it once the release is published.
           EOF
 
           gh issue create \
-            --title "Build Docker for Moby $LATEST" \
+            --title "Building Docker ${LATEST} for RISC-V64" \
             --body-file issue-body.md \
-            --label "build-request,moby-release"
+            --label "build-in-progress,moby-release"
+
+          echo "Build triggered successfully!"
