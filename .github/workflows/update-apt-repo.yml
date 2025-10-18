@@ -1,0 +1,117 @@
+name: Update APT Repository
+
+on:
+  workflow_run:
+    workflows: ["Build Debian Package"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag containing the .deb package'
+        required: true
+        default: 'v28.5.1-riscv64'
+
+jobs:
+  update-repo:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+
+    steps:
+      - name: Checkout apt-repo branch
+        uses: actions/checkout@v4
+        with:
+          ref: apt-repo
+          fetch-depth: 0
+
+      - name: Install reprepro
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y reprepro
+
+      - name: Get release information
+        id: release_info
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Get release tag from workflow run or manual input
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            # Find the latest -riscv64 release
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 | \
+                          grep -E 'v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          head -1 | \
+                          awk '{print $1}')
+          fi
+
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "📦 Processing release: $RELEASE_TAG"
+
+      - name: Download .deb package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_TAG="${{ steps.release_info.outputs.release_tag }}"
+          echo "Downloading docker.io package from $RELEASE_TAG..."
+
+          # Download all .deb files from the release
+          gh release download $RELEASE_TAG -p "docker.io_*.deb" --repo gounthar/docker-for-riscv64 || {
+            echo "❌ No .deb file found in release $RELEASE_TAG"
+            echo "Available assets:"
+            gh release view $RELEASE_TAG --repo gounthar/docker-for-riscv64
+            exit 1
+          }
+
+          ls -lh docker.io_*.deb
+
+      - name: Add package to repository
+        run: |
+          echo "Adding package to APT repository..."
+
+          # Add the package (reprepro will handle duplicates)
+          for deb in docker.io_*.deb; do
+            echo "Processing: $deb"
+            reprepro -b . includedeb trixie "$deb" || {
+              echo "⚠️  Package already in repository or error occurred"
+              reprepro -b . list trixie
+            }
+          done
+
+          echo ""
+          echo "Repository contents:"
+          reprepro -b . list trixie
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          RELEASE_TAG="${{ steps.release_info.outputs.release_tag }}"
+          VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
+
+          # Check if there are changes
+          if git diff --quiet dists pool 2>/dev/null; then
+            echo "📝 No changes to commit (package may already exist)"
+            exit 0
+          fi
+
+          git add dists pool
+          git commit -m "Add docker.io $VERSION from release $RELEASE_TAG
+
+Automated update from GitHub Actions.
+
+Package: docker.io_${VERSION}-1_riscv64.deb
+Release: $RELEASE_TAG
+Workflow: ${{ github.workflow }}
+Run: ${{ github.run_id }}"
+
+          git push
+
+          echo ""
+          echo "✅ APT repository updated successfully!"
+          echo "📍 Repository URL: https://gounthar.github.io/docker-for-riscv64"
+          echo ""
+          echo "Users can now install with:"
+          echo "  sudo apt-get update"
+          echo "  sudo apt-get install docker.io"
