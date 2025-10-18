@@ -15,8 +15,12 @@ This is a Debian APT repository managed by `reprepro`:
 To use this repository, add it to your system:
 
 ```bash
-# Add repository
-echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+# Import the GPG key
+curl -fsSL https://gounthar.github.io/docker-for-riscv64/docker-riscv64.gpg.key | \
+  sudo gpg --dearmor -o /usr/share/keyrings/docker-riscv64.gpg
+
+# Add repository with signed-by key
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
   sudo tee /etc/apt/sources.list.d/docker-riscv64.list
 
 # Update package list
@@ -67,12 +71,9 @@ See `.github/workflows/update-apt-repo.yml` in the main branch.
 
 ## Package Signing
 
-Currently, packages are not signed (`SignWith: no` in `conf/distributions`).
+The repository is signed with GPG key `62F028C086E205AFEC275E48E7EAD7209D3ECCD3`.
 
-To enable signing, update the configuration and add a GPG key:
+The public key is available at:
+- https://gounthar.github.io/docker-for-riscv64/docker-riscv64.gpg.key
 
-```
-SignWith: yes
-```
-
-Then generate and publish a GPG key for the repository.
+Users must import this key before installing packages (see installation instructions above).

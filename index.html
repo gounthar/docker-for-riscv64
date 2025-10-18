@@ -99,8 +99,12 @@
 
         <h2>🚀 Quick Installation</h2>
 
-        <pre><code># Add repository
-echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+        <pre><code># Import the GPG key
+curl -fsSL https://gounthar.github.io/docker-for-riscv64/docker-riscv64.gpg.key | \
+  sudo gpg --dearmor -o /usr/share/keyrings/docker-riscv64.gpg
+
+# Add repository with signed-by key
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
   sudo tee /etc/apt/sources.list.d/docker-riscv64.list
 
 # Update package list

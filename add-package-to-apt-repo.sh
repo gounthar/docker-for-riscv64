@@ -32,6 +32,7 @@ dpkg-deb --info docker.io_28.5.1-1_riscv64.deb | head -20
 
 echo ""
 echo "🔧 Adding package to repository..."
+echo "📝 Package will be signed with GPG key from conf/distributions"
 reprepro -b . includedeb trixie docker.io_28.5.1-1_riscv64.deb
 
 echo ""
