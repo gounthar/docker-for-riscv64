@@ -59,29 +59,54 @@ jobs:
           DOCKER_VERSION=$(echo "${{ github.event.inputs.release_tag }}" | sed 's/^v//; s/-riscv64$//')
           sed -i "s/docker.io (28.5.1-1)/docker.io ($DOCKER_VERSION-1)/" debian-docker/changelog
 
-      - name: Build runc package
+      - name: Build all packages in parallel
         run: |
-          echo "Building runc package (v1.3.0-1)..."
-          cp -r debian-runc debian
-          dpkg-buildpackage -us -uc -b
-          mv ../runc_*.deb .
-          rm -rf debian
+          echo "Building all three packages in parallel..."
 
-      - name: Build containerd package
-        run: |
-          echo "Building containerd package (v1.7.28-1)..."
-          cp -r debian-containerd debian
-          dpkg-buildpackage -us -uc -b
-          mv ../containerd_*.deb .
-          rm -rf debian
+          # Create separate build directories
+          mkdir -p build-runc build-containerd build-docker
 
-      - name: Build docker.io package
-        run: |
-          echo "Building docker.io package (v28.5.1-1)..."
-          cp -r debian-docker debian
-          dpkg-buildpackage -us -uc -b
-          mv ../docker.io_*.deb .
-          rm -rf debian
+          # Copy binaries and debian configs to each build directory
+          cp runc build-runc/
+          cp -r debian-runc build-runc/debian
+
+          cp containerd containerd-shim-runc-v2 build-containerd/
+          cp -r debian-containerd build-containerd/debian
+
+          cp dockerd docker-proxy build-docker/
+          cp -r debian-docker build-docker/debian
+
+          # Build all three packages in parallel
+          (cd build-runc && dpkg-buildpackage -us -uc -b) &
+          PID_RUNC=$!
+
+          (cd build-containerd && dpkg-buildpackage -us -uc -b) &
+          PID_CONTAINERD=$!
+
+          (cd build-docker && dpkg-buildpackage -us -uc -b) &
+          PID_DOCKER=$!
+
+          # Wait for all builds to complete
+          echo "Waiting for runc build (PID $PID_RUNC)..."
+          wait $PID_RUNC
+          echo "✓ runc build completed"
+
+          echo "Waiting for containerd build (PID $PID_CONTAINERD)..."
+          wait $PID_CONTAINERD
+          echo "✓ containerd build completed"
+
+          echo "Waiting for docker.io build (PID $PID_DOCKER)..."
+          wait $PID_DOCKER
+          echo "✓ docker.io build completed"
+
+          # Collect all .deb files
+          mv build-runc/../runc_*.deb . || true
+          mv build-containerd/../containerd_*.deb . || true
+          mv build-docker/../docker.io_*.deb . || true
+
+          echo ""
+          echo "All builds completed successfully!"
+          ls -lh *.deb
 
       - name: Run lintian checks
         run: |
