@@ -66,15 +66,20 @@ jobs:
         run: |
           DATE=$(date +%Y%m%d)
           mkdir -p release-$DATE
-          
-          # Extract from bundles directory
-          cp moby/bundles/binary/dockerd release-$DATE/
-          cp moby/bundles/binary/docker-proxy release-$DATE/
-          
+
+          # Extract binaries from Docker image
+          CONTAINER_ID=$(docker create docker-riscv64:binary-$DATE)
+          docker cp $CONTAINER_ID:/usr/local/bin/dockerd release-$DATE/
+          docker cp $CONTAINER_ID:/usr/local/bin/docker-proxy release-$DATE/
+          docker rm $CONTAINER_ID
+
+          # Make binaries executable
+          chmod +x release-$DATE/dockerd release-$DATE/docker-proxy
+
           # Get versions
           ./release-$DATE/dockerd --version > release-$DATE/versions.txt
           ./release-$DATE/docker-proxy --version >> release-$DATE/versions.txt
-          
+
           ls -lh release-$DATE/
       
       - name: Create release
