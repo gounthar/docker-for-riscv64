@@ -67,24 +67,10 @@ jobs:
           DATE=$(date +%Y%m%d)
           mkdir -p release-$DATE
 
-          # Extract binaries from Docker image (binary target has no shell)
-          # Create container to inspect and extract files
+          # Extract binaries from Docker image (binary target places them at root)
           CONTAINER_ID=$(docker create --entrypoint=/bin/true docker-riscv64:binary-$DATE)
-
-          # Debug: List container filesystem to find binaries
-          echo "=== Searching for dockerd and docker-proxy in container ==="
-          docker export $CONTAINER_ID | tar -t | grep -E '(dockerd|docker-proxy)$' || true
-
-          # Try multiple possible locations
-          for path in /usr/local/bin /usr/bin /build /go/bin /usr/local; do
-            echo "Trying $path..."
-            docker cp $CONTAINER_ID:$path/dockerd release-$DATE/ 2>/dev/null && echo "Found dockerd in $path" && break
-          done
-
-          for path in /usr/local/bin /usr/bin /build /go/bin /usr/local; do
-            docker cp $CONTAINER_ID:$path/docker-proxy release-$DATE/ 2>/dev/null && echo "Found docker-proxy in $path" && break
-          done
-
+          docker cp $CONTAINER_ID:/dockerd release-$DATE/
+          docker cp $CONTAINER_ID:/docker-proxy release-$DATE/
           docker rm $CONTAINER_ID
 
           # Make binaries executable
