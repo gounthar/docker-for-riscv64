@@ -67,9 +67,12 @@ jobs:
           DATE=$(date +%Y%m%d)
           mkdir -p release-$DATE
 
-          # Extract binaries from Docker image using docker run with volume mount
-          docker run --rm -v $(pwd)/release-$DATE:/out docker-riscv64:binary-$DATE \
-            sh -c 'cp /usr/local/bin/dockerd /usr/local/bin/docker-proxy /out/'
+          # Extract binaries from Docker image (binary target has no shell)
+          # Create container without starting it, using /bin/true as dummy entrypoint
+          CONTAINER_ID=$(docker create --entrypoint=/bin/true docker-riscv64:binary-$DATE)
+          docker cp $CONTAINER_ID:/usr/local/bin/dockerd release-$DATE/
+          docker cp $CONTAINER_ID:/usr/local/bin/docker-proxy release-$DATE/
+          docker rm $CONTAINER_ID
 
           # Make binaries executable
           chmod +x release-$DATE/dockerd release-$DATE/docker-proxy
