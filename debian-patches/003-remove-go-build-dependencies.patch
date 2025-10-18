@@ -1,0 +1,157 @@
+Description: Remove Go build dependencies for pre-built binaries  
+ Since we use pre-built RISC-V64 binaries from upstream releases and
+ have simplified debian/rules (patch 002), we no longer need any Go
+ toolchain or library dependencies.
+Author: Bruno Verachten <gounthar@gmail.com>
+Forwarded: not-needed
+Last-Update: 2025-10-18
+
+--- a/debian/control
++++ b/debian/control
+@@ -11,142 +11,10 @@
+           ,Paul Tagliamonte <paultag@debian.org>
+           ,Reinhard Tartler <siretart@tauware.de>
+ Build-Conflicts: golang-github-docker-docker-dev
+-Build-Depends: debhelper-compat (= 13) ,dh-apparmor ,dh-golang (>= 1.14~)
+-    ,bash-completion
+-    ,ca-certificates
+-    ,golang-any (>= 2:1.10~)
+-    ,go-md2man (>= 1.0.3~)
+-    ,golang-dbus-dev (>= 5.0.2~)
+-#    ,golang-etcd-server-dev
+-    ,golang-github-adamkorcz-go-fuzz-headers-1-dev
+-    ,golang-github-agext-levenshtein-dev
+-    ,golang-github-armon-circbuf-dev
+-    ,golang-github-armon-go-metrics-dev
+-    ,golang-github-aws-aws-sdk-go-v2-dev
+-    ,golang-github-aws-smithy-go-dev
+-    ,golang-github-azure-go-ansiterm-dev
+-    ,golang-github-bsphere-le-go-dev
+-    ,golang-github-burntsushi-toml-dev
+-    ,golang-github-cespare-xxhash-dev
+-    ,golang-github-cenkalti-backoff-dev
+-    ,golang-github-cilium-ebpf-dev
+-    ,golang-github-cloudflare-cfssl-dev (>= 1.6.4)
+-    ,golang-github-containerd-console-dev
+-    ,golang-github-containerd-containerd-dev (>= 1.7.23~)
+-    ,golang-github-containerd-continuity-dev (>= 0.0~git20190426~)
+-    ,golang-github-containerd-fifo-dev (>= 1.1.0~)
+-    ,golang-github-containerd-go-cni-dev
+-    ,golang-github-containerd-go-runc-dev (>= 1.1.0)
+-    ,golang-github-containerd-typeurl-dev (>= 2.1.1-2)
+-    ,golang-github-containernetworking-plugins-dev
+-    ,golang-github-coreos-bbolt-dev (>= 1.3.10)
+-    ,golang-github-coreos-go-systemd-dev (>= 20~)
+-    ,golang-github-creack-pty-dev
+-    ,golang-github-cyphar-filepath-securejoin-dev
+-    ,golang-github-davecgh-go-spew-dev
+-    ,golang-github-deckarep-golang-set-dev (>= 2.3.0~)
+-    ,golang-github-dimchansky-utfbom-dev
+-    ,golang-github-distribution-reference-dev
+-    ,golang-github-docker-distribution-dev (>= 2.7.1~)
+-    ,golang-github-docker-docker-credential-helpers-dev (>= 0.6.1~)
+-    ,golang-github-docker-go-connections-dev (>= 0.4.0~)
+-    ,golang-github-docker-go-events-dev
+-    ,golang-github-docker-go-metrics-dev
+-    ,golang-github-docker-go-units-dev (>= 0.4.0~)
+-    ,golang-github-docker-libkv-dev
+-    ,golang-github-docker-libtrust-dev
+-    ,golang-github-docker-notary-dev (>= 0.7.0+git20240416)
+-    ,golang-github-felixge-httpsnoop-dev
+-    ,golang-github-fernet-fernet-go-dev
+-    ,golang-github-fluent-fluent-logger-golang-dev (>= 1.3.0~)
+-    ,golang-github-fsnotify-fsnotify-dev
+-    ,golang-github-fvbommel-sortorder-dev
+-    ,golang-github-go-logr-logr-dev
+-    ,golang-github-go-logr-stdr-dev
+-    ,golang-github-gofrs-flock-dev
+-    ,golang-github-gogo-googleapis-dev
+-    ,golang-github-golang-groupcache-dev
+-    ,golang-github-golang-jwt-jwt-dev    
+-    ,golang-github-googleapis-gax-go-dev
+-    ,golang-github-google-go-cmp-dev (>= 0.2.0~)
+-    ,golang-github-google-shlex-dev
+-    ,golang-github-google-uuid-dev
+-    ,golang-github-gorilla-mux-dev (>= 1.7.1~)
+-    ,golang-github-gotestyourself-gotest.tools-dev
+-    ,golang-github-graylog2-go-gelf-dev (>= 0.0+git20191017~)
+-    ,golang-github-grpc-ecosystem-go-grpc-prometheus-dev
+-    ,golang-github-grpc-ecosystem-grpc-opentracing-dev
+-    ,golang-github-hashicorp-go-memdb-dev
+-    ,golang-github-hashicorp-go-immutable-radix-dev
+-    ,golang-github-hashicorp-memberlist-dev (>= 0.1.0~)
+-    ,golang-github-hashicorp-serf-dev
+-    ,golang-github-imdario-mergo-dev (>= 0.3.3~)
+-    ,golang-github-in-toto-in-toto-golang-dev
+-    ,golang-github-ishidawataru-sctp-dev
+-    ,golang-github-json-iterator-go-dev (>= 1.1.4~)
+-    ,golang-github-klauspost-compress-dev
+-    ,golang-github-mattn-go-runewidth-dev
+-    ,golang-github-miekg-dns-dev (>= 1.1.26~)
+-    ,golang-github-mitchellh-hashstructure-dev (>= 2.0.2)
+-    ,golang-github-moby-docker-image-spec-dev
+-    ,golang-github-moby-locker-dev
+-    ,golang-github-moby-patternmatcher-dev
+-    ,golang-github-moby-pubsub-dev
+-    ,golang-github-moby-sys-dev
+-    ,golang-github-moby-term-dev
+-    ,golang-github-modern-go-reflect2-dev
+-    ,golang-github-morikuni-aec-dev
+-    ,golang-github-nxadm-tail-dev
+-    ,golang-github-onsi-ginkgo-dev
+-    ,golang-github-opencontainers-cgroups-dev (>= 0.0.1~)
+-    ,golang-github-opencontainers-go-digest-dev
+-    ,golang-github-opencontainers-image-spec-dev (>= 1.0.1~)
+-    ,golang-github-opencontainers-selinux-dev (>= 1.8.0~)
+-    ,golang-github-opencontainers-specs-dev (>= 1.0.1~)
+-    ,golang-github-opentracing-contrib-go-stdlib-dev
+-    ,golang-github-opentracing-opentracing-go-dev (>= 0.0~git20180507)
+-    ,golang-opentelemetry-contrib-dev (>= 0.56)
+-    ,golang-opentelemetry-otel-dev (>= 1.31)
+-    ,golang-opentelemetry-proto-dev (>= 1.3.1)
+-    ,golang-github-pelletier-go-toml-dev
+-    ,golang-github-philhofer-fwd-dev
+-    ,golang-github-prometheus-client-golang-dev (>= 0.9.0~)
+-    ,golang-github-racksec-srslog-dev
+-    ,golang-github-rcrowley-go-metrics-dev
+-    ,golang-github-samuel-go-zookeeper-dev
+-    ,golang-github-sirupsen-logrus-dev (>= 1.0.2~)
+-    ,golang-github-spf13-cobra-dev (>= 1.1.1~)
+-    ,golang-github-spf13-pflag-dev (>= 1.0.5-2~)
+-    ,golang-github-stretchr-testify-dev
+-    ,golang-github-tchap-go-patricia-dev
+-#    ,golang-github-tonistiigi-fsutil-dev (>= 0.0~git20200724~)
+-    ,golang-github-tonistiigi-units-dev
+-    ,golang-github-rootless-containers-rootlesskit-dev (>= 2)
+-    ,golang-github-secure-systems-lab-go-securesystemslib-dev
+-    ,golang-github-urfave-cli-dev (>= 1.20.0~)
+-    ,golang-github-vbatts-tar-split-dev (>= 0.11.1~)
+-    ,golang-github-xeipuuv-gojsonschema-dev (>= 1.2.0~)
+-    ,golang-golang-x-net-dev
+-    ,golang-golang-x-oauth2-google-dev | golang-golang-x-oauth2-dev
+-    ,golang-golang-x-term-dev
+-    ,golang-golang-x-time-dev
+-    ,golang-google-api-dev
+-    ,golang-google-cloud-dev
+-    ,golang-google-grpc-dev (>> 1.64)
+-    ,golang-github-golang-protobuf-1-5-dev
+-    ,golang-go-zfs-dev
+-    ,golang-protobuf-extensions-dev
+-    ,golang-k8s-klog-dev
+-    ,gotestsum
+-    ,libapparmor-dev
+-    ,libseccomp-dev
+-    ,libsystemd-dev
+-    ,pkgconf
+-    ,procps
+-    ,tzdata
+-# tests:
+-    ,git
+-    ,golang-github-adalogics-go-fuzz-headers-dev
++Build-Depends: debhelper-compat (= 13)
++              ,dh-apparmor
++              ,bash-completion
++              ,ca-certificates
+ Homepage: https://mobyproject.org
+ Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
+ Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
