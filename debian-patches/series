@@ -1,8 +1,13 @@
 # Patch series for RISC-V64 adaptation
 # Applied in order during build
+#
+# These patches convert Debian's docker.io source packaging to work
+# with pre-built RISC-V64 binaries from upstream Docker releases.
 
-001-riscv64-prebuilt-adaptations.patch
+001-riscv64-metadata.patch
+002-simplify-rules-prebuilt.patch
+003-remove-go-build-dependencies.patch
+
 # Following patches will be added as they're created:
-# 002-simplify-rules-prebuilt.patch
-# 003-simplify-install-files.patch
-# 004-add-riscv64-changelog.patch
+# 004-update-install-files.patch
+# 005-add-riscv64-changelog.patch

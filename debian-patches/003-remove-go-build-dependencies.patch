@@ -1,25 +1,14 @@
-Description: Adapt Debian packaging for RISC-V64 pre-built binaries
- This patch makes the following changes for RISC-V64 pre-built binaries:
- - Change maintainer to Bruno Verachten
- - Restrict architecture to riscv64 only
- - Remove all Go build dependencies (using pre-built binaries)
- - Keep only minimal packaging dependencies
+Description: Remove Go build dependencies for pre-built binaries  
+ Since we use pre-built RISC-V64 binaries from upstream releases and
+ have simplified debian/rules (patch 002), we no longer need any Go
+ toolchain or library dependencies.
 Author: Bruno Verachten <gounthar@gmail.com>
 Forwarded: not-needed
 Last-Update: 2025-10-18
 
 --- a/debian/control
 +++ b/debian/control
-@@ -2,7 +2,7 @@
- Section: admin
- Priority: optional
- Standards-Version: 4.7.0
--Maintainer: Debian Go Packaging Team <team+pkg-go@tracker.debian.org>
-+Maintainer: Bruno Verachten <gounthar@gmail.com>
- Uploaders: Arnaud Rebillout <arnaudr@kali.org>
-           ,Dmitry Smirnov <onlyjob@debian.org>
-           ,Tim Potter <tpot@hpe.com>
-@@ -10,142 +10,10 @@
+@@ -11,142 +11,10 @@
            ,Paul Tagliamonte <paultag@debian.org>
            ,Reinhard Tartler <siretart@tauware.de>
  Build-Conflicts: golang-github-docker-docker-dev
@@ -164,23 +153,5 @@ Last-Update: 2025-10-18
 +              ,bash-completion
 +              ,ca-certificates
  Homepage: https://mobyproject.org
- Vcs-Browser: https://salsa.debian.org/go-team/packages/docker
- Vcs-Git: https://salsa.debian.org/go-team/packages/docker.git
-@@ -156,7 +24,7 @@
-     ,github.com/moby/ipvs
- 
- Package: docker.io
--Architecture: linux-any
-+Architecture: riscv64
- Pre-Depends: ${misc:Pre-Depends}
- Depends: ${misc:Depends} ,${shlibs:Depends}
-     ,adduser
-@@ -207,7 +75,7 @@
-  issues.
- 
- Package: docker-cli
--Architecture: linux-any
-+Architecture: riscv64
- Pre-Depends: ${misc:Pre-Depends}
- Depends: ${misc:Depends} ,${shlibs:Depends}
- Conflicts:
+ Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
+ Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
