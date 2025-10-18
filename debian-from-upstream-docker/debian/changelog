@@ -1,3 +1,16 @@
+docker.io (28.5.1-4) trixie; urgency=medium
+
+  * RISC-V64 port using pre-built binaries
+  * Refactored to use official Debian docker.io source as base
+  * Simplified debian/rules for pre-built binary installation
+  * Updated control file for RISC-V64 architecture
+  * Removed Go build dependencies (binaries are pre-built)
+  * Proper systemd integration with socket activation
+  * Built natively on BananaPi F3 (Armbian Trixie)
+  * Based on Debian docker.io 26.1.5+dfsg1-10 packaging
+
+ -- Bruno Verachten <gounthar@gmail.com>  Sat, 18 Oct 2025 19:45:00 +0200
+
 docker.io (26.1.5+dfsg1-10) unstable; urgency=medium
 
   * Backport a couple patches (FTBFS due to runc upload; Closes: #1115952)

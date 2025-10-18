@@ -1,9 +1,3 @@
-_build/bin/dockerd usr/sbin/
-
-engine/contrib/check-config.sh                usr/share/docker.io/contrib/
-engine/contrib/dockerd-rootless.sh            usr/share/docker.io/contrib/
-engine/contrib/dockerd-rootless-setuptool.sh  usr/share/docker.io/contrib/
-engine/contrib/nuke-graph-directory.sh        usr/share/docker.io/contrib/
-
-## libnetwork:
-_build/bin/docker-proxy  usr/sbin/
+# Docker Engine binaries (pre-built for RISC-V64)
+dockerd usr/bin/
+docker-proxy usr/bin/

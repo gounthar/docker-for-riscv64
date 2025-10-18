@@ -1,159 +1,47 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
+#
+# Simplified rules for RISC-V64 pre-built binaries
+# Based on official Debian docker.io package
+# Source: https://salsa.debian.org/docker-team/docker
 
 include /usr/share/dpkg/default.mk
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# The engine is built and tested using upstream scripts
-# and Makefiles, rather than dh_auto_*. Therefore we can't rely
-# on dh to set the environment for us, we have to do it here.
-export GOPATH := $(CURDIR)/_build
-export GOCACHE := $(GOPATH)/go-build
-export GO111MODULE := off
-export GOPROXY := off
-
-#export DH_GOLANG_BUILDPKG := github.com/docker/docker github.com/docker/cli
-export DH_GOLANG_GO_GENERATE := 1
-export DH_GOLANG_INSTALL_ALL := 1
-export DH_GOLANG_INSTALL_EXTRA := testdata/
-export DH_GOLANG_EXCLUDES := \
-    integration-cli \
-    overlay_test \
-    vendor
-
-# Package names
-CLI_PKG        := github.com/docker/cli
-ENGINE_PKG     := github.com/docker/docker
-BUILDKIT_PKG   := github.com/moby/buildkit
-
-# Version and commits
+# Version information
 DOCKER_VERSION := $(DEB_VERSION_UPSTREAM)
-ENGINE_GITCOMMIT := $(shell ./debian/helpers/gitcommit.sh engine $(DOCKER_VERSION))
-ifndef ENGINE_GITCOMMIT
-  $(error Missing ENGINE_GITCOMMIT - see debian/helpers/engine-gitcommits)
-endif
-CLI_GITCOMMIT    := $(shell ./debian/helpers/gitcommit.sh cli $(DOCKER_VERSION))
-ifndef CLI_GITCOMMIT
-  $(error Missing CLI_GITCOMMIT - see debian/helpers/cli-gitcommits)
-endif
-
-# Cf. scripts/build/binary scripts/build/.variables
-CLI_BUILDTIME := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" +"%Y-%m-%dT%H:%M:%SZ")
-CLI_BUILDTAGS := pkcs11
-CLI_LDFLAGS   += -X $(CLI_PKG)/cli/version.BuildTime=$(CLI_BUILDTIME)
-CLI_LDFLAGS   += -X $(CLI_PKG)/cli/version.GitCommit=$(CLI_GITCOMMIT)
-CLI_LDFLAGS   += -X $(CLI_PKG)/cli/version.Version=$(DOCKER_VERSION)
-ifeq (,$(filter $(DEB_BUILD_ARCH), mipsel mips64el))
-CLI_BUILDMODE := -buildmode=pie
-endif
-
-# Cf. hack/make.sh hack/make/.binary
-ENGINE_BUILDTIME := $(shell date -u -d "@$(SOURCE_DATE_EPOCH)" --rfc-3339 ns | sed -e 's/ /T/')
-ENGINE_BUILDTAGS := apparmor seccomp journald
-ENGINE_TESTFLAGS := -test.short
-ENGINE_LDFLAGS   := -w
-ENGINE_LDFLAGS   += -X $(ENGINE_PKG)/dockerversion.Version=$(DOCKER_VERSION)
-ENGINE_LDFLAGS   += -X $(ENGINE_PKG)/dockerversion.GitCommit=$(ENGINE_GITCOMMIT)
-ENGINE_LDFLAGS   += -X $(ENGINE_PKG)/dockerversion.BuildTime=$(ENGINE_BUILDTIME)
-ENGINE_LDFLAGS   += -X $(ENGINE_PKG)/dockerversion.PlatformName=
-ENGINE_LDFLAGS   += -X $(ENGINE_PKG)/dockerversion.ProductName=docker
-ENGINE_LDFLAGS   += -X $(ENGINE_PKG)/dockerversion.DefaultProductLicense=
-
-ifeq (,$(filter $(DEB_BUILD_ARCH), mipsel mips64el))
-ENGINE_BUILDMODE := -buildmode=pie
-endif
-
-BUILT_LIBC := $(shell dpkg-query -f '$${source:Package} (= $${source:Version})' -W libc-dev-bin)
 
 %:
-	dh $@ --buildsystem=golang --with=bash-completion,golang --builddirectory=_build
+	dh $@ --with=bash-completion
 
-override_dh_golang:
-## Set DH_GOLANG_BUILDPKG so that Built-Using is properly generated.
-	DH_GOLANG_BUILDPKG="$(CLI_PKG)/... $(ENGINE_PKG)/... $(BUILDKIT_PKG)/..." \
-	  dh_golang -O--buildsystem=golang -O--builddirectory=_build
-
-override_dh_clean:
-	dh_clean
-	$(RM) -v -r autogen bundles man/man*/ debian/tmphome
-#	-find . -type f -name '*.pb.go' -delete -printf 'removed %p\n'            ## delete generated .pb.go files
-	## Remove Files-Excluded (when built from checkout or non-DFSG tarball):
-	$(RM) -rv `perl -0nE 'say grep { $$_=q{ */}.$$_ } split(/\s+/,$$1) if m{^Files\-Excluded:\s*(.*?)(?:\n\n|^Files|^Comment:)}sm;' debian/copyright`
-	-find */vendor -mindepth 1 -type d -empty -delete -printf 'removed %p\n'
+override_dh_auto_clean:
+	dh_auto_clean
+	rm -rf debian/tmphome
 
 override_dh_auto_configure:
-## dh_auto_configure symlinks dirs from "/usr/share/gocode/src" into
-## $(GOPATH) unless folders already exist there in which case files
-## are copied. Pre-making directories allows us to use debhelper to
-## create proper GOPATH source tree yet have certain directories writable
-## even if they are provided by already installed package.
-	mkdir -pv $(GOPATH)/src/$(CLI_PKG)
-	mkdir -pv $(GOPATH)/src/$(ENGINE_PKG)
-	mkdir -pv $(GOPATH)/src/$(BUILDKIT_PKG)
-
-## Prepare builddirectory but throw away sourcedirectory.
-	DH_GOPKG="__IGNORE__" dh_auto_configure
-
-## Each package must be removed from working tree first, in case some
-## of the packages that we are going to build are already installed.
-## This is also useful for building in unclean environment.
-##
-## This is _necessary_ to avoid merging packages that we build with
-## pre-installed packages. See #827226 for details.
-## Debhelper knows only about "main" DH_GOPKG package but we build several
-## and we have to ensure that build tree is properly prepared.
-	$(RM) -r              $(GOPATH)/src/$(CLI_PKG)
-	cp -ra  cli           $(GOPATH)/src/$(CLI_PKG)
-	$(RM) -r              $(GOPATH)/src/$(ENGINE_PKG)
-	cp -ra  engine        $(GOPATH)/src/$(ENGINE_PKG)
-	$(RM) -r              $(GOPATH)/src/$(BUILDKIT_PKG)
-	cp -ra  buildkit      $(GOPATH)/src/$(BUILDKIT_PKG)
+	# Skip configuration - we use pre-built binaries
 
 override_dh_auto_build:
-## Order is important:
-
-	# enable when we start additional binaries, such as buildkitd, etc.
-	# GENERATE=0 avoid protoc and gogoprotobuf dependencies
-	#DH_GOPKG=$(BUILDKIT_PKG) DH_GOLANG_GO_GENERATE=0 dh_auto_build -v
-
-	DH_GOPKG=$(ENGINE_PKG) DH_GOLANG_BUILDPKG=$(ENGINE_PKG)/cmd/dockerd \
-	  dh_auto_build -v -- -tags '$(ENGINE_BUILDTAGS)' $(ENGINE_BUILDMODE) -ldflags '$(ENGINE_LDFLAGS)'
-
-	DH_GOPKG=$(ENGINE_PKG) DH_GOLANG_BUILDPKG=$(ENGINE_PKG)/cmd/docker-proxy \
-	  dh_auto_build -v -- -tags '$(ENGINE_BUILDTAGS)' $(ENGINE_BUILDMODE) -ldflags '$(ENGINE_LDFLAGS)'
-
-	DH_GOPKG=$(CLI_PKG) DH_GOLANG_BUILDPKG=$(CLI_PKG)/cmd/docker \
-	  dh_auto_build -v -- -tags '$(CLI_BUILDTAGS)' -ldflags '$(CLI_LDFLAGS)' $(CLI_BUILDMODE)
-	cd $(GOPATH)/src/$(CLI_PKG) && ./scripts/docs/generate-man.sh
+	# Skip build - binaries are pre-built from GitHub releases
+	# They should be downloaded before running dpkg-buildpackage
+	# Expected files: dockerd, docker-proxy, containerd, containerd-shim-runc-v2, runc
+	@echo "Using pre-built binaries for RISC-V64"
+	@test -f dockerd || (echo "Error: dockerd binary not found" && exit 1)
+	@test -f docker-proxy || (echo "Error: docker-proxy binary not found" && exit 1)
+	@echo "✓ All required binaries present"
 
 override_dh_auto_test:
-ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
-	# basic smoke test -- these must pass
-	_build/bin/docker --version
-	_build/bin/dockerd --version
-
-	## Test engine:
-	-cd $(GOPATH)/src/$(ENGINE_PKG) && PATH=$(GOPATH)/bin:$(PATH) TESTFLAGS='$(ENGINE_TESTFLAGS)' ./hack/test/unit
-
-	# Unit tests -- these are notoriously flaky and not written with the intend
-	# to be run outside of a tightly controlled container image. Therefore,
-	# ignore failures
-	## Test CLI:
-	mkdir -p $(CURDIR)/debian/tmphome/tmp
-	-cd $(GOPATH)/src/$(CLI_PKG) && HOME=$(CURDIR)/debian/tmphome TMPDIR=$(CURDIR)/debian/tmphome/tmp PATH=$(GOPATH)/bin:$(PATH) DISABLE_WARN_OUTSIDE_CONTAINER=1 $(MAKE) test-unit GO111MODULE=off
-endif
-
-override_dh_install:
-	## Do not install extra license files:
-	dh_install -XLICENSE
-	## Apparmor thing, not sure it's needed, we don't install a profile
-	dh_apparmor --profile-name=docker.io -pdocker.io
+	# Skip tests - binaries are pre-built and tested upstream
 
 override_dh_auto_install:
-	## skip dh_auto_install to stop dh_golang trying to copy bits
-	## for /usr/share/gocode (we use dh_install for that)
+	# Skip dh_auto_install - we use dh_install
+
+override_dh_install:
+	dh_install -XLICENSE
+	## Apparmor integration
+	dh_apparmor --profile-name=docker.io -pdocker.io
 
 override_dh_installinit:
 	dh_installinit -v --name=docker --no-stop-on-upgrade --no-restart-after-upgrade
@@ -164,3 +52,19 @@ override_dh_installsystemd:
 override_dh_installudev:
 	# use priority z80 to match the upstream priority of 80
 	dh_installudev -v --name=docker --priority=z80
+
+override_dh_shlibdeps:
+	# Go binaries may have unusual dependencies
+	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+
+override_dh_strip:
+	# Don't strip Go binaries (they don't have standard debug symbols)
+	dh_strip --no-automatic-dbgsym
+
+override_dh_dwz:
+	# Skip dwz compression (Go binaries don't benefit from it)
+	@echo "Skipping dwz for Go binaries"
+
+override_dh_gencontrol:
+	## Include libc version in Built-Using
+	dh_gencontrol -- -VBuilt-Using="$(shell dpkg-query -f '$${source:Package} (= $${source:Version})' -W libc-dev-bin)"
