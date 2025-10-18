@@ -43,7 +43,6 @@ Depends: ${shlibs:Depends}, ${misc:Depends},
 Conflicts: containerd.io
 Provides: containerd.io
 Replaces: docker.io (<< 28.5.1-1~)
-Breaks: docker.io (<< 28.5.1-1~)
 Description: Container runtime for RISC-V64 architecture
  containerd is an industry-standard container runtime with an emphasis on
  simplicity, robustness and portability. It is available as a daemon for
@@ -61,7 +60,6 @@ Architecture: riscv64
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: runc-nvidia
 Replaces: docker.io (<< 28.5.1-1~)
-Breaks: docker.io (<< 28.5.1-1~)
 Description: OCI container runtime for RISC-V64 architecture
  runc is a CLI tool for spawning and running containers according to the
  OCI specification. It is designed to be as minimal as possible, and is

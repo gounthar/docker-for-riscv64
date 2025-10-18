@@ -1,3 +1,12 @@
+docker.io (28.5.1-5) trixie; urgency=medium
+
+  * Remove Breaks directives from containerd and runc packages
+  * Enables smooth upgrades from Debian's docker.io (any version)
+  * containerd and runc don't break docker.io - they provide dependencies
+  * Keeps Replaces directive for file conflict resolution
+
+ -- Bruno Verachten <gounthar@gmail.com>  Sat, 18 Oct 2025 18:20:00 +0200
+
 docker.io (28.5.1-4) trixie; urgency=medium
 
   * Fix typo in Depends field (${shlibs:Depends} not ${shlibc:Depends})
