@@ -390,6 +390,6 @@ git clean -fdx moby/
 
 ---
 
-**Last Updated:** 2025-10-18
-**Hardware:** BananaPi F3 (RISC-V64)
+**Last Updated:** 2025-10-18  
+**Hardware:** BananaPi F3 (RISC-V64)  
 **Repository:** https://github.com/gounthar/docker-for-riscv64
