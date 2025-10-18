@@ -1,0 +1,5 @@
+Component: main
+Origin: docker-riscv64
+Label: Docker RISC-V64
+Architecture: riscv64
+Description: Docker Engine for RISC-V64

@@ -1,0 +1,36 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA512
+
+Origin: docker-riscv64
+Label: Docker RISC-V64
+Codename: trixie
+Date: Sat, 18 Oct 2025 15:24:35 UTC
+Architectures: riscv64
+Components: main
+Description: Docker Engine for RISC-V64
+MD5Sum:
+ f72224f976dd33ed9f31ba71e74ba582 1316 main/binary-riscv64/Packages
+ 97a53ab5a057562f1cc54b9d6a24528e 774 main/binary-riscv64/Packages.gz
+ 9852bd9d838105f01fcafc21fda5984e 124 main/binary-riscv64/Release
+SHA1:
+ 56f3c27bb21ac64688d0ec6b7768e79b8d4e1d76 1316 main/binary-riscv64/Packages
+ 6a6fd42548c11ecc261d3aa5e13b9514bb5d7486 774 main/binary-riscv64/Packages.gz
+ b7225961fc1f44f74040069f34eb67abeaa4ffd5 124 main/binary-riscv64/Release
+SHA256:
+ 2b0fa9afc2e4ccdeefe10e7d9935d53e7ac63305e8aebf53eb8840d54b8b4f45 1316 main/binary-riscv64/Packages
+ 164d6327361abd84a6e213c38d63432e69c4f4dedbbe7beba7c302cd2e82f560 774 main/binary-riscv64/Packages.gz
+ 58b302992d272775817ccba4454a67bde99cf7de79067618e4f23708835558c0 124 main/binary-riscv64/Release
+-----BEGIN PGP SIGNATURE-----
+
+iQGzBAEBCgAdFiEEYvAowIbiBa/sJ15I5+rXIJ0+zNMFAmjzsTMACgkQ5+rXIJ0+
+zNM6kgv/RAIUE+3CcMEqcuxtFSlzsRtVdYCx6ac81EcqbZogkBsq1Mibbi0d2+gS
+2Wk1fK4oFszvSVFwEfnIyScMBSSumVhGgt0QIxOYRN0430hNRbtalpBXv5REdAms
+gUCX55U1PORfFN0Y9xbenmrcopDZCabPoJlKNtclJs2DfA2OpGdnuNpOWzz1nHcV
+HQ9STsauCK+EK/iamAHRLen6uZRl5MjQr8PV/tlbkh1B/H7EeDxzc6PpeqTzpBq0
+Q31MU3pdJxJwsy08geJvoDa9hWq4PNUGEGbY9yZEyVoi+U/nmRGd8ZE14mx/TA5t
+HAWVXuU1XxHRZWT36H8jvOw+woc7hh1xZoifHKFCTkL15Lp1yty9uylO/GYdeyPX
+iKyYVEs1gd13tjeHZXfdz5s/tij1Xdg94jOR6Lcc/J6iYB6tYwPJcmqUCV3pp+Yi
+/dTE5rMaPrKdQABVNf6WbEIk3KwCnkJIQLCXR08gnDkhkx7cXJa+UNA38YRtHZP9
+nxNi7maR
+=u77Q
+-----END PGP SIGNATURE-----

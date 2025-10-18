@@ -1,0 +1,32 @@
+Package: docker.io
+Version: 28.5.1-1
+Architecture: riscv64
+Maintainer: Bruno Verachten <gounthar@gmail.com>
+Installed-Size: 131197
+Depends: iptables, systemd
+Recommends: ca-certificates, git, xz-utils, docker-cli
+Suggests: cgroupfs-mount | cgroup-lite
+Conflicts: containerd, docker, docker-ce, docker-engine, runc
+Replaces: docker-engine-riscv64
+Provides: containerd, docker-engine, runc
+Homepage: https://github.com/gounthar/docker-for-riscv64
+Priority: optional
+Section: admin
+Filename: pool/main/d/docker.io/docker.io_28.5.1-1_riscv64.deb
+Size: 31221424
+SHA256: 1f2b0a768996f3f2e2fe942755c32a8f7d73b3912353b52d699765b536702899
+SHA1: e86ce3519287e0ac01a3279f11ed4c97677e820d
+MD5sum: 2adf0e3b38fbc5bb2b1d12352365ad8f
+Description: Docker Engine for RISC-V64 architecture
+ Docker is an open-source project to easily create lightweight, portable,
+ self-sufficient containers from any application. The same container that a
+ developer builds and tests on a laptop can run at scale, in production, on
+ VMs, bare metal, OpenStack clusters, public clouds and more.
+ .
+ This package contains the Docker Engine daemon (dockerd) and docker-proxy,
+ built natively for RISC-V64 architecture from the official Moby project
+ source code.
+ .
+ This is an unofficial build specifically for RISC-V64 systems running
+ Debian Trixie.
+
