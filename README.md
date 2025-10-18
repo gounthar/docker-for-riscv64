@@ -8,6 +8,8 @@ This project provides pre-built Docker Engine binaries for RISC-V64 Linux system
 
 **Key Features:**
 - Native RISC-V64 compilation
+- Debian APT repository for easy installation
+- Automated `.deb` package creation
 - Automated weekly builds
 - Based on official Moby releases
 - Built on Debian Trixie
@@ -17,11 +19,51 @@ This project provides pre-built Docker Engine binaries for RISC-V64 Linux system
 
 ### Installation
 
+#### Option 1: APT Repository (Recommended)
+
+Install from our Debian APT repository:
+
+```bash
+# Add repository
+echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+  sudo tee /etc/apt/sources.list.d/docker-riscv64.list
+
+# Update and install
+sudo apt-get update
+sudo apt-get install docker.io
+
+# Add your user to docker group
+sudo usermod -aG docker $USER
+
+# Enable and start service
+sudo systemctl enable --now docker
+```
+
+**Note**: Log out and back in for group changes to take effect.
+
+#### Option 2: Direct .deb Package
+
+Download and install the `.deb` package:
+
+```bash
+# Get latest release
+VERSION="v28.5.1-riscv64"
+
+# Download package
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/docker.io_${VERSION#v}_riscv64.deb"
+
+# Install
+sudo dpkg -i docker.io_*.deb
+sudo apt-get install -f  # Fix any dependencies
+```
+
+#### Option 3: Manual Binary Installation
+
 Download the latest release binaries:
 
 ```bash
 # Get latest version from https://github.com/gounthar/docker-for-riscv64/releases
-VERSION="v1.0.0"
+VERSION="v28.5.1-riscv64"
 
 # Download binaries
 for binary in dockerd docker-proxy containerd runc containerd-shim-runc-v2; do
@@ -77,11 +119,13 @@ docker info
 ### Components
 
 Each release includes:
+- **docker.io_*.deb** (~140MB) - Complete Debian package (all components)
 - **dockerd** (73MB) - Docker Engine daemon
 - **docker-proxy** (2.4MB) - Docker network proxy
 - **containerd** (37MB) - Container runtime
 - **runc** (15MB) - OCI runtime
 - **containerd-shim-runc-v2** (13MB) - Containerd shim
+- **VERSIONS.txt** - Component version information
 
 ## Building from Source
 
@@ -140,7 +184,8 @@ See build logs and details in the repository's GitHub Actions workflows.
 - ✅ **First release**: v1.0.0 (October 2025)
 - ✅ **Automated builds**: Active (weekly + release tracking)
 - ✅ **CI/CD**: Self-hosted RISC-V64 runner operational
-- 🚧 **Debian packaging**: Planned (Issue #2)
+- ✅ **Debian packaging**: Complete with APT repository
+- ✅ **APT repository**: https://gounthar.github.io/docker-for-riscv64
 - 🚧 **Extended testing**: Community feedback welcome
 
 ## Contributing
@@ -148,9 +193,10 @@ See build logs and details in the repository's GitHub Actions workflows.
 Contributions are welcome! Areas where help is needed:
 
 - Testing on different RISC-V64 hardware
-- Debian/RPM package creation
+- RPM package creation (Fedora/SUSE)
 - Documentation improvements
 - Bug reports and fixes
+- Testing APT repository on various Debian-based RISC-V64 systems
 
 **Before contributing:**
 1. Check existing issues and pull requests
