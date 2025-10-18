@@ -1,3 +1,20 @@
+docker.io (28.5.1-1) trixie; urgency=medium
+
+  * New upstream release Docker v28.5.1
+  * Package renamed from docker-engine-riscv64 to docker.io (standard name)
+  * Complete runtime stack included:
+    - dockerd (Docker Engine daemon v28.5.1)
+    - docker-proxy (network proxy)
+    - containerd v1.7.28 (container runtime)
+    - runc v1.3.0 (OCI runtime)
+    - containerd-shim-runc-v2 (containerd shim)
+  * Built from official moby v28.5.1 release
+  * Built on Debian Trixie with Go 1.25.3
+  * Native RISC-V64 compilation on BananaPi F3
+  * Designed for APT repository deployment
+
+ -- Bruno Verachten <gounthar@gmail.com>  Fri, 18 Oct 2025 14:30:00 +0200
+
 docker-engine-riscv64 (1.0.0-1) trixie; urgency=medium
 
   * Initial Debian package release for RISC-V64

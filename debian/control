@@ -12,16 +12,14 @@ Package: docker.io
 Architecture: riscv64
 Depends: ${shlibc:Depends}, ${misc:Depends},
          iptables,
-         containerd (>= 1.7.0),
-         runc (>= 1.1.0),
          systemd
 Recommends: ca-certificates,
             git,
             xz-utils,
             docker-cli
 Suggests: cgroupfs-mount | cgroup-lite
-Conflicts: docker, docker-ce, docker-engine
-Provides: docker-engine
+Conflicts: docker, docker-ce, docker-engine, containerd, runc
+Provides: docker-engine, containerd, runc
 Replaces: docker-engine-riscv64
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,

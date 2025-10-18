@@ -12,9 +12,14 @@ override_dh_auto_build:
 	# Nothing to build here
 
 override_dh_auto_install:
-	# Install binaries
+	# Install Docker binaries
 	install -D -m 0755 dockerd debian/docker.io/usr/bin/dockerd
 	install -D -m 0755 docker-proxy debian/docker.io/usr/bin/docker-proxy
+
+	# Install container runtime binaries
+	install -D -m 0755 containerd debian/docker.io/usr/bin/containerd
+	install -D -m 0755 runc debian/docker.io/usr/bin/runc
+	install -D -m 0755 containerd-shim-runc-v2 debian/docker.io/usr/bin/containerd-shim-runc-v2
 
 	# Install systemd service files
 	install -D -m 0644 debian/docker.service debian/docker.io/lib/systemd/system/docker.service
