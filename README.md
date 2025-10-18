@@ -20,23 +20,19 @@ This project provides pre-built Docker Engine binaries for RISC-V64 Linux system
 Download the latest release binaries:
 
 ```bash
-# Download latest release
+# Get latest version from https://github.com/gounthar/docker-for-riscv64/releases
 VERSION="v1.0.0"
-wget https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/dockerd
-wget https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/docker-proxy
-wget https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/containerd
-wget https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/runc
-wget https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/containerd-shim-runc-v2
+
+# Download binaries
+for binary in dockerd docker-proxy containerd runc containerd-shim-runc-v2; do
+  wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/${binary}"
+done
 
 # Make executable
 chmod +x dockerd docker-proxy containerd runc containerd-shim-runc-v2
 
 # Install (requires root)
-sudo install -m 755 dockerd /usr/local/bin/
-sudo install -m 755 docker-proxy /usr/local/bin/
-sudo install -m 755 containerd /usr/local/bin/
-sudo install -m 755 runc /usr/local/bin/
-sudo install -m 755 containerd-shim-runc-v2 /usr/local/bin/
+sudo install -m 755 dockerd docker-proxy containerd runc containerd-shim-runc-v2 /usr/local/bin/
 ```
 
 See [INSTALL.md](INSTALL.md) for detailed installation instructions.
@@ -120,7 +116,7 @@ docker build \
 
 # Extract binaries from the build
 docker run --rm -v $(pwd):/out <image-id> \
-  cp /usr/local/bin/dockerd /out/
+  sh -c 'cp /usr/local/bin/dockerd /usr/local/bin/docker-proxy /out/'
 ```
 
 See build logs and details in the repository's GitHub Actions workflows.
