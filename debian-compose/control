@@ -11,9 +11,9 @@ Package: docker-compose-plugin
 Architecture: riscv64
 Depends: ${misc:Depends}, ${shlibs:Depends}
 Recommends: docker-cli
-Conflicts: docker-compose (<< 2.0)
-Replaces: docker-compose (<< 2.0)
-Breaks: docker-compose (<< 2.0)
+Conflicts: docker-compose
+Replaces: docker-compose
+Breaks: docker-compose
 Provides: docker-compose
 Description: Docker Compose v2 plugin for RISC-V64
  Docker Compose is a tool for running multi-container applications on
