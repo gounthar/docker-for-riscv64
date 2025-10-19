@@ -88,6 +88,18 @@ jobs:
 
           ls -lh *.deb
 
+      - name: Import GPG key for signing
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "Importing GPG key for package signing..."
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+          # List imported keys
+          gpg --list-secret-keys
+
+          echo "GPG key imported successfully"
+
       - name: Add package to repository
         run: |
           echo "Adding package(s) to APT repository..."
