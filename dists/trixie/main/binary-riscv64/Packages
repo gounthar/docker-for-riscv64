@@ -25,6 +25,32 @@ Description: Container runtime for RISC-V64 architecture
  .
  Built on BananaPi F3 running Armbian Trixie.
 
+Package: docker-compose-plugin
+Version: 2.40.1-riscv64-1
+Architecture: riscv64
+Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
+Installed-Size: 61814
+Recommends: docker-cli
+Conflicts: docker-compose (<< 2.0)
+Breaks: docker-compose (<< 2.0)
+Replaces: docker-compose (<< 2.0)
+Provides: docker-compose
+Homepage: https://github.com/docker/compose
+Priority: optional
+Section: admin
+Filename: pool/main/d/docker-compose-plugin/docker-compose-plugin_2.40.1-riscv64-1_riscv64.deb
+Size: 12005808
+SHA256: a1761eec757a4ae4ac5075442544356db63ecd3c25448e7e53cd7973a24fc44f
+SHA1: 7b0b45baf884fb8d4088a9e19420eef5484d546b
+MD5sum: 3b08483bc2e628da93e7bcd3c95659ea
+Description: Docker Compose v2 plugin for RISC-V64
+ Docker Compose is a tool for running multi-container applications on
+ Docker defined using the Compose file format. A Compose file is used
+ to define how one or more containers that make up your application
+ are configured.
+ .
+ This package provides pre-built binaries for RISC-V64 architecture.
+
 Package: docker.io
 Version: 28.5.1-2
 Architecture: riscv64
