@@ -79,7 +79,8 @@ jobs:
           # Copy packaging and update changelog with dch
           cp -r debian-compose debian
           cd debian
-          dch --newversion "${VERSION}-riscv64-1" \
+          dch --check-dirname-level 0 \
+              --newversion "${VERSION}-riscv64-1" \
               --distribution trixie \
               "RISC-V64 prebuilt docker-compose plugin ${VERSION}"
           cd ..
