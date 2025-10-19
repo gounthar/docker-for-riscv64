@@ -1,0 +1,144 @@
+name: Weekly Docker CLI RISC-V64 Build
+
+on:
+  schedule:
+    # Run every Sunday at 04:00 UTC (1 hour after compose build)
+    - cron: '0 4 * * 0'
+  workflow_dispatch:
+    inputs:
+      cli_ref:
+        description: 'CLI ref to build (branch/tag/commit)'
+        required: false
+        default: 'master'
+
+permissions:
+  contents: write
+
+jobs:
+  build-cli:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Update cli submodule
+        run: |
+          cd cli
+          git fetch origin --tags
+          git checkout ${{ github.event.inputs.cli_ref || 'master' }}
+          # Pull only if it's a branch (not a tag)
+          if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.inputs.cli_ref || 'master' }}; then
+            git pull origin ${{ github.event.inputs.cli_ref || 'master' }}
+          fi
+
+      - name: Build docker-cli binary
+        run: |
+          set -euo pipefail
+          cd cli
+
+          # Set version from git tag
+          VERSION=$(git describe --tags --always)
+          echo "Building CLI version: $VERSION"
+
+          # Build with version info and explicit GOOS/GOARCH
+          export GOOS=linux GOARCH=riscv64 CGO_ENABLED=0
+          make -f docker.Makefile VERSION="$VERSION" binary
+
+          # Verify binary exists
+          ls -lh build/docker
+
+      - name: Extract binary
+        run: |
+          DATE=$(date +%Y%m%d)
+          mkdir -p release-cli-$DATE
+
+          # Copy binary
+          cp cli/build/docker release-cli-$DATE/
+          chmod +x release-cli-$DATE/docker
+
+          # Get version
+          ./release-cli-$DATE/docker --version > release-cli-$DATE/VERSION.txt 2>&1 || echo "Version command not available"
+
+          ls -lh release-cli-$DATE/
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Ensure gh is installed
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y gh || true
+          fi
+
+          DATE=$(date +%Y%m%d)
+          CLI_REF="${{ github.event.inputs.cli_ref || 'master' }}"
+
+          # Get version from submodule
+          cd cli
+          CLI_VERSION=$(git describe --tags --always)
+          cd ..
+
+          # Determine release version (handle both v28.5.1 and 28.5.1 formats)
+          if [[ "$CLI_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Official release: v28.5.1 or 28.5.1 -> cli-v28.5.1-riscv64
+            CLEAN_REF="${CLI_REF#v}"
+            RELEASE_VERSION="cli-v${CLEAN_REF}-riscv64"
+            RELEASE_TITLE="Docker CLI v${CLEAN_REF} for RISC-V64"
+            VERSION_INFO="**Docker CLI Version:** v${CLEAN_REF}"
+          else
+            # Development build
+            RELEASE_VERSION="cli-v${DATE}-dev"
+            RELEASE_TITLE="Docker CLI RISC-V64 Development Build ${DATE}"
+            VERSION_INFO="**CLI Branch:** ${CLI_REF}
+          **CLI Version:** ${CLI_VERSION}"
+          fi
+
+          cat > release-notes.md << EOF
+          Automated build of Docker CLI for RISC-V64
+
+          ${VERSION_INFO}
+          **Build Date:** $(date -u +%Y-%m-%d)
+          **Architecture:** riscv64
+
+          **Installation:**
+          \`\`\`bash
+          # Download binary
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/docker
+          chmod +x docker
+
+          # Install to system
+          sudo mv docker /usr/bin/
+          # Or install to local bin
+          mv docker ~/.local/bin/
+
+          # Verify
+          docker --version
+          \`\`\`
+
+          **Build Command:**
+          \`\`\`bash
+          cd cli
+          make -f docker.Makefile VERSION=${CLI_VERSION} binary
+          \`\`\`
+
+          Automated build on RISC-V64 hardware
+          EOF
+
+          # For development builds, delete existing release if it exists
+          if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
+            echo "Checking for existing development release..."
+            if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+              echo "Deleting existing release ${RELEASE_VERSION}..."
+              gh release delete "${RELEASE_VERSION}" --yes
+            fi
+          fi
+
+          gh release create "${RELEASE_VERSION}" \
+            --title "${RELEASE_TITLE}" \
+            --notes-file release-notes.md \
+            release-cli-$DATE/*

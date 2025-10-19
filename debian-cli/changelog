@@ -1,0 +1,7 @@
+docker-cli (28.5.1-riscv64-1) trixie; urgency=medium
+
+  * Initial RISC-V64 build of Docker CLI v28.5.1
+  * Pre-built binary for RISC-V64 architecture
+  * Based on official Docker CLI v28.5.1
+
+ -- Bruno Verachten <bruno.verachten@gmail.com>  Sat, 19 Oct 2025 12:00:00 +0000
