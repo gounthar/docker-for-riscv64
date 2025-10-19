@@ -1,5 +1,124 @@
 # Maintainer Guide
 
+## GPG Package Signing
+
+### Overview
+
+The APT repository uses GPG signing to ensure package authenticity and integrity. All packages and repository metadata are signed with a dedicated GPG key.
+
+**Current GPG Key:**
+- Key ID: `56188341425B007407229B48FB1963FC3575A39D`
+- Key Name: Docker RISC-V64 Repository
+- Email: docker-riscv64-bot@noreply.github.com
+- Fingerprint: `5618 8341 425B 0074 0722  9B48 FB19 63FC 3575 A39D`
+
+### GPG Key Storage
+
+The GPG private key is securely stored as a GitHub Actions secret:
+
+- **Secret Name**: `GPG_PRIVATE_KEY`
+- **Location**: Repository Settings → Secrets and variables → Actions
+- **Format**: ASCII-armored private key
+- **Usage**: Automatically imported during APT repository updates
+
+### Automatic Signing Process
+
+Package signing happens automatically in the `update-apt-repo.yml` workflow:
+
+1. Workflow checks out apt-repo branch
+2. GPG private key is imported from GitHub secrets
+3. Packages are added to repository with `reprepro`
+4. `reprepro` automatically signs packages using the imported key
+5. Signed InRelease and Release.gpg files are generated
+6. Changes are committed and pushed to apt-repo branch
+
+### Verifying Signatures
+
+Users verify package signatures by installing the public key:
+
+```bash
+wget -qO- https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/docker-riscv64.gpg | \
+  sudo tee /usr/share/keyrings/docker-riscv64.gpg > /dev/null
+```
+
+### GPG Key Rotation (If Needed)
+
+If the GPG key needs to be rotated:
+
+1. **Generate new GPG key:**
+```bash
+cat > gpg-gen-key.batch <<'EOF'
+Key-Type: RSA
+Key-Length: 4096
+Name-Real: Docker RISC-V64 Repository
+Name-Email: docker-riscv64-bot@noreply.github.com
+Expire-Date: 0
+%no-protection
+%commit
+EOF
+
+gpg --batch --gen-key gpg-gen-key.batch
+```
+
+2. **Export keys:**
+```bash
+# Get the key ID
+gpg --list-keys "Docker RISC-V64 Repository"
+
+# Export private key (for GitHub secrets)
+gpg --export-secret-keys --armor <KEY_ID> > private-key.asc
+
+# Export public key (for users)
+gpg --export --armor <KEY_ID> > public-key.asc
+```
+
+3. **Update GitHub secret:**
+```bash
+cat private-key.asc | gh secret set GPG_PRIVATE_KEY -R gounthar/docker-for-riscv64
+```
+
+4. **Update conf/distributions:**
+```bash
+# On apt-repo branch
+git checkout apt-repo
+# Edit conf/distributions and change SignWith: <NEW_KEY_ID>
+git commit -m "chore: update GPG signing key"
+git push
+```
+
+5. **Publish new public key:**
+```bash
+gh release edit gpg-key --notes "Updated GPG public key"
+gh release upload gpg-key public-key.asc --clobber
+```
+
+6. **Notify users** to update their keyring
+
+### Manual Signing (Emergency)
+
+If automatic signing fails, manually sign the repository:
+
+```bash
+# On apt-repo branch
+cd /tmp
+git clone -b apt-repo https://github.com/gounthar/docker-for-riscv64 apt-repo
+cd apt-repo
+
+# Import your GPG key (if not already in keyring)
+gpg --import /path/to/private-key.asc
+
+# Export the repository (re-signs all packages)
+reprepro -b . export trixie
+
+# Verify signatures
+gpg --verify dists/trixie/InRelease
+
+# Commit and push
+git add dists/
+git commit -m "chore: re-sign repository"
+git push origin apt-repo
+```
+
 ## APT Repository Management
 
 ### Automatic Updates (Preferred)
@@ -97,11 +216,15 @@ gh workflow run build-debian-package.yml -f release_tag=v28.5.1-riscv64
 After adding a package to the APT repository:
 
 ```bash
-# 1. Add repository (if not already added)
-echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+# 1. Install GPG key (if not already added)
+wget -qO- https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/docker-riscv64.gpg | \
+  sudo tee /usr/share/keyrings/docker-riscv64.gpg > /dev/null
+
+# 2. Add signed repository (if not already added)
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
   sudo tee /etc/apt/sources.list.d/docker-riscv64.list
 
-# 2. Update package list
+# 3. Update package list
 sudo apt-get update
 
 # 3. Check available version

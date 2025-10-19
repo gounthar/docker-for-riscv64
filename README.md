@@ -20,15 +20,38 @@ This project provides pre-built Docker Engine, CLI, and Compose binaries for RIS
 
 ## Quick Start
 
+### Repository Security
+
+Our APT repository uses GPG signing to ensure package authenticity and integrity. To verify package signatures:
+
+```bash
+# Download and install the repository GPG key
+wget -qO- https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/docker-riscv64.gpg | \
+  sudo tee /usr/share/keyrings/docker-riscv64.gpg > /dev/null
+
+# Add signed repository
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+  sudo tee /etc/apt/sources.list.d/docker-riscv64.list
+```
+
+**GPG Key Information:**
+- Key ID: `56188341425B007407229B48FB1963FC3575A39D`
+- Key Name: Docker RISC-V64 Repository
+- Fingerprint: `5618 8341 425B 0074 0722  9B48 FB19 63FC 3575 A39D`
+
 ### Installation
 
 #### Option 1: APT Repository (Recommended)
 
-Install from our Debian APT repository:
+Install from our signed Debian APT repository:
 
 ```bash
-# Add repository
-echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+# Add GPG key
+wget -qO- https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/docker-riscv64.gpg | \
+  sudo tee /usr/share/keyrings/docker-riscv64.gpg > /dev/null
+
+# Add signed repository
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
   sudo tee /etc/apt/sources.list.d/docker-riscv64.list
 
 # Update and install
@@ -100,8 +123,11 @@ The Docker CLI (command-line interface) is available as a separate package:
 #### Option 1: APT Repository (Recommended)
 
 ```bash
-# Add repository (if not already added)
-echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+# Add GPG key and repository (if not already added)
+wget -qO- https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/docker-riscv64.gpg | \
+  sudo tee /usr/share/keyrings/docker-riscv64.gpg > /dev/null
+
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
   sudo tee /etc/apt/sources.list.d/docker-riscv64.list
 
 # Install CLI
@@ -148,8 +174,11 @@ Docker Compose v2 is available as a separate plugin package:
 #### Option 1: APT Repository (Recommended)
 
 ```bash
-# Add repository (if not already added)
-echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+# Add GPG key and repository (if not already added)
+wget -qO- https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/docker-riscv64.gpg | \
+  sudo tee /usr/share/keyrings/docker-riscv64.gpg > /dev/null
+
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
   sudo tee /etc/apt/sources.list.d/docker-riscv64.list
 
 # Install compose plugin
