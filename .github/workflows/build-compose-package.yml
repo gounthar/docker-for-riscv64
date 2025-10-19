@@ -76,10 +76,15 @@ jobs:
           VERSION="$(echo "$RELEASE_TAG" | sed 's/^compose-v//; s/-riscv64$//')"
           echo "Package version: $VERSION"
 
+          # Set DEBEMAIL to avoid interactive prompt
+          export DEBEMAIL="github-actions[bot]@users.noreply.github.com"
+          export DEBFULLNAME="GitHub Actions"
+
           # Copy packaging and update changelog with dch
           cp -r debian-compose debian
           cd debian
           dch --check-dirname-level 0 \
+              --force-distribution \
               --newversion "${VERSION}-riscv64-1" \
               --distribution trixie \
               "RISC-V64 prebuilt docker-compose plugin ${VERSION}"
