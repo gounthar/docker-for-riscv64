@@ -2,13 +2,13 @@ name: Update APT Repository
 
 on:
   workflow_run:
-    workflows: ["Build Debian Package"]
+    workflows: ["Build Debian Package", "Build Docker Compose Debian Package"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag containing the .deb package'
+        description: 'Release tag containing the .deb package (v*-riscv64 or compose-v*-riscv64)'
         required: true
         default: 'v28.5.1-riscv64'
 
@@ -38,44 +38,63 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
-            # Find the latest -riscv64 release
+            # Find the latest -riscv64 release (docker or compose)
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 | \
-                          grep -E 'v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -E '(compose-)?v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
                           awk '{print $1}')
           fi
 
+          # Determine package type
+          if [[ "$RELEASE_TAG" =~ ^compose- ]]; then
+            PACKAGE_TYPE="compose"
+            echo "package_type=compose" >> $GITHUB_OUTPUT
+          else
+            PACKAGE_TYPE="docker"
+            echo "package_type=docker" >> $GITHUB_OUTPUT
+          fi
+
           echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
-          echo "📦 Processing release: $RELEASE_TAG"
+          echo "📦 Processing release: $RELEASE_TAG (type: $PACKAGE_TYPE)"
 
       - name: Download .deb package
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           RELEASE_TAG="${{ steps.release_info.outputs.release_tag }}"
-          echo "Downloading docker.io package from $RELEASE_TAG..."
+          PACKAGE_TYPE="${{ steps.release_info.outputs.package_type }}"
 
-          # Download all .deb files from the release
-          gh release download $RELEASE_TAG -p "docker.io_*.deb" --repo gounthar/docker-for-riscv64 || {
+          if [ "$PACKAGE_TYPE" = "compose" ]; then
+            echo "Downloading docker-compose-plugin package from $RELEASE_TAG..."
+            PATTERN="docker-compose-plugin_*.deb"
+          else
+            echo "Downloading docker.io package from $RELEASE_TAG..."
+            PATTERN="docker.io_*.deb"
+          fi
+
+          # Download all matching .deb files from the release
+          gh release download $RELEASE_TAG -p "$PATTERN" --repo gounthar/docker-for-riscv64 || {
             echo "❌ No .deb file found in release $RELEASE_TAG"
             echo "Available assets:"
             gh release view $RELEASE_TAG --repo gounthar/docker-for-riscv64
             exit 1
           }
 
-          ls -lh docker.io_*.deb
+          ls -lh *.deb
 
       - name: Add package to repository
         run: |
-          echo "Adding package to APT repository..."
+          echo "Adding package(s) to APT repository..."
 
-          # Add the package (reprepro will handle duplicates)
-          for deb in docker.io_*.deb; do
-            echo "Processing: $deb"
-            reprepro -b . includedeb trixie "$deb" || {
-              echo "⚠️  Package already in repository or error occurred"
-              reprepro -b . list trixie
-            }
+          # Add all .deb packages (reprepro will handle duplicates)
+          for deb in *.deb; do
+            if [ -f "$deb" ]; then
+              echo "Processing: $deb"
+              reprepro -b . includedeb trixie "$deb" || {
+                echo "⚠️  Package already in repository or error occurred"
+                reprepro -b . list trixie
+              }
+            fi
           done
 
           echo ""
@@ -88,7 +107,18 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           RELEASE_TAG="${{ steps.release_info.outputs.release_tag }}"
-          VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
+          PACKAGE_TYPE="${{ steps.release_info.outputs.package_type }}"
+
+          # Extract version from tag
+          if [ "$PACKAGE_TYPE" = "compose" ]; then
+            VERSION=$(echo $RELEASE_TAG | sed 's/^compose-v//; s/-riscv64$//')
+            PACKAGE_NAME="docker-compose-plugin"
+            INSTALL_CMD="docker-compose-plugin"
+          else
+            VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
+            PACKAGE_NAME="docker.io"
+            INSTALL_CMD="docker.io"
+          fi
 
           # Check if there are changes
           if git diff --quiet dists pool 2>/dev/null; then
@@ -97,9 +127,9 @@ jobs:
           fi
 
           git add dists pool
-          git commit -m "Add docker.io $VERSION from release $RELEASE_TAG" \
+          git commit -m "Add $PACKAGE_NAME $VERSION from release $RELEASE_TAG" \
                      -m "Automated update from GitHub Actions." \
-                     -m "Package: docker.io_${VERSION}-1_riscv64.deb" \
+                     -m "Package: ${PACKAGE_NAME}_${VERSION}-*_riscv64.deb" \
                      -m "Release: $RELEASE_TAG" \
                      -m "Workflow: ${{ github.workflow }}" \
                      -m "Run: ${{ github.run_id }}"
@@ -112,4 +142,4 @@ jobs:
           echo ""
           echo "Users can now install with:"
           echo "  sudo apt-get update"
-          echo "  sudo apt-get install docker.io"
+          echo "  sudo apt-get install $INSTALL_CMD"
