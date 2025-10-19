@@ -1,0 +1,137 @@
+name: Weekly Docker Compose RISC-V64 Build
+
+on:
+  schedule:
+    # Run every Sunday at 03:00 UTC (1 hour after Docker build)
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      compose_ref:
+        description: 'Compose ref to build (branch/tag/commit)'
+        required: false
+        default: 'main'
+
+jobs:
+  build-compose:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - name: Update compose submodule
+        run: |
+          cd compose
+          git fetch origin --tags
+          git checkout ${{ github.event.inputs.compose_ref || 'main' }}
+          # Pull only if it's a branch (not a tag)
+          if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.inputs.compose_ref || 'main' }}; then
+            git pull origin ${{ github.event.inputs.compose_ref || 'main' }}
+          fi
+
+      - name: Build docker-compose binary
+        run: |
+          cd compose
+
+          # Set version from git tag
+          VERSION=$(git describe --tags --always)
+          echo "Building compose version: $VERSION"
+
+          # Build with version info
+          make VERSION=$VERSION
+
+          # Verify binary exists
+          ls -lh bin/build/docker-compose
+
+      - name: Extract binary
+        run: |
+          DATE=$(date +%Y%m%d)
+          mkdir -p release-compose-$DATE
+
+          # Copy binary
+          cp compose/bin/build/docker-compose release-compose-$DATE/
+          chmod +x release-compose-$DATE/docker-compose
+
+          # Get version
+          ./release-compose-$DATE/docker-compose version > release-compose-$DATE/VERSION.txt 2>&1 || echo "Version command not available"
+
+          ls -lh release-compose-$DATE/
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DATE=$(date +%Y%m%d)
+          COMPOSE_REF="${{ github.event.inputs.compose_ref || 'main' }}"
+
+          # Get version from submodule
+          cd compose
+          COMPOSE_VERSION=$(git describe --tags --always)
+          cd ..
+
+          # Determine release version
+          if [[ "$COMPOSE_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Official release: v2.26.1 -> compose-v2.26.1-riscv64
+            RELEASE_VERSION="compose-${COMPOSE_REF}-riscv64"
+            RELEASE_TITLE="Docker Compose ${COMPOSE_REF} for RISC-V64"
+            VERSION_INFO="**Docker Compose Version:** ${COMPOSE_REF}"
+          else
+            # Development build
+            RELEASE_VERSION="compose-v${DATE}-dev"
+            RELEASE_TITLE="Docker Compose RISC-V64 Development Build ${DATE}"
+            VERSION_INFO="**Compose Branch:** ${COMPOSE_REF}
+          **Compose Version:** ${COMPOSE_VERSION}"
+          fi
+
+          cat > release-notes.md << EOF
+          Automated build of Docker Compose v2 plugin for RISC-V64
+
+          ${VERSION_INFO}
+          **Build Date:** $(date -u +%Y-%m-%d)
+          **Architecture:** riscv64
+
+          **Installation:**
+          \`\`\`bash
+          # Download binary
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/docker-compose
+          chmod +x docker-compose
+
+          # Install as Docker CLI plugin
+          sudo mkdir -p /usr/libexec/docker/cli-plugins
+          sudo mv docker-compose /usr/libexec/docker/cli-plugins/
+
+          # Verify
+          docker compose version
+          \`\`\`
+
+          **Backward Compatibility:**
+          \`\`\`bash
+          # Create symlink for legacy docker-compose command
+          sudo ln -s /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
+          docker-compose version
+          \`\`\`
+
+          **Build Command:**
+          \`\`\`bash
+          cd compose
+          make VERSION=${COMPOSE_VERSION}
+          \`\`\`
+
+          Automated build on RISC-V64 hardware (BananaPi F3)
+          EOF
+
+          # For development builds, delete existing release if it exists
+          if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
+            echo "Checking for existing development release..."
+            if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+              echo "Deleting existing release ${RELEASE_VERSION}..."
+              gh release delete "${RELEASE_VERSION}" --yes
+            fi
+          fi
+
+          gh release create "${RELEASE_VERSION}" \
+            --title "${RELEASE_TITLE}" \
+            --notes-file release-notes.md \
+            release-compose-$DATE/*
