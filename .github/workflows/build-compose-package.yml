@@ -1,0 +1,124 @@
+name: Build Docker Compose Debian Package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Compose release tag'
+        required: true
+        default: 'compose-v2.40.1-riscv64'
+
+permissions:
+  contents: write
+
+jobs:
+  build-deb:
+    runs-on: [self-hosted, riscv64]
+    if: startsWith(github.event.release.tag_name, 'compose-') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y debhelper dh-make dpkg-dev lintian devscripts
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get install -y gh || true
+          fi
+
+      - name: Download compose binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ github.event.release.tag_name || github.event.inputs.release_tag }}"
+          echo "Building package for release: $RELEASE_TAG"
+
+          # Download binary
+          gh release download $RELEASE_TAG -p docker-compose
+          chmod +x docker-compose
+
+          # Verify binary architecture
+          file ./docker-compose || true
+          readelf -h ./docker-compose 2>/dev/null | sed -n '1,5p' || true
+          ./docker-compose version || echo "Version command not available yet"
+
+          ls -lh docker-compose
+
+      - name: Update package version in changelog
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ github.event.release.tag_name || github.event.inputs.release_tag }}"
+          VERSION="$(echo "$RELEASE_TAG" | sed 's/^compose-v//; s/-riscv64$//')"
+          echo "Package version: $VERSION"
+
+          # Copy packaging and update changelog with dch
+          cp -r debian-compose debian
+          dch --chdir debian \
+              --newversion "${VERSION}-riscv64-1" \
+              --distribution trixie \
+              "RISC-V64 prebuilt docker-compose plugin ${VERSION}"
+
+      - name: Build package
+        run: |
+          # Build package (debian/ already created in previous step)
+          dpkg-buildpackage -us -uc -b
+
+          ls -lh ../*.deb
+
+      - name: Run lintian checks
+        run: |
+          lintian --info --display-info ../*.deb || true
+
+      - name: Package info
+        run: |
+          for deb in ../*.deb; do
+            echo "============================================"
+            echo "=== Package: $(basename $deb) ==="
+            echo "============================================"
+            echo ""
+            echo "=== Package Contents ==="
+            dpkg-deb --contents "$deb" | head -50
+            echo ""
+            echo "=== Package Info ==="
+            dpkg-deb --info "$deb"
+            echo ""
+            echo "=== Package Size ==="
+            ls -lh "$deb"
+            echo ""
+          done
+
+      - name: Upload packages to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ github.event.release.tag_name || github.event.inputs.release_tag }}"
+
+          echo "Uploading packages to release $RELEASE_TAG"
+          echo ""
+
+          for deb in ../*.deb; do
+            echo "Uploading $(basename $deb)..."
+            for i in {1..3}; do
+              gh release upload "$RELEASE_TAG" "$deb" --clobber && break
+              echo "Retry $i..."
+              sleep 3
+            done
+          done
+
+          echo ""
+          echo "✅ Docker Compose Debian package uploaded successfully!"
+          echo ""
+          echo "Packages built:"
+          ls -lh ../*.deb
+          echo ""
+          echo "Install with:"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/docker-compose-plugin_*.deb"
+          echo "  sudo dpkg -i docker-compose-plugin_*.deb"
+          echo "  docker compose version"

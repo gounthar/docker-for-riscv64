@@ -1,2 +1,9 @@
 /venv/
 /.idea/
+CLAUDE.md
+CONTEXT.md
+.env
+journal/
+.last_article_timestamp
+DOCKER-COMPOSE-PLAN.md
+*-PLAN.md

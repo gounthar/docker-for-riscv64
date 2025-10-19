@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+# Skip build - we use pre-built binary
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	# Binary will be copied by .install file
+
+override_dh_auto_clean:
+	# Nothing to clean for prebuilt binary
+
+override_dh_strip:
+	dh_strip --no-automatic-dbgsym
+
+override_dh_dwz:
+	# Skip dwz for Go binaries

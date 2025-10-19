@@ -4,3 +4,6 @@
 [submodule "upstream-debian-docker"]
 	path = upstream-debian-docker
 	url = https://salsa.debian.org/docker-team/docker.git
+[submodule "compose"]
+	path = compose
+	url = https://github.com/docker/compose.git

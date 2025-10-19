@@ -1,17 +1,19 @@
-# Docker Engine for RISC-V64
+# Docker Engine & Compose for RISC-V64
 
-Native Docker Engine binaries built for RISC-V64 architecture, enabling containerization on RISC-V hardware.
+Native Docker Engine and Docker Compose binaries built for RISC-V64 architecture, enabling containerization on RISC-V hardware.
 
 ## Overview
 
-This project provides pre-built Docker Engine binaries for RISC-V64 Linux systems. Built from the official [Moby](https://github.com/moby/moby) source with minimal patches for RISC-V compatibility, these binaries enable running Docker containers natively on RISC-V hardware.
+This project provides pre-built Docker Engine and Docker Compose binaries for RISC-V64 Linux systems. Built from official [Moby](https://github.com/moby/moby) and [Compose](https://github.com/docker/compose) sources with minimal patches for RISC-V compatibility, these binaries enable running Docker containers and multi-container applications natively on RISC-V hardware.
 
 **Key Features:**
 - Native RISC-V64 compilation on BananaPi F3 (Armbian Trixie)
+- Docker Engine (dockerd, containerd, runc)
+- Docker Compose v2 plugin
 - Debian APT repository for easy installation
 - Automated `.deb` package creation
 - Automated weekly builds
-- Based on official Moby releases
+- Based on official Moby and Compose releases
 - Built and tested on Debian Trixie / Armbian Trixie
 - Minimal patches for RISC-V compatibility
 
@@ -90,6 +92,90 @@ docker version
 docker info
 ```
 
+### Docker Compose Installation
+
+Docker Compose v2 is available as a separate plugin package:
+
+#### Option 1: APT Repository (Recommended)
+
+```bash
+# Add repository (if not already added)
+echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+  sudo tee /etc/apt/sources.list.d/docker-riscv64.list
+
+# Install compose plugin
+sudo apt-get update
+sudo apt-get install docker-compose-plugin
+
+# Verify
+docker compose version
+```
+
+#### Option 2: Direct .deb Package
+
+```bash
+# Get latest compose release
+COMPOSE_VERSION="compose-v2.40.1-riscv64"
+
+# Download package
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${COMPOSE_VERSION}/docker-compose-plugin_*.deb"
+
+# Install
+sudo dpkg -i docker-compose-plugin_*.deb
+sudo apt-get install -f  # Fix any dependencies
+```
+
+#### Option 3: Manual Binary Installation
+
+```bash
+# Download binary
+COMPOSE_VERSION="compose-v2.40.1-riscv64"
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${COMPOSE_VERSION}/docker-compose"
+
+# Install as Docker CLI plugin
+sudo mkdir -p /usr/libexec/docker/cli-plugins
+sudo mv docker-compose /usr/libexec/docker/cli-plugins/
+sudo chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+
+# Verify
+docker compose version
+```
+
+**Backward Compatibility:**
+
+The package automatically creates a symlink at `/usr/bin/docker-compose` for backward compatibility with v1 commands:
+
+```bash
+# Both work
+docker compose version
+docker-compose version
+```
+
+### Using Docker Compose
+
+```bash
+# Create a sample compose.yml
+cat > compose.yml << 'EOF'
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+EOF
+
+# Start services
+docker compose up -d
+
+# Check status
+docker compose ps
+
+# View logs
+docker compose logs
+
+# Stop and remove
+docker compose down
+```
+
 ## Architecture Support
 
 **Supported:**
@@ -108,25 +194,37 @@ docker info
 
 ### Release Naming
 
-- **Official Docker releases**: `vX.Y.Z-riscv64` (e.g., `v27.5.1-riscv64`)
-- **Development builds**: `vYYYYMMDD-dev` (e.g., `v20251018-dev`)
+- **Docker Engine releases**: `vX.Y.Z-riscv64` (e.g., `v27.5.1-riscv64`)
+- **Docker Compose releases**: `compose-vX.Y.Z-riscv64` (e.g., `compose-v2.40.1-riscv64`)
+- **Development builds**: `vYYYYMMDD-dev` or `compose-vYYYYMMDD-dev`
 
 ### Automated Builds
 
-- **Weekly builds**: Every Sunday at 02:00 UTC (latest Moby master)
-- **Release tracking**: Daily check for new official Moby releases
-- **Automatic builds**: New official releases trigger automatic RISC-V builds
+**Docker Engine:**
+- Weekly builds: Every Sunday at 02:00 UTC (latest Moby master)
+- Release tracking: Daily check for new official Moby releases
+- Automatic builds: New official releases trigger automatic RISC-V builds
+
+**Docker Compose:**
+- Weekly builds: Every Sunday at 03:00 UTC (latest Compose main)
+- Manual trigger support for specific versions
 
 ### Components
 
-Each release includes:
-- **docker.io_*.deb** (~140MB) - Complete Debian package (all components)
+**Docker Engine releases** include:
+- **docker.io_*.deb** (~140MB) - Complete Debian package
 - **dockerd** (73MB) - Docker Engine daemon
 - **docker-proxy** (2.4MB) - Docker network proxy
 - **containerd** (37MB) - Container runtime
 - **runc** (15MB) - OCI runtime
 - **containerd-shim-runc-v2** (13MB) - Containerd shim
 - **VERSIONS.txt** - Component version information
+
+**Docker Compose releases** include:
+- **docker-compose-plugin_*.deb** (~12MB) - Debian package
+- **docker-compose** (~10MB) - Compose v2 binary
+- Installed to: `/usr/libexec/docker/cli-plugins/`
+- Symlink: `/usr/bin/docker-compose` (backward compat)
 
 ## Building from Source
 
@@ -169,6 +267,7 @@ See build logs and details in the repository's GitHub Actions workflows.
 ## Documentation
 
 - **[INSTALL.md](INSTALL.md)** - Detailed installation guide
+- **[COMPOSE-TESTING.md](COMPOSE-TESTING.md)** - Docker Compose testing and validation guide
 - **[RUNNER-SETUP.md](RUNNER-SETUP.md)** - CI/CD runner setup for automated builds
 - **[GitHub Actions Workflows](.github/workflows/)** - Automated build configurations
 
