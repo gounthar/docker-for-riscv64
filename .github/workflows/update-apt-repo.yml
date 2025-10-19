@@ -2,13 +2,13 @@ name: Update APT Repository
 
 on:
   workflow_run:
-    workflows: ["Build Debian Package", "Build Docker Compose Debian Package"]
+    workflows: ["Build Debian Package", "Build Docker Compose Debian Package", "Build Docker CLI Debian Package"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag containing the .deb package (v*-riscv64 or compose-v*-riscv64)'
+        description: 'Release tag containing the .deb package (v*-riscv64, compose-v*-riscv64, or cli-v*-riscv64)'
         required: true
         default: 'v28.5.1-riscv64'
 
@@ -38,9 +38,9 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
-            # Find the latest -riscv64 release (docker or compose)
+            # Find the latest -riscv64 release (docker, compose, or cli)
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 | \
-                          grep -E '(compose-)?v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -E '(compose-|cli-)?v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
                           awk '{print $1}')
           fi
@@ -49,6 +49,9 @@ jobs:
           if [[ "$RELEASE_TAG" =~ ^compose- ]]; then
             PACKAGE_TYPE="compose"
             echo "package_type=compose" >> $GITHUB_OUTPUT
+          elif [[ "$RELEASE_TAG" =~ ^cli- ]]; then
+            PACKAGE_TYPE="cli"
+            echo "package_type=cli" >> $GITHUB_OUTPUT
           else
             PACKAGE_TYPE="docker"
             echo "package_type=docker" >> $GITHUB_OUTPUT
@@ -67,6 +70,9 @@ jobs:
           if [ "$PACKAGE_TYPE" = "compose" ]; then
             echo "Downloading docker-compose-plugin package from $RELEASE_TAG..."
             PATTERN="docker-compose-plugin_*.deb"
+          elif [ "$PACKAGE_TYPE" = "cli" ]; then
+            echo "Downloading docker-cli package from $RELEASE_TAG..."
+            PATTERN="docker-cli_*.deb"
           else
             echo "Downloading docker.io package from $RELEASE_TAG..."
             PATTERN="docker.io_*.deb"
@@ -114,6 +120,10 @@ jobs:
             VERSION=$(echo $RELEASE_TAG | sed 's/^compose-v//; s/-riscv64$//')
             PACKAGE_NAME="docker-compose-plugin"
             INSTALL_CMD="docker-compose-plugin"
+          elif [ "$PACKAGE_TYPE" = "cli" ]; then
+            VERSION=$(echo $RELEASE_TAG | sed 's/^cli-v//; s/-riscv64$//')
+            PACKAGE_NAME="docker-cli"
+            INSTALL_CMD="docker-cli"
           else
             VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
             PACKAGE_NAME="docker.io"

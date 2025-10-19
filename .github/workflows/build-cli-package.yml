@@ -1,16 +1,19 @@
-name: Build Debian Package
+name: Build Docker CLI Debian Package
 
 on:
   workflow_run:
-    workflows: ["Weekly Docker RISC-V64 Build", "Track Moby Releases"]
+    workflows: ["Weekly Docker CLI RISC-V64 Build"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag to build package from'
+        description: 'CLI release tag'
         required: true
-        default: 'v28.5.1-riscv64'
+        default: 'cli-v28.5.1-riscv64'
+
+permissions:
+  contents: write
 
 jobs:
   build-deb:
@@ -23,67 +26,76 @@ jobs:
 
       - name: Install build dependencies
         run: |
+          set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y debhelper dh-make dpkg-dev lintian
+          sudo apt-get install -y debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get install -y gh || true
+          fi
 
-      - name: Download release binaries
+      - name: Download CLI binary
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           # Get release tag from workflow_run or manual input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
-            # Find the latest docker release created by the workflow
+            # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          grep -v '^compose-' | grep -v '^cli-' | \
+                          grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
                           awk '{print $1}')
           fi
-
           echo "Building package for release: $RELEASE_TAG"
 
-          # Download all binaries
-          for binary in dockerd docker-proxy containerd containerd-shim-runc-v2 runc; do
-            gh release download $RELEASE_TAG -p $binary
-          done
+          # Download binary
+          gh release download $RELEASE_TAG -p docker
+          chmod +x docker
 
-          chmod +x *
-          ls -lh
+          # Verify binary architecture
+          file ./docker || true
+          readelf -h ./docker 2>/dev/null | sed -n '1,5p' || true
+          ./docker --version || echo "Version command not available yet"
+
+          ls -lh docker
 
       - name: Update package version in changelog
         run: |
-          # Get release tag (same logic as download step)
+          set -euo pipefail
+          # Get release tag from workflow_run or manual input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
+            # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          grep -v '^compose-' | grep -v '^cli-' | \
+                          grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
                           awk '{print $1}')
           fi
-          # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
-          VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
-
-          # Get moby commit info for changelog
-          cd moby 2>/dev/null || true
-          MOBY_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-          cd ..
-
-          # Check if this version is already in changelog
-          if ! head -1 debian/changelog | grep -q "$VERSION"; then
-            echo "Version $VERSION not in changelog, needs update"
-            # In production, use dch to add entry, but changelog should be pre-updated
-          fi
-
+          VERSION="$(echo "$RELEASE_TAG" | sed 's/^cli-v//; s/-riscv64$//')"
           echo "Package version: $VERSION"
-          echo "Moby commit: $MOBY_COMMIT"
+
+          # Set DEBEMAIL to avoid interactive prompt
+          export DEBEMAIL="github-actions[bot]@users.noreply.github.com"
+          export DEBFULLNAME="GitHub Actions"
+
+          # Copy packaging and update changelog with dch
+          cp -r debian-cli debian
+          dch --chdir debian \
+              --newversion "${VERSION}-riscv64-1" \
+              --distribution trixie \
+              --force-distribution \
+              --check-dirname-level 0 \
+              "RISC-V64 prebuilt docker-cli ${VERSION}"
 
       - name: Build package
         run: |
+          # Build package (debian/ already created in previous step)
           dpkg-buildpackage -us -uc -b
+
+          ls -lh ../*.deb
 
       - name: Run lintian checks
         run: |
@@ -96,8 +108,8 @@ jobs:
             echo "=== Package: $(basename $deb) ==="
             echo "============================================"
             echo ""
-            echo "=== Package Contents (first 30 files) ==="
-            dpkg-deb --contents "$deb" | head -30
+            echo "=== Package Contents ==="
+            dpkg-deb --contents "$deb" | head -50
             echo ""
             echo "=== Package Info ==="
             dpkg-deb --info "$deb"
@@ -111,13 +123,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Get release tag (same logic as download step)
+          set -euo pipefail
+          # Get release tag from workflow_run or manual input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
+            # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          grep -v '^compose-' | grep -v '^cli-' | \
+                          grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
                           awk '{print $1}')
           fi
@@ -127,23 +140,20 @@ jobs:
 
           for deb in ../*.deb; do
             echo "Uploading $(basename $deb)..."
-            gh release upload $RELEASE_TAG "$deb" --clobber
+            for i in {1..3}; do
+              gh release upload "$RELEASE_TAG" "$deb" --clobber && break
+              echo "Retry $i..."
+              sleep 3
+            done
           done
 
           echo ""
-          echo "✅ All Debian packages uploaded successfully!"
+          echo "✅ Docker CLI Debian package uploaded successfully!"
           echo ""
           echo "Packages built:"
           ls -lh ../*.deb
           echo ""
           echo "Install with:"
-          echo "  # Download all packages"
-          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/docker.io_*_riscv64.deb"
-          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/containerd_*_riscv64.deb"
-          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/runc_*_riscv64.deb"
-          echo ""
-          echo "  # Install in dependency order"
-          echo "  sudo dpkg -i runc_*_riscv64.deb"
-          echo "  sudo dpkg -i containerd_*_riscv64.deb"
-          echo "  sudo dpkg -i docker.io_*_riscv64.deb"
-          echo "  sudo apt-get install -f"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/docker-cli_*.deb"
+          echo "  sudo dpkg -i docker-cli_*.deb"
+          echo "  docker --version"

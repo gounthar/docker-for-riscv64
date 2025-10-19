@@ -1,0 +1,23 @@
+Source: docker-cli
+Section: admin
+Priority: optional
+Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://github.com/docker/cli
+Rules-Requires-Root: no
+
+Package: docker-cli
+Architecture: riscv64
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Recommends: docker.io
+Conflicts: docker (<< 1.5~), docker.io (<< 18.09)
+Replaces: docker (<< 1.5~), docker.io (<< 18.09)
+Breaks: docker (<< 1.5~), docker.io (<< 18.09)
+Provides: docker
+Description: Docker command-line interface (CLI) for RISC-V64
+ The Docker CLI is the command-line interface for Docker, allowing users
+ to interact with Docker containers and images from the terminal. It provides
+ commands for building, running, and managing containers.
+ .
+ This package provides pre-built binaries for RISC-V64 architecture.

@@ -1,19 +1,20 @@
-# Docker Engine & Compose for RISC-V64
+# Docker Engine, CLI & Compose for RISC-V64
 
-Native Docker Engine and Docker Compose binaries built for RISC-V64 architecture, enabling containerization on RISC-V hardware.
+Native Docker Engine, CLI, and Compose binaries built for RISC-V64 architecture, enabling full containerization on RISC-V hardware.
 
 ## Overview
 
-This project provides pre-built Docker Engine and Docker Compose binaries for RISC-V64 Linux systems. Built from official [Moby](https://github.com/moby/moby) and [Compose](https://github.com/docker/compose) sources with minimal patches for RISC-V compatibility, these binaries enable running Docker containers and multi-container applications natively on RISC-V hardware.
+This project provides pre-built Docker Engine, CLI, and Compose binaries for RISC-V64 Linux systems. Built from official [Moby](https://github.com/moby/moby), [CLI](https://github.com/docker/cli), and [Compose](https://github.com/docker/compose) sources with minimal patches for RISC-V compatibility, these binaries enable running Docker containers and multi-container applications natively on RISC-V hardware.
 
 **Key Features:**
 - Native RISC-V64 compilation on BananaPi F3 (Armbian Trixie)
 - Docker Engine (dockerd, containerd, runc)
+- Docker CLI (docker command-line interface)
 - Docker Compose v2 plugin
 - Debian APT repository for easy installation
 - Automated `.deb` package creation
 - Automated weekly builds
-- Based on official Moby and Compose releases
+- Based on official Moby, CLI, and Compose releases
 - Built and tested on Debian Trixie / Armbian Trixie
 - Minimal patches for RISC-V compatibility
 
@@ -90,6 +91,54 @@ sudo dockerd &
 # Verify installation
 docker version
 docker info
+```
+
+### Docker CLI Installation
+
+The Docker CLI (command-line interface) is available as a separate package:
+
+#### Option 1: APT Repository (Recommended)
+
+```bash
+# Add repository (if not already added)
+echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+  sudo tee /etc/apt/sources.list.d/docker-riscv64.list
+
+# Install CLI
+sudo apt-get update
+sudo apt-get install docker-cli
+
+# Verify
+docker --version
+```
+
+#### Option 2: Direct .deb Package
+
+```bash
+# Get latest CLI release
+CLI_VERSION="cli-v28.5.1-riscv64"
+
+# Download package
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${CLI_VERSION}/docker-cli_*.deb"
+
+# Install
+sudo dpkg -i docker-cli_*.deb
+sudo apt-get install -f  # Fix any dependencies
+```
+
+#### Option 3: Manual Binary Installation
+
+```bash
+# Download binary
+CLI_VERSION="cli-v28.5.1-riscv64"
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${CLI_VERSION}/docker"
+
+# Install to system
+chmod +x docker
+sudo mv docker /usr/bin/
+
+# Verify
+docker --version
 ```
 
 ### Docker Compose Installation
@@ -195,8 +244,9 @@ docker compose down
 ### Release Naming
 
 - **Docker Engine releases**: `vX.Y.Z-riscv64` (e.g., `v27.5.1-riscv64`)
+- **Docker CLI releases**: `cli-vX.Y.Z-riscv64` (e.g., `cli-v28.5.1-riscv64`)
 - **Docker Compose releases**: `compose-vX.Y.Z-riscv64` (e.g., `compose-v2.40.1-riscv64`)
-- **Development builds**: `vYYYYMMDD-dev` or `compose-vYYYYMMDD-dev`
+- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, or `compose-vYYYYMMDD-dev`
 
 ### Automated Builds
 
@@ -204,6 +254,10 @@ docker compose down
 - Weekly builds: Every Sunday at 02:00 UTC (latest Moby master)
 - Release tracking: Daily check for new official Moby releases
 - Automatic builds: New official releases trigger automatic RISC-V builds
+
+**Docker CLI:**
+- Weekly builds: Every Sunday at 04:00 UTC (latest CLI master)
+- Manual trigger support for specific versions
 
 **Docker Compose:**
 - Weekly builds: Every Sunday at 03:00 UTC (latest Compose main)
@@ -219,6 +273,11 @@ docker compose down
 - **runc** (15MB) - OCI runtime
 - **containerd-shim-runc-v2** (13MB) - Containerd shim
 - **VERSIONS.txt** - Component version information
+
+**Docker CLI releases** include:
+- **docker-cli_*.deb** (~45MB) - Debian package
+- **docker** (~43MB) - Docker CLI binary
+- Installed to: `/usr/bin/docker`
 
 **Docker Compose releases** include:
 - **docker-compose-plugin_*.deb** (~12MB) - Debian package
@@ -267,6 +326,7 @@ See build logs and details in the repository's GitHub Actions workflows.
 ## Documentation
 
 - **[INSTALL.md](INSTALL.md)** - Detailed installation guide
+- **[CLI-TESTING.md](CLI-TESTING.md)** - Docker CLI testing and validation guide
 - **[COMPOSE-TESTING.md](COMPOSE-TESTING.md)** - Docker Compose testing and validation guide
 - **[RUNNER-SETUP.md](RUNNER-SETUP.md)** - CI/CD runner setup for automated builds
 - **[GitHub Actions Workflows](.github/workflows/)** - Automated build configurations
@@ -274,7 +334,6 @@ See build logs and details in the repository's GitHub Actions workflows.
 ## Known Limitations
 
 - **Development builds**: Current builds are marked as `version dev`
-- **Docker CLI**: Not included; use official Docker CLI or build separately
 - **Frozen images**: Disabled (no RISC-V64 manifests for busybox/hello-world)
 - **Legacy CLI tests**: Disabled (old v18.06.3-ce integration tests)
 - **Hardware testing**: Limited to specific RISC-V64 hardware
@@ -286,6 +345,7 @@ See build logs and details in the repository's GitHub Actions workflows.
 - ✅ **CI/CD**: Self-hosted RISC-V64 runner operational
 - ✅ **Debian packaging**: Complete with APT repository
 - ✅ **APT repository**: https://gounthar.github.io/docker-for-riscv64
+- ✅ **Docker CLI support**: Native RISC-V64 CLI builds available
 - 🚧 **Extended testing**: Community feedback welcome
 
 ## Contributing

@@ -7,3 +7,6 @@
 [submodule "compose"]
 	path = compose
 	url = https://github.com/docker/compose.git
+[submodule "cli"]
+	path = cli
+	url = https://github.com/docker/cli.git
