@@ -11,6 +11,9 @@ on:
         required: false
         default: 'main'
 
+permissions:
+  contents: write
+
 jobs:
   build-compose:
     runs-on: [self-hosted, riscv64]
@@ -20,6 +23,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: true
+          fetch-depth: 0
 
       - name: Update compose submodule
         run: |
@@ -33,14 +37,16 @@ jobs:
 
       - name: Build docker-compose binary
         run: |
+          set -euo pipefail
           cd compose
 
           # Set version from git tag
           VERSION=$(git describe --tags --always)
           echo "Building compose version: $VERSION"
 
-          # Build with version info
-          make VERSION=$VERSION
+          # Build with version info and explicit GOOS/GOARCH
+          export GOOS=linux GOARCH=riscv64 CGO_ENABLED=0
+          make VERSION="$VERSION"
 
           # Verify binary exists
           ls -lh bin/build/docker-compose
@@ -63,6 +69,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+          # Ensure gh is installed
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y gh || true
+          fi
+
           DATE=$(date +%Y%m%d)
           COMPOSE_REF="${{ github.event.inputs.compose_ref || 'main' }}"
 
@@ -71,12 +83,13 @@ jobs:
           COMPOSE_VERSION=$(git describe --tags --always)
           cd ..
 
-          # Determine release version
-          if [[ "$COMPOSE_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-            # Official release: v2.26.1 -> compose-v2.26.1-riscv64
-            RELEASE_VERSION="compose-${COMPOSE_REF}-riscv64"
-            RELEASE_TITLE="Docker Compose ${COMPOSE_REF} for RISC-V64"
-            VERSION_INFO="**Docker Compose Version:** ${COMPOSE_REF}"
+          # Determine release version (handle both v2.40.1 and 2.40.1 formats)
+          if [[ "$COMPOSE_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Official release: v2.26.1 or 2.26.1 -> compose-v2.26.1-riscv64
+            CLEAN_REF="${COMPOSE_REF#v}"
+            RELEASE_VERSION="compose-v${CLEAN_REF}-riscv64"
+            RELEASE_TITLE="Docker Compose v${CLEAN_REF} for RISC-V64"
+            VERSION_INFO="**Docker Compose Version:** v${CLEAN_REF}"
           else
             # Development build
             RELEASE_VERSION="compose-v${DATE}-dev"
@@ -119,7 +132,7 @@ jobs:
           make VERSION=${COMPOSE_VERSION}
           \`\`\`
 
-          Automated build on RISC-V64 hardware (BananaPi F3)
+          Automated build on RISC-V64 hardware
           EOF
 
           # For development builds, delete existing release if it exists

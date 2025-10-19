@@ -10,6 +10,9 @@ on:
         required: true
         default: 'compose-v2.40.1-riscv64'
 
+permissions:
+  contents: write
+
 jobs:
   build-deb:
     runs-on: [self-hosted, riscv64]
@@ -21,13 +24,18 @@ jobs:
 
       - name: Install build dependencies
         run: |
+          set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y debhelper dh-make dpkg-dev lintian
+          sudo apt-get install -y debhelper dh-make dpkg-dev lintian devscripts
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get install -y gh || true
+          fi
 
       - name: Download compose binary
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           RELEASE_TAG="${{ github.event.release.tag_name || github.event.inputs.release_tag }}"
           echo "Building package for release: $RELEASE_TAG"
 
@@ -35,28 +43,30 @@ jobs:
           gh release download $RELEASE_TAG -p docker-compose
           chmod +x docker-compose
 
-          # Verify
+          # Verify binary architecture
+          file ./docker-compose || true
+          readelf -h ./docker-compose 2>/dev/null | sed -n '1,5p' || true
           ./docker-compose version || echo "Version command not available yet"
 
           ls -lh docker-compose
 
       - name: Update package version in changelog
         run: |
-          # Extract version from tag (compose-v2.40.1-riscv64 -> 2.40.1)
+          set -euo pipefail
           RELEASE_TAG="${{ github.event.release.tag_name || github.event.inputs.release_tag }}"
-          VERSION=$(echo $RELEASE_TAG | sed 's/^compose-v//; s/-riscv64$//')
-
+          VERSION="$(echo "$RELEASE_TAG" | sed 's/^compose-v//; s/-riscv64$//')"
           echo "Package version: $VERSION"
 
-          # Update changelog with actual version
-          sed -i "s/2.40.1/$VERSION/g" debian-compose/changelog
+          # Copy packaging and update changelog with dch
+          cp -r debian-compose debian
+          dch --chdir debian \
+              --newversion "${VERSION}-riscv64-1" \
+              --distribution trixie \
+              "RISC-V64 prebuilt docker-compose plugin ${VERSION}"
 
       - name: Build package
         run: |
-          # Copy packaging files to debian/
-          cp -r debian-compose debian
-
-          # Build package
+          # Build package (debian/ already created in previous step)
           dpkg-buildpackage -us -uc -b
 
           ls -lh ../*.deb
@@ -87,6 +97,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           RELEASE_TAG="${{ github.event.release.tag_name || github.event.inputs.release_tag }}"
 
           echo "Uploading packages to release $RELEASE_TAG"
@@ -94,7 +105,11 @@ jobs:
 
           for deb in ../*.deb; do
             echo "Uploading $(basename $deb)..."
-            gh release upload $RELEASE_TAG "$deb" --clobber
+            for i in {1..3}; do
+              gh release upload "$RELEASE_TAG" "$deb" --clobber && break
+              echo "Retry $i..."
+              sleep 3
+            done
           done
 
           echo ""

@@ -13,6 +13,8 @@ Depends: ${misc:Depends}, ${shlibs:Depends}
 Recommends: docker-cli
 Conflicts: docker-compose (<< 2.0)
 Replaces: docker-compose (<< 2.0)
+Breaks: docker-compose (<< 2.0)
+Provides: docker-compose
 Description: Docker Compose v2 plugin for RISC-V64
  Docker Compose is a tool for running multi-container applications on
  Docker defined using the Compose file format. A Compose file is used
@@ -20,5 +22,3 @@ Description: Docker Compose v2 plugin for RISC-V64
  are configured.
  .
  This package provides pre-built binaries for RISC-V64 architecture.
- .
- Usage: docker compose up

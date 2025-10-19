@@ -267,6 +267,7 @@ See build logs and details in the repository's GitHub Actions workflows.
 ## Documentation
 
 - **[INSTALL.md](INSTALL.md)** - Detailed installation guide
+- **[COMPOSE-TESTING.md](COMPOSE-TESTING.md)** - Docker Compose testing and validation guide
 - **[RUNNER-SETUP.md](RUNNER-SETUP.md)** - CI/CD runner setup for automated builds
 - **[GitHub Actions Workflows](.github/workflows/)** - Automated build configurations
 
