@@ -7,6 +7,12 @@ Testing guide for Docker Compose v2 plugin on RISC-V64 architecture.
 - RISC-V64 hardware or emulator
 - Docker Engine installed and running
 - Git with submodules initialized
+- GitHub CLI (`gh`) for automated scripts
+
+> **Note:** This guide uses specific version numbers for illustration (e.g., `compose-v2.40.1-riscv64`).
+> Always check the [releases page](https://github.com/gounthar/docker-for-riscv64/releases)
+> for the latest Compose versions. See [Dynamic Version Detection](#dynamic-version-detection) below
+> for automated scripts to fetch the latest release.
 
 ## Phase 1: Binary Build Testing
 
@@ -338,6 +344,93 @@ time docker compose -f test-compose.yml down
 ### Test with Large Compose File
 
 Create `large-compose.yml` with 10+ services and test performance.
+
+## Dynamic Version Detection
+
+For testing automation or always using the latest Compose version, use these commands to dynamically detect the latest release:
+
+### Fetch Latest Compose Release
+
+```bash
+# Using GitHub CLI (gh)
+LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
+
+echo "Latest Compose: $LATEST_COMPOSE"
+```
+
+### Using with Testing Scripts
+
+Replace hardcoded versions in Phase 2 and Phase 3:
+
+```bash
+# Get latest Compose release tag
+LATEST_COMPOSE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
+
+# Test with latest release
+RELEASE_TAG=$LATEST_COMPOSE_TAG
+gh release view $RELEASE_TAG
+
+# Download and verify binary
+gh release download $RELEASE_TAG -p docker-compose
+chmod +x docker-compose
+./docker-compose version
+```
+
+### Automated Testing Script
+
+Here's a complete script for automated Compose testing:
+
+```bash
+#!/bin/bash
+set -e
+
+# Check for required dependencies
+command -v gh &> /dev/null || {
+  echo "Error: GitHub CLI (gh) not found. Install with: https://cli.github.com"
+  exit 1
+}
+
+command -v jq &> /dev/null || {
+  echo "Error: jq not found. Install with: sudo apt-get install jq"
+  exit 1
+}
+
+# Fetch latest Compose release
+echo "Detecting latest Compose release..."
+LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
+
+if [[ -z "$LATEST_COMPOSE" ]]; then
+  echo "Error: No Compose releases found. Check repository and network connectivity."
+  exit 1
+fi
+
+echo "Latest Compose: $LATEST_COMPOSE"
+
+# Download binary
+echo "Downloading Compose binary..."
+gh release download $LATEST_COMPOSE -p docker-compose --clobber
+
+# Verify binary
+chmod +x docker-compose
+echo "Compose Version:"
+./docker-compose version
+
+# Optional: Install system-wide
+read -p "Install to /usr/libexec/docker/cli-plugins/? (y/N) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    sudo install -D -m 0755 docker-compose /usr/libexec/docker/cli-plugins/docker-compose
+
+    # Create backward compat symlink
+    sudo ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
+
+    echo "Installed successfully!"
+    docker compose version
+fi
+```
 
 ## Success Criteria
 
