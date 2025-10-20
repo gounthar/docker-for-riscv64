@@ -8,6 +8,11 @@ Testing guide for Docker CLI on RISC-V64 architecture.
 - Docker Engine installed and running
 - Git with submodules initialized
 
+> **Note:** This guide uses specific version numbers for illustration (e.g., `cli-v28.5.1-riscv64`).
+> Always check the [releases page](https://github.com/gounthar/docker-for-riscv64/releases)
+> for the latest CLI versions. See [Dynamic Version Detection](#dynamic-version-detection) below
+> for automated scripts to fetch the latest release.
+
 ## Phase 1: Binary Build Testing
 
 ### Build CLI Binary
@@ -464,6 +469,81 @@ time docker inspect python:3.11
 
 # Cleanup
 docker rmi python:3.11
+```
+
+## Dynamic Version Detection
+
+For testing automation or always using the latest CLI version, use these commands to dynamically detect the latest release:
+
+### Fetch Latest CLI Release
+
+```bash
+# Using GitHub CLI (gh)
+LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
+echo "Latest CLI: $LATEST_CLI"
+```
+
+### Using with Testing Scripts
+
+Replace hardcoded versions in Phase 2 and Phase 3:
+
+```bash
+# Phase 2: Trigger Manual Build with latest version
+LATEST_CLI_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
+LATEST_CLI_VERSION=$(echo "$LATEST_CLI_TAG" | sed 's/^cli-v//')
+
+# Trigger build
+gh workflow run cli-weekly-build.yml -f cli_ref=v${LATEST_CLI_VERSION}
+
+# Phase 3: Test with latest release
+RELEASE_TAG=$LATEST_CLI_TAG
+gh release view $RELEASE_TAG
+
+# Download and verify binary
+gh release download $RELEASE_TAG -p docker
+chmod +x docker
+./docker --version
+```
+
+### Automated Testing Script
+
+Here's a complete script for automated CLI testing:
+
+```bash
+#!/bin/bash
+set -e
+
+# Fetch latest CLI release
+echo "Detecting latest CLI release..."
+LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
+echo "Latest CLI: $LATEST_CLI"
+
+# Download binary
+echo "Downloading CLI binary..."
+gh release download $LATEST_CLI -p docker --clobber
+
+# Verify binary
+chmod +x docker
+echo "CLI Version:"
+./docker --version
+
+# Optional: Install system-wide
+read -p "Install to /usr/bin/docker? (y/N) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    sudo cp docker /usr/bin/docker
+    echo "Installed successfully!"
+    docker --version
+fi
 ```
 
 ## Success Criteria

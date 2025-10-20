@@ -20,6 +20,11 @@ This project provides pre-built Docker Engine, CLI, and Compose binaries for RIS
 
 ## Quick Start
 
+> **Note:** The examples below use specific version numbers for illustration.
+> Always check the [releases page](https://github.com/gounthar/docker-for-riscv64/releases)
+> for the latest versions, or use the [Advanced Version Detection](#advanced-version-detection)
+> section to automatically fetch the latest release tags.
+
 ### Repository Security
 
 Our APT repository uses GPG signing to ensure package authenticity and integrity. To verify package signatures:
@@ -252,6 +257,103 @@ docker compose logs
 
 # Stop and remove
 docker compose down
+```
+
+## Advanced Version Detection
+
+For automation or to always use the latest versions, you can dynamically detect the latest release tags using the GitHub CLI or API:
+
+### Using GitHub CLI (gh)
+
+```bash
+# Automatically fetch latest versions
+LATEST_ENGINE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  grep -v 'cli-v' | grep -v 'compose-v' | \
+  head -1 | awk '{print $1}')
+
+LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
+LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
+# Display detected versions
+echo "Latest Engine: $LATEST_ENGINE"
+echo "Latest CLI: $LATEST_CLI"
+echo "Latest Compose: $LATEST_COMPOSE"
+
+# Example: Download Docker Engine binaries
+for binary in dockerd docker-proxy containerd runc containerd-shim-runc-v2; do
+  wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${LATEST_ENGINE}/${binary}"
+done
+```
+
+### Using GitHub API (curl)
+
+```bash
+# Fetch latest Engine release (no authentication required)
+LATEST_ENGINE=$(curl -s https://api.github.com/repos/gounthar/docker-for-riscv64/releases | \
+  jq -r '[.[] | select(.tag_name | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))] |
+  .[0].tag_name')
+
+# Fetch latest CLI release
+LATEST_CLI=$(curl -s https://api.github.com/repos/gounthar/docker-for-riscv64/releases | \
+  jq -r '[.[] | select(.tag_name | test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))] |
+  .[0].tag_name')
+
+# Fetch latest Compose release
+LATEST_COMPOSE=$(curl -s https://api.github.com/repos/gounthar/docker-for-riscv64/releases | \
+  jq -r '[.[] | select(.tag_name | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))] |
+  .[0].tag_name')
+
+echo "Latest Engine: $LATEST_ENGINE"
+echo "Latest CLI: $LATEST_CLI"
+echo "Latest Compose: $LATEST_COMPOSE"
+```
+
+### Automated Installation Script
+
+Here's a complete script that detects and installs the latest versions:
+
+```bash
+#!/bin/bash
+set -e
+
+# Detect latest releases
+echo "Detecting latest versions..."
+LATEST_ENGINE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  grep -v 'cli-v' | grep -v 'compose-v' | \
+  head -1 | awk '{print $1}')
+
+LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
+echo "Latest Engine: $LATEST_ENGINE"
+echo "Latest CLI: $LATEST_CLI"
+
+# Download and install Engine
+echo "Downloading Docker Engine..."
+for binary in dockerd docker-proxy containerd runc containerd-shim-runc-v2; do
+  wget -q "https://github.com/gounthar/docker-for-riscv64/releases/download/${LATEST_ENGINE}/${binary}"
+  chmod +x "$binary"
+done
+
+echo "Installing Docker Engine..."
+sudo install -m 755 dockerd docker-proxy containerd runc containerd-shim-runc-v2 /usr/local/bin/
+
+# Download and install CLI
+echo "Downloading Docker CLI..."
+wget -q "https://github.com/gounthar/docker-for-riscv64/releases/download/${LATEST_CLI}/docker"
+chmod +x docker
+sudo mv docker /usr/bin/
+
+echo "Installation complete!"
+docker --version
 ```
 
 ## Architecture Support

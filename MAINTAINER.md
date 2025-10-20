@@ -1,5 +1,10 @@
 # Maintainer Guide
 
+> **Note:** This guide uses specific version numbers for illustration (e.g., `v28.5.1-riscv64`).
+> Always check the [releases page](https://github.com/gounthar/docker-for-riscv64/releases)
+> for current versions, or use the dynamic detection commands in the
+> [Dynamic Version Detection](#dynamic-version-detection-for-maintainers) section.
+
 ## GPG Package Signing
 
 ### Overview
@@ -252,6 +257,97 @@ sudo docker run hello-world
 # Or use Alpine
 sudo docker pull alpine
 sudo docker run alpine echo "Docker on RISC-V64 works!"
+```
+
+## Dynamic Version Detection for Maintainers
+
+For automation or scripting maintenance tasks, use these commands to dynamically detect the latest releases:
+
+### Detect Latest Releases
+
+```bash
+# Detect latest Engine release
+LATEST_ENGINE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  grep -v 'cli-v' | grep -v 'compose-v' | \
+  head -1 | awk '{print $1}')
+
+# Detect latest CLI release
+LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
+# Detect latest Compose release
+LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
+echo "Latest Engine: $LATEST_ENGINE"
+echo "Latest CLI: $LATEST_CLI"
+echo "Latest Compose: $LATEST_COMPOSE"
+```
+
+### Automated APT Repository Update
+
+Replace hardcoded versions in manual update workflow:
+
+```bash
+# Detect latest Engine release
+RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  grep -v 'cli-v' | grep -v 'compose-v' | \
+  head -1 | awk '{print $1}')
+
+echo "Latest release: $RELEASE_TAG"
+
+# Clone and prepare
+cd /tmp
+git clone -b apt-repo https://github.com/gounthar/docker-for-riscv64 apt-repo
+cd apt-repo
+
+# Download the .deb package
+gh release download $RELEASE_TAG -p "docker.io_*.deb" --repo gounthar/docker-for-riscv64
+
+# Add to repository
+reprepro -b . includedeb trixie docker.io_*.deb
+
+# Verify
+reprepro -b . list trixie
+
+# Commit and push
+git add dists pool
+git commit -m "chore: add docker.io from release $RELEASE_TAG"
+git push origin apt-repo
+```
+
+### Automated Workflow Trigger
+
+Trigger workflows with detected versions:
+
+```bash
+# Detect latest upstream Moby version
+LATEST_MOBY=$(curl -s https://api.github.com/repos/moby/moby/releases/latest | \
+  jq -r '.tag_name')
+
+echo "Latest Moby: $LATEST_MOBY"
+
+# Trigger build with latest version
+gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST_MOBY
+
+# Wait for build to complete
+echo "Waiting for build..."
+sleep 60
+
+# Get the release tag that was created
+RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 5 | \
+  grep -E '^\s*v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  grep -v 'cli-v' | grep -v 'compose-v' | \
+  head -1 | awk '{print $1}')
+
+echo "New release created: $RELEASE_TAG"
+
+# Trigger package build
+gh workflow run build-debian-package.yml -f release_tag=$RELEASE_TAG
 ```
 
 ## Troubleshooting
