@@ -39,10 +39,10 @@ Homepage: https://github.com/docker/cli
 Priority: optional
 Section: admin
 Filename: pool/main/d/docker-cli/docker-cli_28.5.1-riscv64-1_riscv64.deb
-Size: 6475232
-SHA256: 0d2ee8b0aa3ef61ac368ad745c8465647f9af8f15cbb2a0c08f1ccbfd4230b09
-SHA1: f83de41b8a8f34aacf716bb046719fa7b7fe921b
-MD5sum: 5ff1478f934064ea13b6773b07020132
+Size: 6473288
+SHA256: 6be4cc0709b9e5a2a0bcc01d0f5f11683224789f35fb7d73ca662e0c37793b59
+SHA1: 94b9d48afe99c85e477a10190fc049427e83b595
+MD5sum: bbf594f60e4477206ae7c4d4d2f96962
 Description: Docker command-line interface (CLI) for RISC-V64
  The Docker CLI is the command-line interface for Docker, allowing users
  to interact with Docker containers and images from the terminal. It provides
