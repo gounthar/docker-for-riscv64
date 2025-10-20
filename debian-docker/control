@@ -23,7 +23,7 @@ Recommends: ca-certificates,
             xz-utils,
             docker-cli
 Suggests: cgroupfs-mount | cgroup-lite
-Conflicts: docker, docker-ce, docker-engine
+Conflicts: docker-ce, docker-engine
 Provides: docker-engine
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
