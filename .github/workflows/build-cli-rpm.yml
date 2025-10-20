@@ -1,0 +1,114 @@
+name: Build CLI RPM Package
+
+on:
+  workflow_run:
+    workflows: ["Weekly CLI RISC-V64 Build", "Track CLI Releases"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'CLI release tag to build package from'
+        required: true
+        default: 'cli-v28.5.1-riscv64'
+
+jobs:
+  build-cli-rpm:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          if [ -f /etc/fedora-release ]; then
+            sudo dnf install -y rpm-build rpmdevtools rpmlint
+          elif [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y rpm rpmlint
+          fi
+
+      - name: Set up RPM build tree
+        run: |
+          rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+      - name: Download docker CLI binary
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Get release tag
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                          grep '^cli-v' | \
+                          head -1 | \
+                          awk '{print $1}')
+          fi
+
+          echo "Building package for release: $RELEASE_TAG"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+          # Download docker binary to SOURCES
+          cd ~/rpmbuild/SOURCES
+          gh release download $RELEASE_TAG -p docker --repo gounthar/docker-for-riscv64
+          chmod +x docker
+          ls -lh
+
+      - name: Copy spec file
+        run: |
+          cp rpm-cli/docker-cli.spec ~/rpmbuild/SPECS/
+
+      - name: Update package version
+        run: |
+          # Extract version from tag (cli-v28.5.1-riscv64 -> 28.5.1)
+          VERSION=$(echo $RELEASE_TAG | sed 's/^cli-v//; s/-riscv64$//')
+          echo "Package version: $VERSION"
+
+          # Update spec file
+          sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/docker-cli.spec
+
+      - name: Build RPM package
+        run: |
+          cd ~/rpmbuild/SPECS
+          rpmbuild -bb docker-cli.spec
+
+          echo ""
+          echo "Built RPM package:"
+          ls -lh ~/rpmbuild/RPMS/riscv64/
+
+      - name: Run rpmlint checks
+        run: |
+          rpmlint ~/rpmbuild/RPMS/riscv64/docker-cli-*.rpm || true
+
+      - name: Package info
+        run: |
+          for rpm in ~/rpmbuild/RPMS/riscv64/docker-cli-*.rpm; do
+            echo "============================================"
+            echo "=== Package: $(basename $rpm) ==="
+            echo "============================================"
+            echo ""
+            echo "=== Package Info ==="
+            rpm -qip "$rpm"
+            echo ""
+            echo "=== Package Contents ==="
+            rpm -qlp "$rpm"
+            echo ""
+            echo "=== Package Size ==="
+            ls -lh "$rpm"
+            echo ""
+          done
+
+      - name: Upload package to release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for rpm in ~/rpmbuild/RPMS/riscv64/docker-cli-*.rpm; do
+            echo "Uploading $(basename $rpm)..."
+            gh release upload $RELEASE_TAG "$rpm" --repo gounthar/docker-for-riscv64 --clobber
+          done
+
+          echo ""
+          echo "✅ Docker CLI RPM package uploaded successfully!"
