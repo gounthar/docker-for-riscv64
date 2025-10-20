@@ -36,14 +36,14 @@ architecture.
 %install
 # Create necessary directories
 install -d %{buildroot}%{_bindir}
-install -d %{buildroot}%{_unitdir}
+install -d %{buildroot}/usr/lib/systemd/system
 
 # Install binaries
 install -p -m 0755 %{SOURCE0} %{buildroot}%{_bindir}/containerd
 install -p -m 0755 %{SOURCE1} %{buildroot}%{_bindir}/containerd-shim-runc-v2
 
 # Install systemd unit file
-install -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/containerd.service
+install -p -m 0644 %{SOURCE2} %{buildroot}/usr/lib/systemd/system/containerd.service
 
 %post
 %systemd_post containerd.service
@@ -57,7 +57,7 @@ install -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/containerd.service
 %files
 %{_bindir}/containerd
 %{_bindir}/containerd-shim-runc-v2
-%{_unitdir}/containerd.service
+/usr/lib/systemd/system/containerd.service
 
 %changelog
 * Mon Oct 20 2025 Bruno Verachten <gounthar@gmail.com> - 1.7.28-1

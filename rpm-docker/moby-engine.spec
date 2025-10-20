@@ -52,15 +52,15 @@ Built on BananaPi F3 running Fedora RISC-V64.
 %install
 # Create necessary directories
 install -d %{buildroot}%{_bindir}
-install -d %{buildroot}%{_unitdir}
+install -d %{buildroot}/usr/lib/systemd/system
 
 # Install binaries
 install -p -m 0755 %{SOURCE0} %{buildroot}%{_bindir}/dockerd
 install -p -m 0755 %{SOURCE1} %{buildroot}%{_bindir}/docker-proxy
 
 # Install systemd unit files
-install -p -m 0644 %{SOURCE2} %{buildroot}%{_unitdir}/docker.service
-install -p -m 0644 %{SOURCE3} %{buildroot}%{_unitdir}/docker.socket
+install -p -m 0644 %{SOURCE2} %{buildroot}/usr/lib/systemd/system/docker.service
+install -p -m 0644 %{SOURCE3} %{buildroot}/usr/lib/systemd/system/docker.socket
 
 %pre
 # Create docker group
@@ -78,8 +78,8 @@ getent group docker >/dev/null || groupadd -r docker
 %files
 %{_bindir}/dockerd
 %{_bindir}/docker-proxy
-%{_unitdir}/docker.service
-%{_unitdir}/docker.socket
+/usr/lib/systemd/system/docker.service
+/usr/lib/systemd/system/docker.socket
 
 %changelog
 * Mon Oct 20 2025 Bruno Verachten <gounthar@gmail.com> - 28.5.1-1
