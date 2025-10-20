@@ -62,7 +62,7 @@ docker info
 ```
 
 **Expected Output:**
-```
+```text
 Docker version 28.5.1, build <commit>
 ```
 
@@ -287,8 +287,12 @@ docker rmi test-image:latest
 **On clean RISC-V64 system:**
 
 ```bash
-# Add repository
-echo "deb [arch=riscv64] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+# Add GPG key
+wget -qO- https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/docker-riscv64.gpg | \
+  sudo tee /usr/share/keyrings/docker-riscv64.gpg > /dev/null
+
+# Add signed repository
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
   sudo tee /etc/apt/sources.list.d/docker-riscv64.list
 
 # Update package list
@@ -600,7 +604,7 @@ Document any issues discovered during testing:
 
 ## References
 
-- Docker CLI Docs: https://docs.docker.com/engine/reference/commandline/cli/
-- Docker CLI Repository: https://github.com/docker/cli
-- Issue #16: https://github.com/gounthar/docker-for-riscv64/issues/16
-- Docker for RISC-V64: https://github.com/gounthar/docker-for-riscv64
+- [Docker CLI Docs](https://docs.docker.com/engine/reference/commandline/cli/)
+- [Docker CLI Repository](https://github.com/docker/cli)
+- [Issue #16](https://github.com/gounthar/docker-for-riscv64/issues/16)
+- [Docker for RISC-V64](https://github.com/gounthar/docker-for-riscv64)
