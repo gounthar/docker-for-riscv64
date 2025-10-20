@@ -12,10 +12,11 @@ This project provides pre-built Docker Engine, CLI, and Compose binaries for RIS
 - Docker CLI (docker command-line interface)
 - Docker Compose v2 plugin
 - Debian APT repository for easy installation
-- Automated `.deb` package creation
+- RPM repository for Fedora/RHEL/Rocky/AlmaLinux
+- Automated `.deb` and `.rpm` package creation
 - Automated weekly builds
 - Based on official Moby, CLI, and Compose releases
-- Built and tested on Debian Trixie / Armbian Trixie
+- Built and tested on Debian Trixie / Armbian Trixie and Fedora RISC-V64
 - Minimal patches for RISC-V compatibility
 
 ## Quick Start
@@ -46,7 +47,11 @@ echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https:
 
 ### Installation
 
-#### Option 1: APT Repository (Recommended)
+Choose your Linux distribution:
+
+#### Debian / Ubuntu / Armbian
+
+##### Option 1: APT Repository (Recommended)
 
 Install from our signed Debian APT repository:
 
@@ -72,7 +77,7 @@ sudo systemctl enable --now docker
 
 **Note**: Log out and back in for group changes to take effect.
 
-#### Option 2: Direct .deb Package
+##### Option 2: Direct .deb Package
 
 Download and install the `.deb` package:
 
@@ -88,7 +93,49 @@ sudo dpkg -i docker.io_*.deb
 sudo apt-get install -f  # Fix any dependencies
 ```
 
-#### Option 3: Manual Binary Installation
+#### Fedora / RHEL / Rocky Linux / AlmaLinux
+
+##### Option 1: DNF Repository (Recommended)
+
+Install from our signed RPM repository:
+
+```bash
+# Add the repository
+sudo curl -L https://gounthar.github.io/docker-for-riscv64/rpm/docker-riscv64.repo \
+  -o /etc/yum.repos.d/docker-riscv64.repo
+
+# Install Docker Engine
+sudo dnf install -y moby-engine docker-cli
+
+# Add your user to docker group
+sudo usermod -aG docker $USER
+
+# Enable and start service
+sudo systemctl enable --now docker
+```
+
+**Note**: Log out and back in for group changes to take effect.
+
+##### Option 2: Direct .rpm Package
+
+Download and install the `.rpm` packages:
+
+```bash
+# Get latest release
+VERSION="v28.5.1-riscv64"
+
+# Download packages
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/runc-1.3.0-1.fc*.riscv64.rpm"
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/containerd-1.7.28-1.fc*.riscv64.rpm"
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/moby-engine-${VERSION#v}-1.fc*.riscv64.rpm"
+
+# Install in dependency order
+sudo dnf install -y runc-*.riscv64.rpm
+sudo dnf install -y containerd-*.riscv64.rpm
+sudo dnf install -y moby-engine-*.riscv64.rpm
+```
+
+#### Manual Binary Installation (Any Distribution)
 
 Download the latest release binaries:
 

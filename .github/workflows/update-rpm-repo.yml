@@ -1,0 +1,232 @@
+name: Update RPM Repository
+
+on:
+  workflow_run:
+    workflows: ["Build RPM Package"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag to add to repository'
+        required: true
+        default: 'v28.5.1-riscv64'
+
+jobs:
+  update-repo:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout apt-repo branch
+        uses: actions/checkout@v4
+        with:
+          ref: apt-repo
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          if [ -f /etc/fedora-release ]; then
+            sudo dnf install -y createrepo_c gnupg2
+          elif [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y createrepo-c gnupg2
+          fi
+
+      - name: Create RPM repository structure
+        run: |
+          # Create directory structure for RPM repo
+          mkdir -p rpm/fedora/riscv64
+
+      - name: Get release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            # Find the latest release with RPM packages
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                          grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -v '^compose-' | grep -v '^cli-' | \
+                          head -1 | \
+                          awk '{print $1}')
+          fi
+
+          echo "Adding packages from release: $RELEASE_TAG"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+      - name: Download RPM packages from release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd rpm/fedora/riscv64
+
+          # Download all RPM packages
+          echo "Downloading RPM packages from $RELEASE_TAG..."
+          gh release download $RELEASE_TAG \
+            --pattern '*.riscv64.rpm' \
+            --repo gounthar/docker-for-riscv64 \
+            --clobber
+
+          echo ""
+          echo "Downloaded packages:"
+          ls -lh *.rpm
+
+      - name: Import GPG signing key
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          # Import GPG key for signing
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+          # Verify key imported
+          gpg --list-secret-keys
+
+      - name: Create repository metadata
+        run: |
+          cd rpm/fedora/riscv64
+
+          # Create repository metadata
+          echo "Creating repository metadata..."
+          createrepo_c .
+
+          # Sign repository metadata
+          echo "Signing repository metadata..."
+          gpg --batch --yes --detach-sign --armor repodata/repomd.xml
+
+          echo ""
+          echo "Repository metadata created and signed"
+          ls -lh repodata/
+
+      - name: Create repository configuration file
+        run: |
+          cat > rpm/docker-riscv64.repo << 'EOF'
+[docker-riscv64]
+name=Docker for RISC-V64
+baseurl=https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64
+enabled=1
+gpgcheck=1
+gpgkey=https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/gpg-public-key.asc
+EOF
+
+          echo ""
+          echo "Created repository configuration:"
+          cat rpm/docker-riscv64.repo
+
+      - name: Update README for RPM repo
+        run: |
+          cat > rpm/README.md << 'EOF'
+# Docker RISC-V64 RPM Repository
+
+This repository provides RPM packages for Docker Engine, containerd, and runc
+built natively for RISC-V64 architecture.
+
+## Installation
+
+### Fedora/RHEL/Rocky Linux/AlmaLinux
+
+1. Add the repository:
+
+```bash
+sudo curl -L https://gounthar.github.io/docker-for-riscv64/rpm/docker-riscv64.repo \
+  -o /etc/yum.repos.d/docker-riscv64.repo
+```
+
+2. Install Docker:
+
+```bash
+sudo dnf install -y moby-engine docker-cli
+```
+
+3. Start Docker:
+
+```bash
+sudo systemctl enable --now docker
+```
+
+4. Verify installation:
+
+```bash
+docker --version
+sudo docker run hello-world
+```
+
+## Packages Available
+
+- **moby-engine** - Docker Engine daemon
+- **containerd** - Container runtime
+- **runc** - OCI runtime
+- **docker-cli** - Docker command-line interface
+- **docker-compose-plugin** - Docker Compose v2
+
+## Manual Installation
+
+If you prefer to install manually:
+
+```bash
+# Download packages
+wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/runc-*.riscv64.rpm
+wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/containerd-*.riscv64.rpm
+wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/moby-engine-*.riscv64.rpm
+
+# Install in dependency order
+sudo dnf install -y runc-*.riscv64.rpm
+sudo dnf install -y containerd-*.riscv64.rpm
+sudo dnf install -y moby-engine-*.riscv64.rpm
+```
+
+## Repository Structure
+
+```
+rpm/
+├── docker-riscv64.repo       # Repository configuration
+├── README.md                 # This file
+└── fedora/
+    └── riscv64/
+        ├── *.rpm             # RPM packages
+        └── repodata/         # Repository metadata
+```
+
+## Build Information
+
+- Built on: BananaPi F3 running Fedora RISC-V64
+- Source: https://github.com/gounthar/docker-for-riscv64
+- Weekly builds every Sunday
+- Automatic tracking of upstream Moby releases
+
+## Support
+
+For issues and questions:
+- GitHub: https://github.com/gounthar/docker-for-riscv64/issues
+EOF
+
+          echo ""
+          echo "Created RPM repository README"
+
+      - name: Commit and push changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add rpm/
+          git commit -m "feat: add RPM packages from $RELEASE_TAG to repository" || echo "No changes to commit"
+          git push origin apt-repo
+
+      - name: Summary
+        run: |
+          echo ""
+          echo "================================================"
+          echo "✅ RPM Repository Updated Successfully!"
+          echo "================================================"
+          echo ""
+          echo "Release: $RELEASE_TAG"
+          echo "Repository URL: https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64"
+          echo ""
+          echo "Add repository with:"
+          echo "  sudo curl -L https://gounthar.github.io/docker-for-riscv64/rpm/docker-riscv64.repo \\"
+          echo "    -o /etc/yum.repos.d/docker-riscv64.repo"
+          echo ""
+          echo "Install with:"
+          echo "  sudo dnf install -y moby-engine"
+          echo ""
