@@ -6,6 +6,11 @@ on:
     - cron: '0 7 * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
 jobs:
   check-release:
     runs-on: [self-hosted, riscv64]
@@ -51,7 +56,7 @@ jobs:
           gh workflow run cli-weekly-build.yml -f cli_ref=$LATEST
 
           # Create tracking issue
-          cat > issue-body.md << EOF
+          cat > issue-body.md << 'ISSUE_EOF'
           New Docker CLI release detected: **$LATEST**
 
           **Status:** Build automatically triggered
@@ -60,17 +65,21 @@ jobs:
           Expected completion time: ~5-10 minutes
 
           **Monitor build progress:**
-          \`\`\`bash
+          ```bash
           gh run list --workflow=cli-weekly-build.yml --limit 1
           gh run watch
-          \`\`\`
+          ```
 
           **Expected release:** cli-v${LATEST#v}-riscv64
 
           **Upstream release notes:** https://github.com/docker/cli/releases/tag/$LATEST
 
           This issue will track the build progress. Close it once the release is published.
-          EOF
+ISSUE_EOF
+
+          # Substitute variables in issue body
+          sed -i "s/\$LATEST/$LATEST/g" issue-body.md
+          sed -i "s/\${LATEST#v}/${LATEST#v}/g" issue-body.md
 
           gh issue create \
             --title "Building Docker CLI ${LATEST} for RISC-V64" \
