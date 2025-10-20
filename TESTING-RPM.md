@@ -372,7 +372,7 @@ which docker
 # Install older version first (if available)
 OLD_VERSION="v28.4.0-riscv64"
 gh release download $OLD_VERSION --pattern '*.rpm'
-sudo dnf install -y moby-engine-*.rpm
+sudo dnf install -y ./*.rpm
 
 # Verify old version
 dockerd --version
@@ -380,7 +380,7 @@ dockerd --version
 # Upgrade to newer version
 NEW_VERSION="v28.5.1-riscv64"
 gh release download $NEW_VERSION --pattern 'moby-engine*.rpm'
-sudo dnf upgrade -y moby-engine-*.rpm
+sudo dnf upgrade -y moby-engine-${NEW_VERSION#v}-*.rpm
 
 # Verify upgrade
 dockerd --version

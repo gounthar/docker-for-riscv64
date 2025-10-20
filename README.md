@@ -129,10 +129,8 @@ wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION
 wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/containerd-1.7.28-1.fc*.riscv64.rpm"
 wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION}/moby-engine-${VERSION#v}-1.fc*.riscv64.rpm"
 
-# Install in dependency order
-sudo dnf install -y runc-*.riscv64.rpm
-sudo dnf install -y containerd-*.riscv64.rpm
-sudo dnf install -y moby-engine-*.riscv64.rpm
+# Install all packages (dnf will resolve dependencies)
+sudo dnf install -y ./*.riscv64.rpm
 ```
 
 #### Manual Binary Installation (Any Distribution)
