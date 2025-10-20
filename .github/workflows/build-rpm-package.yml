@@ -57,8 +57,9 @@ jobs:
           echo "Building package for release: $RELEASE_TAG"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
-          # Download all binaries to SOURCES directory
+          # Clean and download all binaries to SOURCES directory
           cd ~/rpmbuild/SOURCES
+          rm -f dockerd docker-proxy containerd containerd-shim-runc-v2 runc
           for binary in dockerd docker-proxy containerd containerd-shim-runc-v2 runc; do
             gh release download $RELEASE_TAG -p $binary --repo gounthar/docker-for-riscv64
           done
