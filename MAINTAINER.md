@@ -288,9 +288,15 @@ echo "Latest Compose: $LATEST_COMPOSE"
 Replace hardcoded versions in manual update workflow:
 
 ```bash
-# Detect latest Engine release
+# Detect latest Engine release (see "Detect Latest Releases" section above for all components)
 RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
   jq -r '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
+
+# Validate detection succeeded
+if [ -z "$RELEASE_TAG" ]; then
+  echo "Error: Failed to detect latest Engine release" >&2
+  exit 1
+fi
 
 echo "Latest release: $RELEASE_TAG"
 
