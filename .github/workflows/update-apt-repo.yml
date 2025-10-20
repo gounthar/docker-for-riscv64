@@ -78,7 +78,7 @@ jobs:
           fi
 
           # Download all matching .deb files from the release
-          gh release download $RELEASE_TAG -p "$PATTERN" --repo gounthar/docker-for-riscv64 || {
+          gh release download $RELEASE_TAG -p "$PATTERN" --clobber --repo gounthar/docker-for-riscv64 || {
             echo "❌ No .deb file found in release $RELEASE_TAG"
             echo "Available assets:"
             gh release view $RELEASE_TAG --repo gounthar/docker-for-riscv64
