@@ -1,0 +1,77 @@
+name: Lint Workflows
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/**'
+      - '**/*.yml'
+      - '**/*.yaml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/**'
+  workflow_dispatch:
+
+jobs:
+  lint-yaml:
+    name: Lint YAML Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install yamllint
+        run: |
+          pip install yamllint
+
+      - name: Create yamllint config
+        run: |
+          cat > .yamllint << 'EOF'
+          extends: default
+          rules:
+            line-length:
+              max: 120
+              level: warning
+            comments:
+              min-spaces-from-content: 1
+            document-start: disable
+            truthy:
+              allowed-values: ['true', 'false', 'yes', 'no']
+          EOF
+
+      - name: Run yamllint on workflow files
+        run: |
+          yamllint -c .yamllint .github/workflows/ || true
+
+      - name: Run yamllint on all YAML files
+        run: |
+          find . -type f \( -name "*.yml" -o -name "*.yaml" \) \
+            -not -path "*/\.*" \
+            -not -path "*/moby/*" \
+            -not -path "*/compose/*" \
+            -not -path "*/cli/*" \
+            | xargs yamllint -c .yamllint
+
+  actionlint:
+    name: Lint GitHub Actions Workflows
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download actionlint
+        run: |
+          bash <(curl https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          echo "${PWD}" >> $GITHUB_PATH
+
+      - name: Run actionlint
+        run: |
+          actionlint -color
