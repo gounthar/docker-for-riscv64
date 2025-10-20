@@ -455,8 +455,8 @@ done
 time docker ps
 
 # Cleanup
-docker stop $(docker ps -q)
-docker rm $(docker ps -aq)
+docker stop $(docker ps -q --filter "name=test-")
+docker rm $(docker ps -aq --filter "name=test-")
 ```
 
 ### Test Large Image Operations
