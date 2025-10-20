@@ -479,9 +479,8 @@ For testing automation or always using the latest CLI version, use these command
 
 ```bash
 # Using GitHub CLI (gh)
-LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  head -1 | awk '{print $1}')
+LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 echo "Latest CLI: $LATEST_CLI"
 ```
@@ -492,9 +491,8 @@ Replace hardcoded versions in Phase 2 and Phase 3:
 
 ```bash
 # Phase 2: Trigger Manual Build with latest version
-LATEST_CLI_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  head -1 | awk '{print $1}')
+LATEST_CLI_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 LATEST_CLI_VERSION=$(echo "$LATEST_CLI_TAG" | sed 's/^cli-v//')
 
@@ -521,9 +519,8 @@ set -e
 
 # Fetch latest CLI release
 echo "Detecting latest CLI release..."
-LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  head -1 | awk '{print $1}')
+LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 echo "Latest CLI: $LATEST_CLI"
 
@@ -540,7 +537,7 @@ echo "CLI Version:"
 read -p "Install to /usr/bin/docker? (y/N) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sudo cp docker /usr/bin/docker
+    sudo install -m 0755 docker /usr/bin/docker
     echo "Installed successfully!"
     docker --version
 fi

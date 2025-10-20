@@ -267,20 +267,16 @@ For automation or scripting maintenance tasks, use these commands to dynamically
 
 ```bash
 # Detect latest Engine release
-LATEST_ENGINE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  grep -v 'cli-v' | grep -v 'compose-v' | \
-  head -1 | awk '{print $1}')
+LATEST_ENGINE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 # Detect latest CLI release
-LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  head -1 | awk '{print $1}')
+LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 # Detect latest Compose release
-LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  head -1 | awk '{print $1}')
+LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 echo "Latest Engine: $LATEST_ENGINE"
 echo "Latest CLI: $LATEST_CLI"
@@ -293,10 +289,8 @@ Replace hardcoded versions in manual update workflow:
 
 ```bash
 # Detect latest Engine release
-RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  grep -v 'cli-v' | grep -v 'compose-v' | \
-  head -1 | awk '{print $1}')
+RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 echo "Latest release: $RELEASE_TAG"
 
@@ -331,18 +325,17 @@ LATEST_MOBY=$(curl -s https://api.github.com/repos/moby/moby/releases/latest | \
 
 echo "Latest Moby: $LATEST_MOBY"
 
-# Trigger build with latest version
-gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST_MOBY
+# Trigger build with latest version and get run URL
+RUN_URL=$(gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST_MOBY 2>&1)
+RUN_ID=$(echo "$RUN_URL" | grep -oP 'actions/runs/\K[0-9]+' || gh run list --workflow=docker-weekly-build.yml --limit 1 --json databaseId --jq '.[0].databaseId')
 
 # Wait for build to complete
-echo "Waiting for build..."
-sleep 60
+echo "Waiting for build run $RUN_ID to complete..."
+gh run watch "$RUN_ID" --exit-status
 
 # Get the release tag that was created
-RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 5 | \
-  grep -E '^\s*v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  grep -v 'cli-v' | grep -v 'compose-v' | \
-  head -1 | awk '{print $1}')
+RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 5 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 echo "New release created: $RELEASE_TAG"
 

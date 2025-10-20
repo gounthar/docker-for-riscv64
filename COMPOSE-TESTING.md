@@ -352,9 +352,8 @@ For testing automation or always using the latest Compose version, use these com
 
 ```bash
 # Using GitHub CLI (gh)
-LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  head -1 | awk '{print $1}')
+LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 echo "Latest Compose: $LATEST_COMPOSE"
 ```
@@ -364,12 +363,11 @@ echo "Latest Compose: $LATEST_COMPOSE"
 Replace hardcoded versions in Phase 2 and Phase 3:
 
 ```bash
-# Phase 2: Trigger Manual Build
-LATEST_COMPOSE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  head -1 | awk '{print $1}')
+# Get latest Compose release tag
+LATEST_COMPOSE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
-# Phase 3: Test with latest release
+# Test with latest release
 RELEASE_TAG=$LATEST_COMPOSE_TAG
 gh release view $RELEASE_TAG
 
@@ -389,9 +387,8 @@ set -e
 
 # Fetch latest Compose release
 echo "Detecting latest Compose release..."
-LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-  grep -E '^\s*compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-  head -1 | awk '{print $1}')
+LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
+  jq -r '[.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
 
 echo "Latest Compose: $LATEST_COMPOSE"
 
@@ -408,9 +405,7 @@ echo "Compose Version:"
 read -p "Install to /usr/libexec/docker/cli-plugins/? (y/N) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
-    sudo mkdir -p /usr/libexec/docker/cli-plugins
-    sudo cp docker-compose /usr/libexec/docker/cli-plugins/
-    sudo chmod +x /usr/libexec/docker/cli-plugins/docker-compose
+    sudo install -D -m 0755 docker-compose /usr/libexec/docker/cli-plugins/docker-compose
 
     # Create backward compat symlink
     sudo ln -sf /usr/libexec/docker/cli-plugins/docker-compose /usr/bin/docker-compose
