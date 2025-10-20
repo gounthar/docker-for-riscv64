@@ -109,12 +109,13 @@ jobs:
 
           # Copy packaging and update changelog with dch
           cp -r debian-cli debian
-          dch --chdir debian \
-              --newversion "${VERSION}-riscv64-1" \
+          cd debian
+          dch --newversion "${VERSION}-riscv64-1" \
               --distribution trixie \
               --force-distribution \
               --check-dirname-level 0 \
               "RISC-V64 prebuilt docker-cli ${VERSION}"
+          cd ..
 
       - name: Build package
         if: steps.check_release.outputs.skip != 'true'
