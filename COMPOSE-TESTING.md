@@ -7,6 +7,7 @@ Testing guide for Docker Compose v2 plugin on RISC-V64 architecture.
 - RISC-V64 hardware or emulator
 - Docker Engine installed and running
 - Git with submodules initialized
+- GitHub CLI (`gh`) for automated scripts
 
 > **Note:** This guide uses specific version numbers for illustration (e.g., `compose-v2.40.1-riscv64`).
 > Always check the [releases page](https://github.com/gounthar/docker-for-riscv64/releases)
@@ -385,10 +386,26 @@ Here's a complete script for automated Compose testing:
 #!/bin/bash
 set -e
 
+# Check for required dependencies
+command -v gh &> /dev/null || {
+  echo "Error: GitHub CLI (gh) not found. Install with: https://cli.github.com"
+  exit 1
+}
+
+command -v jq &> /dev/null || {
+  echo "Error: jq not found. Install with: sudo apt-get install jq"
+  exit 1
+}
+
 # Fetch latest Compose release
 echo "Detecting latest Compose release..."
 LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
   jq -r '[.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
+
+if [[ -z "$LATEST_COMPOSE" ]]; then
+  echo "Error: No Compose releases found. Check repository and network connectivity."
+  exit 1
+fi
 
 echo "Latest Compose: $LATEST_COMPOSE"
 

@@ -319,15 +319,42 @@ git push origin apt-repo
 Trigger workflows with detected versions:
 
 ```bash
+# Check for required dependencies
+command -v gh &> /dev/null || {
+  echo "Error: GitHub CLI (gh) not found. Install from: https://cli.github.com"
+  exit 1
+}
+
+command -v jq &> /dev/null || {
+  echo "Error: jq not found. Install with: sudo apt-get install jq"
+  exit 1
+}
+
+command -v curl &> /dev/null || {
+  echo "Error: curl not found. Install with: sudo apt-get install curl"
+  exit 1
+}
+
 # Detect latest upstream Moby version
 LATEST_MOBY=$(curl -s https://api.github.com/repos/moby/moby/releases/latest | \
   jq -r '.tag_name')
 
+if [[ -z "$LATEST_MOBY" ]]; then
+  echo "Error: Failed to detect latest Moby version. Check network connectivity."
+  exit 1
+fi
+
 echo "Latest Moby: $LATEST_MOBY"
 
-# Trigger build with latest version and get run URL
-RUN_URL=$(gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST_MOBY 2>&1)
-RUN_ID=$(echo "$RUN_URL" | grep -oP 'actions/runs/\K[0-9]+' || gh run list --workflow=docker-weekly-build.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+# Trigger build and get run ID from recent runs
+gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST_MOBY
+sleep 2  # Brief delay for GitHub to register the new run
+RUN_ID=$(gh run list --workflow=docker-weekly-build.yml --limit 1 --json databaseId --jq '.[0].databaseId')
+
+if [[ -z "$RUN_ID" ]]; then
+  echo "Error: Failed to get workflow run ID. Check gh CLI authentication."
+  exit 1
+fi
 
 # Wait for build to complete
 echo "Waiting for build run $RUN_ID to complete..."
@@ -336,6 +363,11 @@ gh run watch "$RUN_ID" --exit-status
 # Get the release tag that was created
 RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 5 --json tagName | \
   jq -r '[.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
+
+if [[ -z "$RELEASE_TAG" ]]; then
+  echo "Error: Failed to detect new Engine release. Check build completion."
+  exit 1
+fi
 
 echo "New release created: $RELEASE_TAG"
 

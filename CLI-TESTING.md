@@ -7,6 +7,7 @@ Testing guide for Docker CLI on RISC-V64 architecture.
 - RISC-V64 hardware or emulator
 - Docker Engine installed and running
 - Git with submodules initialized
+- GitHub CLI (`gh`) for automated scripts
 
 > **Note:** This guide uses specific version numbers for illustration (e.g., `cli-v28.5.1-riscv64`).
 > Always check the [releases page](https://github.com/gounthar/docker-for-riscv64/releases)
@@ -517,10 +518,26 @@ Here's a complete script for automated CLI testing:
 #!/bin/bash
 set -e
 
+# Check for required dependencies
+command -v gh &> /dev/null || {
+  echo "Error: GitHub CLI (gh) not found. Install with: https://cli.github.com"
+  exit 1
+}
+
+command -v jq &> /dev/null || {
+  echo "Error: jq not found. Install with: sudo apt-get install jq"
+  exit 1
+}
+
 # Fetch latest CLI release
 echo "Detecting latest CLI release..."
 LATEST_CLI=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 --json tagName | \
   jq -r '[.[] | select(.tagName | test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))][0].tagName')
+
+if [[ -z "$LATEST_CLI" ]]; then
+  echo "Error: No CLI releases found. Check repository and network connectivity."
+  exit 1
+fi
 
 echo "Latest CLI: $LATEST_CLI"
 
