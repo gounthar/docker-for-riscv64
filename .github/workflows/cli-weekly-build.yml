@@ -94,8 +94,11 @@ jobs:
             # Development build
             RELEASE_VERSION="cli-v${DATE}-dev"
             RELEASE_TITLE="Docker CLI RISC-V64 Development Build ${DATE}"
-            VERSION_INFO="**CLI Branch:** ${CLI_REF}
-          **CLI Version:** ${CLI_VERSION}"
+            VERSION_INFO=$(cat <<EOF
+**CLI Branch:** ${CLI_REF}
+**CLI Version:** ${CLI_VERSION}
+EOF
+)
           fi
 
           cat > release-notes.md << EOF
