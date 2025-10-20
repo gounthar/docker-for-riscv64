@@ -22,12 +22,18 @@ jobs:
       - name: Check for new Docker CLI release
         id: check
         run: |
-          # Get latest docker/cli release
-          LATEST=$(gh api repos/docker/cli/releases/latest --jq '.tag_name')
+          # Get latest stable tag from docker/cli repository
+          # Note: docker/cli uses tags but doesn't create GitHub Releases
+          LATEST=$(gh api repos/docker/cli/git/refs/tags \
+            --jq '.[] | select(.ref | test("refs/tags/v[0-9]+\\.[0-9]+\\.[0-9]+$")) | .ref' \
+            | sed 's|refs/tags/||' \
+            | sort -V \
+            | tail -n1)
+
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
           # Check if we've already built this (using cli-v*-riscv64 format)
-          # Docker CLI releases are like v28.5.1, we create cli-v28.5.1-riscv64
+          # Docker CLI tags are like v28.5.1, we create cli-v28.5.1-riscv64
           CLEAN_VERSION="${LATEST#v}"
           OUR_TAG="cli-v${CLEAN_VERSION}-riscv64"
 
@@ -37,7 +43,7 @@ jobs:
             echo "already_built=false" >> $GITHUB_OUTPUT
           fi
 
-          echo "Latest Docker CLI release: $LATEST"
+          echo "Latest Docker CLI tag: $LATEST"
           echo "Checking for: ${OUR_TAG}"
         env:
           GH_TOKEN: ${{ github.token }}
