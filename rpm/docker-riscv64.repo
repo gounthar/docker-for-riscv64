@@ -1,0 +1,6 @@
+[docker-riscv64]
+name=Docker for RISC-V64
+baseurl=https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64
+enabled=1
+gpgcheck=1
+gpgkey=https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/gpg-public-key.asc
