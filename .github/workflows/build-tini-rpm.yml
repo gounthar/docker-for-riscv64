@@ -1,0 +1,171 @@
+name: Build Tini RPM Package
+
+on:
+  workflow_run:
+    workflows: ["Weekly Tini RISC-V64 Build"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Tini release tag to build package from'
+        required: true
+        default: 'tini-v0.19.0-riscv64'
+
+jobs:
+  build-tini-rpm:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if new release exists
+        id: check_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Skip check for manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - proceeding with build"
+            echo "has_new_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Find the latest Tini release
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                        grep '^tini-v' | \
+                        head -1 | \
+                        awk '{print $1}')
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No Tini release found - skipping package build"
+            echo "has_new_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if release already has .rpm packages
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          if echo "$ASSETS" | grep -q 'tini.*\.rpm$'; then
+            echo "Release $RELEASE_TAG already has RPM packages - skipping build"
+            echo "has_new_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $RELEASE_TAG needs RPM packages - proceeding with build"
+            echo "has_new_release=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install build dependencies
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          if [ -f /etc/fedora-release ]; then
+            sudo dnf install -y rpm-build rpmdevtools rpmlint
+          elif [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y rpm rpmlint
+          fi
+
+      - name: Set up RPM build tree
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+      - name: Download tini binaries
+        if: steps.check_release.outputs.has_new_release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Get release tag
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                          grep '^tini-v' | \
+                          head -1 | \
+                          awk '{print $1}')
+          fi
+
+          echo "Building package for release: $RELEASE_TAG"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+          # Clean and download tini binaries to SOURCES
+          cd ~/rpmbuild/SOURCES
+          rm -f tini tini-static
+          gh release download $RELEASE_TAG -p tini --repo gounthar/docker-for-riscv64
+          gh release download $RELEASE_TAG -p tini-static --repo gounthar/docker-for-riscv64
+          chmod +x tini tini-static
+          ls -lh
+
+      - name: Copy spec file
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          cp rpm-tini/tini.spec ~/rpmbuild/SPECS/
+
+      - name: Update package version
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          # Extract version from tag (tini-v0.19.0-riscv64 -> 0.19.0)
+          VERSION=$(echo $RELEASE_TAG | sed 's/^tini-v//; s/-riscv64$//')
+          echo "Package version: $VERSION"
+
+          # Update spec file
+          sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/tini.spec
+
+      - name: Build RPM packages
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          cd ~/rpmbuild/SPECS
+          rpmbuild -bb tini.spec
+
+          echo ""
+          echo "Built RPM packages:"
+          ls -lh ~/rpmbuild/RPMS/riscv64/
+
+      - name: Run rpmlint checks
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          rpmlint ~/rpmbuild/RPMS/riscv64/tini*.rpm || true
+
+      - name: Package info
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          for rpm in ~/rpmbuild/RPMS/riscv64/tini*.rpm; do
+            echo "============================================"
+            echo "=== Package: $(basename $rpm) ==="
+            echo "============================================"
+            echo ""
+            echo "=== Package Info ==="
+            rpm -qip "$rpm"
+            echo ""
+            echo "=== Package Contents ==="
+            rpm -qlp "$rpm"
+            echo ""
+            echo "=== Package Size ==="
+            ls -lh "$rpm"
+            echo ""
+          done
+
+      - name: Upload packages to release
+        if: steps.check_release.outputs.has_new_release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          for rpm in ~/rpmbuild/RPMS/riscv64/tini*.rpm; do
+            echo "Uploading $(basename $rpm)..."
+            gh release upload $RELEASE_TAG "$rpm" --repo gounthar/docker-for-riscv64 --clobber
+          done
+
+          echo ""
+          echo "✅ Tini RPM packages uploaded successfully!"
+          echo ""
+          echo "Packages built:"
+          ls -lh ~/rpmbuild/RPMS/riscv64/tini*.rpm
+          echo ""
+          echo "Install with:"
+          echo "  # Main package (dynamic binary)"
+          echo "  sudo dnf install -y tini-*.riscv64.rpm"
+          echo ""
+          echo "  # Static package"
+          echo "  sudo dnf install -y tini-static-*.riscv64.rpm"

@@ -11,11 +11,12 @@ This project provides pre-built Docker Engine, CLI, and Compose binaries for RIS
 - Docker Engine (dockerd, containerd, runc)
 - Docker CLI (docker command-line interface)
 - Docker Compose v2 plugin
+- Tini - tiny init for containers
 - Debian APT repository for easy installation
 - RPM repository for Fedora/RHEL/Rocky/AlmaLinux
 - Automated `.deb` and `.rpm` package creation
 - Automated weekly builds
-- Based on official Moby, CLI, and Compose releases
+- Based on official Moby, CLI, Compose, and Tini releases
 - Built and tested on Debian Trixie / Armbian Trixie and Fedora RISC-V64
 - Minimal patches for RISC-V compatibility
 
@@ -502,6 +503,14 @@ docker --version
 - **docker-compose** (~10MB) - Compose v2 binary
 - Installed to: `/usr/libexec/docker/cli-plugins/`
 - Symlink: `/usr/bin/docker-compose` (backward compat)
+
+**Tini releases** include:
+- **tini-*.rpm** (~50KB) - RPM package for main binary
+- **tini-static-*.rpm** (~2MB) - RPM package for static binary
+- **tini** (~30KB) - Dynamic init binary
+- **tini-static** (~2MB) - Static init binary
+- Installed to: `/usr/bin/tini` and `/usr/bin/tini-static`
+- Used by Docker with `--init` flag for proper signal handling
 
 ## Building from Source
 
