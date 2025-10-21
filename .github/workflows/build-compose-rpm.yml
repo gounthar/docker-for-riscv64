@@ -21,7 +21,44 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check if new release exists
+        id: check_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Skip check for manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - proceeding with build"
+            echo "has_new_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Find the latest Compose release
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                        grep '^compose-v' | \
+                        head -1 | \
+                        awk '{print $1}')
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No Compose release found - skipping package build"
+            echo "has_new_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if release already has .rpm packages
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          if echo "$ASSETS" | grep -q 'docker-compose-plugin.*\.rpm$'; then
+            echo "Release $RELEASE_TAG already has RPM packages - skipping build"
+            echo "has_new_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $RELEASE_TAG needs RPM packages - proceeding with build"
+            echo "has_new_release=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install build dependencies
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           if [ -f /etc/fedora-release ]; then
             sudo dnf install -y rpm-build rpmdevtools rpmlint
@@ -31,10 +68,12 @@ jobs:
           fi
 
       - name: Set up RPM build tree
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
       - name: Download compose binary
+        if: steps.check_release.outputs.has_new_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -59,10 +98,12 @@ jobs:
           ls -lh
 
       - name: Copy spec file
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           cp rpm-compose/docker-compose-plugin.spec ~/rpmbuild/SPECS/
 
       - name: Update package version
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           # Extract version from tag (compose-v2.40.1-riscv64 -> 2.40.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^compose-v//; s/-riscv64$//')
@@ -72,6 +113,7 @@ jobs:
           sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/docker-compose-plugin.spec
 
       - name: Build RPM package
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           cd ~/rpmbuild/SPECS
           rpmbuild -bb docker-compose-plugin.spec
@@ -81,10 +123,12 @@ jobs:
           ls -lh ~/rpmbuild/RPMS/riscv64/
 
       - name: Run rpmlint checks
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           rpmlint ~/rpmbuild/RPMS/riscv64/docker-compose-plugin-*.rpm || true
 
       - name: Package info
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           for rpm in ~/rpmbuild/RPMS/riscv64/docker-compose-plugin-*.rpm; do
             echo "============================================"
@@ -103,6 +147,7 @@ jobs:
           done
 
       - name: Upload package to release
+        if: steps.check_release.outputs.has_new_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
