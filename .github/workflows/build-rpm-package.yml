@@ -21,7 +21,43 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Check if new release exists
+        id: check_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Skip check for manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - proceeding with build"
+            echo "has_new_release=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Find the latest docker release
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                        grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                        grep -v '^compose-' | grep -v '^cli-' | \
+                        head -1 | \
+                        awk '{print $1}')
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No Docker release found - skipping package build"
+            echo "has_new_release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if release already has .rpm packages
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          if echo "$ASSETS" | grep -q 'moby-engine.*\.rpm$'; then
+            echo "Release $RELEASE_TAG already has RPM packages - skipping build"
+            echo "has_new_release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $RELEASE_TAG needs RPM packages - proceeding with build"
+            echo "has_new_release=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install build dependencies
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           # Check if running on Fedora or Debian
           if [ -f /etc/fedora-release ]; then
@@ -35,10 +71,12 @@ jobs:
           fi
 
       - name: Set up RPM build tree
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
       - name: Download release binaries
+        if: steps.check_release.outputs.has_new_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -68,6 +106,7 @@ jobs:
           ls -lh
 
       - name: Copy spec files and sources
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           # Copy systemd unit files to SOURCES
           cp rpm-docker/docker.service ~/rpmbuild/SOURCES/
@@ -80,6 +119,7 @@ jobs:
           cp rpm-runc/runc.spec ~/rpmbuild/SPECS/
 
       - name: Update package versions
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
@@ -89,6 +129,7 @@ jobs:
           sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/moby-engine.spec
 
       - name: Build RPM packages
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           # Build each package
           cd ~/rpmbuild/SPECS
@@ -108,10 +149,12 @@ jobs:
           ls -lh ~/rpmbuild/RPMS/riscv64/
 
       - name: Run rpmlint checks
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           rpmlint ~/rpmbuild/RPMS/riscv64/*.rpm || true
 
       - name: Package info
+        if: steps.check_release.outputs.has_new_release == 'true'
         run: |
           for rpm in ~/rpmbuild/RPMS/riscv64/*.rpm; do
             echo "============================================"
@@ -130,6 +173,7 @@ jobs:
           done
 
       - name: Upload packages to release
+        if: steps.check_release.outputs.has_new_release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
