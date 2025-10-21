@@ -176,13 +176,13 @@ jobs:
           fi
 
           # Get GPG key ID
-          GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format LONG --with-colons | awk -F: '/^sec:/ {print $5; exit}')
           echo "Using GPG key ID: $GPG_KEY_ID"
 
           # Sign each RPM package
           for rpm in ~/rpmbuild/RPMS/riscv64/docker-compose-plugin-*.rpm; do
             echo "Signing $(basename $rpm)..."
-            echo "" | setsid rpmsign --addsign --key-id="$GPG_KEY_ID" "$rpm"
+            setsid rpmsign --addsign --define "_gpg_name $GPG_KEY_ID" "$rpm" || { echo "Error: Failed to sign $rpm"; exit 1; }
           done
 
           echo ""
