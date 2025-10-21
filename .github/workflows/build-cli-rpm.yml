@@ -146,6 +146,56 @@ jobs:
             echo ""
           done
 
+      - name: Import GPG signing key
+        if: steps.check_release.outputs.has_new_release == 'true'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "Importing GPG key for package signing..."
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+          # Verify key imported
+          echo ""
+          echo "GPG keys available:"
+          gpg --list-secret-keys
+          echo ""
+          echo "GPG key imported successfully"
+
+      - name: Sign RPM packages
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          echo "Signing RPM packages..."
+
+          # Install rpm-sign if needed
+          if ! command -v rpmsign >/dev/null 2>&1; then
+            if [ -f /etc/fedora-release ]; then
+              sudo dnf install -y rpm-sign
+            elif [ -f /etc/debian_version ]; then
+              sudo apt-get update && sudo apt-get install -y rpm
+            fi
+          fi
+
+          # Get GPG key ID
+          GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format LONG | grep sec | head -1 | awk '{print $2}' | cut -d'/' -f2)
+          echo "Using GPG key ID: $GPG_KEY_ID"
+
+          # Sign each RPM package
+          for rpm in ~/rpmbuild/RPMS/riscv64/docker-cli-*.rpm; do
+            echo "Signing $(basename $rpm)..."
+            echo "" | setsid rpmsign --addsign --key-id="$GPG_KEY_ID" "$rpm"
+          done
+
+          echo ""
+          echo "✅ All packages signed successfully"
+          echo ""
+
+          # Verify signatures
+          echo "Verifying signatures:"
+          for rpm in ~/rpmbuild/RPMS/riscv64/docker-cli-*.rpm; do
+            echo "Checking $(basename $rpm)..."
+            rpm -qip "$rpm" | grep -i signature || echo "Warning: No signature found"
+          done
+
       - name: Upload package to release
         if: steps.check_release.outputs.has_new_release == 'true'
         env:
