@@ -148,10 +148,16 @@ jobs:
 
           ## Usage with Docker
 
+          Once tini is installed on your Fedora/RPM-based RISC-V64 host, Docker can use it with any container:
+
           \`\`\`bash
-          # Use tini as container init process
-          docker run --init alpine sh
+          # Docker uses host's tini to init any container
+          docker run --init fedora:latest sh
+          docker run --init debian:latest sh
+          docker run --init ubuntu:latest sh
           \`\`\`
+
+          **Note:** Tini runs on the host OS (Fedora), not inside the container.
 
           ## Build Details
 
