@@ -26,6 +26,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+
           # Skip check for manual dispatch
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "Manual dispatch - proceeding with build"

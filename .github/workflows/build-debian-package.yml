@@ -48,7 +48,7 @@ jobs:
 
           # Check if release already has .deb packages
           ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
-          if echo "$ASSETS" | grep -q '\.deb$'; then
+          if echo "$ASSETS" | grep -q 'docker\.io.*\.deb$'; then
             echo "Release $RELEASE_TAG already has Debian packages - skipping build"
             echo "has_new_release=false" >> $GITHUB_OUTPUT
           else
