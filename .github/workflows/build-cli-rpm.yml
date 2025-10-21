@@ -77,6 +77,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+
           # Get release tag
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
@@ -87,6 +89,12 @@ jobs:
                           awk '{print $1}')
           fi
 
+          # Validate RELEASE_TAG is not empty
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: No matching CLI release found"
+            exit 1
+          fi
+
           echo "Building package for release: $RELEASE_TAG"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
@@ -94,6 +102,13 @@ jobs:
           cd ~/rpmbuild/SOURCES
           rm -f docker
           gh release download $RELEASE_TAG -p docker --repo gounthar/docker-for-riscv64
+
+          # Validate binary was downloaded
+          if [ ! -f docker ]; then
+            echo "Error: Failed to download docker binary from release $RELEASE_TAG"
+            exit 1
+          fi
+
           chmod +x docker
           ls -lh
 
@@ -105,9 +120,17 @@ jobs:
       - name: Update package version
         if: steps.check_release.outputs.has_new_release == 'true'
         run: |
+          set -euo pipefail
+
           # Extract version from tag (cli-v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^cli-v//; s/-riscv64$//')
           echo "Package version: $VERSION"
+
+          # Validate VERSION extraction succeeded
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$RELEASE_TAG" ]; then
+            echo "Error: Failed to extract version from tag: $RELEASE_TAG"
+            exit 1
+          fi
 
           # Update spec file
           sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/docker-cli.spec

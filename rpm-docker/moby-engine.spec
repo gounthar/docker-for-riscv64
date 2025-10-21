@@ -16,7 +16,6 @@ Requires:       containerd >= 1.7.28
 Requires:       runc >= 1.3.0
 Requires:       iptables
 Requires:       systemd
-Requires:       tini
 Requires:       libseccomp
 Requires(post): systemd
 Requires(preun): systemd
@@ -26,6 +25,7 @@ Recommends:     ca-certificates
 Recommends:     git
 Recommends:     xz
 Recommends:     docker-cli
+Recommends:     tini
 
 Conflicts:      docker-ce
 Conflicts:      docker-engine

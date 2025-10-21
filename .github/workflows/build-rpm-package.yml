@@ -82,6 +82,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+
           # Get release tag from workflow_run or manual input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
@@ -94,6 +96,12 @@ jobs:
                           awk '{print $1}')
           fi
 
+          # Validate RELEASE_TAG is not empty
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: No matching release found"
+            exit 1
+          fi
+
           echo "Building package for release: $RELEASE_TAG"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
@@ -102,6 +110,10 @@ jobs:
           rm -f dockerd docker-proxy containerd containerd-shim-runc-v2 runc
           for binary in dockerd docker-proxy containerd containerd-shim-runc-v2 runc; do
             gh release download $RELEASE_TAG -p $binary --repo gounthar/docker-for-riscv64
+            if [ ! -f "$binary" ]; then
+              echo "Error: Failed to download $binary from release $RELEASE_TAG"
+              exit 1
+            fi
           done
 
           chmod +x *
