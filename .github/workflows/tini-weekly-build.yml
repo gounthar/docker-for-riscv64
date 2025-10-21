@@ -1,0 +1,189 @@
+name: Weekly Tini RISC-V64 Build
+
+on:
+  schedule:
+    # Run every Sunday at 05:00 UTC (after Compose build)
+    - cron: '0 5 * * 0'
+  workflow_dispatch:
+    inputs:
+      tini_ref:
+        description: 'Tini ref to build (branch/tag/commit)'
+        required: false
+        default: 'v0.19.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-tini:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake gcc glibc-source
+
+      - name: Clone tini repository
+        run: |
+          git clone https://github.com/krallin/tini.git
+          cd tini
+          git checkout ${{ github.event.inputs.tini_ref || 'v0.19.0' }}
+          echo "Building tini from: $(git describe --tags --always)"
+
+      - name: Build tini (dynamic)
+        run: |
+          cd tini
+          mkdir -p build-dynamic
+          cd build-dynamic
+          cmake ..
+          make
+          ls -lh tini
+          ./tini --version || true
+
+      - name: Build tini-static
+        run: |
+          cd tini
+          mkdir -p build-static
+          cd build-static
+          cmake -DCMAKE_EXE_LINKER_FLAGS="-static" ..
+          make
+          ls -lh tini
+          ./tini --version || true
+
+      - name: Prepare release artifacts
+        run: |
+          DATE=$(date +%Y%m%d)
+          mkdir -p release-tini-$DATE
+
+          # Copy binaries
+          cp tini/build-dynamic/tini release-tini-$DATE/tini
+          cp tini/build-static/tini release-tini-$DATE/tini-static
+          chmod +x release-tini-$DATE/*
+
+          # Verify binaries
+          echo "=== Dynamic binary ==="
+          ls -lh release-tini-$DATE/tini
+          file release-tini-$DATE/tini
+          ldd release-tini-$DATE/tini || true
+
+          echo ""
+          echo "=== Static binary ==="
+          ls -lh release-tini-$DATE/tini-static
+          file release-tini-$DATE/tini-static
+          ldd release-tini-$DATE/tini-static || echo "Statically linked"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Ensure gh is installed
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y gh || true
+          fi
+
+          DATE=$(date +%Y%m%d)
+          TINI_REF="${{ github.event.inputs.tini_ref || 'v0.19.0' }}"
+
+          # Get version from tini repo
+          cd tini
+          TINI_VERSION=$(git describe --tags --always)
+          cd ..
+
+          # Determine release version (handle v0.19.0 or 0.19.0 formats)
+          if [[ "$TINI_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Official release: v0.19.0 or 0.19.0 -> tini-v0.19.0-riscv64
+            CLEAN_REF="${TINI_REF#v}"
+            RELEASE_VERSION="tini-v${CLEAN_REF}-riscv64"
+            RELEASE_TITLE="Tini v${CLEAN_REF} for RISC-V64"
+            VERSION_INFO="**Tini Version:** v${CLEAN_REF}"
+          else
+            # Development build
+            RELEASE_VERSION="tini-v${DATE}-dev"
+            RELEASE_TITLE="Tini RISC-V64 Development Build ${DATE}"
+            VERSION_INFO="**Tini Branch:** ${TINI_REF}
+          **Tini Version:** ${TINI_VERSION}"
+          fi
+
+          cat > release-notes.md << EOF
+          Automated build of Tini for RISC-V64
+
+          ${VERSION_INFO}
+          **Build Date:** $(date -u +%Y-%m-%d)
+          **Architecture:** riscv64
+
+          ## What is Tini?
+
+          Tini is the simplest init you could think of. It spawns a single child process
+          and waits for it to exit while reaping zombies and performing signal forwarding.
+
+          Tini is used by Docker with the \`--init\` flag to properly handle process signals
+          and prevent zombie processes in containers.
+
+          ## Installation
+
+          **Option 1: Manual Installation**
+          \`\`\`bash
+          # Download binary
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/tini
+          chmod +x tini
+          sudo mv tini /usr/bin/tini
+
+          # Or download static version
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/tini-static
+          chmod +x tini-static
+          sudo mv tini-static /usr/bin/tini-static
+          \`\`\`
+
+          **Option 2: RPM Package (recommended)**
+          \`\`\`bash
+          # RPM package will be built automatically and available soon
+          # Check release assets for tini-*.rpm files
+          sudo dnf install -y tini-*.rpm
+          \`\`\`
+
+          ## Usage with Docker
+
+          \`\`\`bash
+          # Use tini as container init process
+          docker run --init alpine sh
+          \`\`\`
+
+          ## Build Details
+
+          **Build Command:**
+          \`\`\`bash
+          # Dynamic build
+          cmake .
+          make
+
+          # Static build
+          cmake -DCMAKE_EXE_LINKER_FLAGS="-static" .
+          make
+          \`\`\`
+
+          **Dependencies:**
+          - cmake
+          - gcc
+          - glibc (dynamic) or glibc-static (static)
+
+          Built natively on RISC-V64 hardware (BananaPi F3)
+          EOF
+
+          # For development builds, delete existing release if it exists
+          if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
+            echo "Checking for existing development release..."
+            if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+              echo "Deleting existing release ${RELEASE_VERSION}..."
+              gh release delete "${RELEASE_VERSION}" --yes
+            fi
+          fi
+
+          gh release create "${RELEASE_VERSION}" \
+            --title "${RELEASE_TITLE}" \
+            --notes-file release-notes.md \
+            release-tini-$DATE/*
