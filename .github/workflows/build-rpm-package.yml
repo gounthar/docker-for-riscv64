@@ -179,6 +179,7 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
+          set -euo pipefail
           echo "Importing GPG key for package signing..."
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
 
@@ -192,6 +193,7 @@ jobs:
       - name: Sign RPM packages
         if: steps.check_release.outputs.has_new_release == 'true'
         run: |
+          set -euo pipefail
           echo "Signing RPM packages..."
 
           # Install rpm-sign if needed
