@@ -52,5 +52,4 @@ install -p -m 0755 %{SOURCE1} %{buildroot}%{_bindir}/tini-static
 * Tue Oct 21 2025 Bruno Verachten <gounthar@gmail.com> - 0.19.0-1
 - Initial RPM packaging for RISC-V64
 - Built from official tini v0.19.0 source
-- Pre-built binaries for BananaPi F3
 - Split into main and static subpackages
