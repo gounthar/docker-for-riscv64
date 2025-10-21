@@ -102,13 +102,13 @@ jobs:
       - name: Create repository configuration file
         run: |
           cat > rpm/docker-riscv64.repo << 'EOF'
-[docker-riscv64]
-name=Docker for RISC-V64
-baseurl=https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64
-enabled=1
-gpgcheck=1
-gpgkey=https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/gpg-public-key.asc
-EOF
+          [docker-riscv64]
+          name=Docker for RISC-V64
+          baseurl=https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64
+          enabled=1
+          gpgcheck=1
+          gpgkey=https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/gpg-public-key.asc
+          EOF
 
           echo ""
           echo "Created repository configuration:"
@@ -117,89 +117,89 @@ EOF
       - name: Update README for RPM repo
         run: |
           cat > rpm/README.md << 'EOF'
-# Docker RISC-V64 RPM Repository
+          # Docker RISC-V64 RPM Repository
 
-This repository provides RPM packages for Docker Engine, containerd, and runc
-built natively for RISC-V64 architecture.
+          This repository provides RPM packages for Docker Engine, containerd, and runc
+          built natively for RISC-V64 architecture.
 
-## Installation
+          ## Installation
 
-### Fedora/RHEL/Rocky Linux/AlmaLinux
+          ### Fedora/RHEL/Rocky Linux/AlmaLinux
 
-1. Add the repository:
+          1. Add the repository:
 
-```bash
-sudo curl -L https://gounthar.github.io/docker-for-riscv64/rpm/docker-riscv64.repo \
-  -o /etc/yum.repos.d/docker-riscv64.repo
-```
+          ```bash
+          sudo curl -L https://gounthar.github.io/docker-for-riscv64/rpm/docker-riscv64.repo \
+            -o /etc/yum.repos.d/docker-riscv64.repo
+          ```
 
-2. Install Docker:
+          2. Install Docker:
 
-```bash
-sudo dnf install -y moby-engine docker-cli
-```
+          ```bash
+          sudo dnf install -y moby-engine docker-cli
+          ```
 
-3. Start Docker:
+          3. Start Docker:
 
-```bash
-sudo systemctl enable --now docker
-```
+          ```bash
+          sudo systemctl enable --now docker
+          ```
 
-4. Verify installation:
+          4. Verify installation:
 
-```bash
-docker --version
-sudo docker run hello-world
-```
+          ```bash
+          docker --version
+          sudo docker run hello-world
+          ```
 
-## Packages Available
+          ## Packages Available
 
-- **moby-engine** - Docker Engine daemon
-- **containerd** - Container runtime
-- **runc** - OCI runtime
-- **docker-cli** - Docker command-line interface
-- **docker-compose-plugin** - Docker Compose v2
+          - **moby-engine** - Docker Engine daemon
+          - **containerd** - Container runtime
+          - **runc** - OCI runtime
+          - **docker-cli** - Docker command-line interface
+          - **docker-compose-plugin** - Docker Compose v2
 
-## Manual Installation
+          ## Manual Installation
 
-If you prefer to install manually:
+          If you prefer to install manually:
 
-```bash
-# Download packages
-wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/runc-*.riscv64.rpm
-wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/containerd-*.riscv64.rpm
-wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/moby-engine-*.riscv64.rpm
+          ```bash
+          # Download packages
+          wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/runc-*.riscv64.rpm
+          wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/containerd-*.riscv64.rpm
+          wget https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64/moby-engine-*.riscv64.rpm
 
-# Install in dependency order
-sudo dnf install -y runc-*.riscv64.rpm
-sudo dnf install -y containerd-*.riscv64.rpm
-sudo dnf install -y moby-engine-*.riscv64.rpm
-```
+          # Install in dependency order
+          sudo dnf install -y runc-*.riscv64.rpm
+          sudo dnf install -y containerd-*.riscv64.rpm
+          sudo dnf install -y moby-engine-*.riscv64.rpm
+          ```
 
-## Repository Structure
+          ## Repository Structure
 
-```
-rpm/
-├── docker-riscv64.repo       # Repository configuration
-├── README.md                 # This file
-└── fedora/
-    └── riscv64/
-        ├── *.rpm             # RPM packages
-        └── repodata/         # Repository metadata
-```
+          ```
+          rpm/
+          ├── docker-riscv64.repo       # Repository configuration
+          ├── README.md                 # This file
+          └── fedora/
+              └── riscv64/
+                  ├── *.rpm             # RPM packages
+                  └── repodata/         # Repository metadata
+          ```
 
-## Build Information
+          ## Build Information
 
-- Built on: BananaPi F3 running Fedora RISC-V64
-- Source: https://github.com/gounthar/docker-for-riscv64
-- Weekly builds every Sunday
-- Automatic tracking of upstream Moby releases
+          - Built on: BananaPi F3 running Fedora RISC-V64
+          - Source: https://github.com/gounthar/docker-for-riscv64
+          - Weekly builds every Sunday
+          - Automatic tracking of upstream Moby releases
 
-## Support
+          ## Support
 
-For issues and questions:
-- GitHub: https://github.com/gounthar/docker-for-riscv64/issues
-EOF
+          For issues and questions:
+          - GitHub: https://github.com/gounthar/docker-for-riscv64/issues
+          EOF
 
           echo ""
           echo "Created RPM repository README"
