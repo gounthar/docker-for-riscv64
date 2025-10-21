@@ -42,6 +42,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
@@ -70,6 +72,12 @@ jobs:
             fi
           fi
 
+          # Validate RELEASE_TAG is not empty
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: No matching release found with RPM packages"
+            exit 1
+          fi
+
           echo "Adding packages from release: $RELEASE_TAG"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
@@ -77,6 +85,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           cd rpm/fedora/riscv64
 
           # Download all RPM packages
@@ -86,6 +95,12 @@ jobs:
             --repo gounthar/docker-for-riscv64 \
             --clobber
 
+          # Validate RPM packages were downloaded
+          if ! ls *.rpm 1> /dev/null 2>&1; then
+            echo "Error: No RPM packages found in release $RELEASE_TAG"
+            exit 1
+          fi
+
           echo ""
           echo "Downloaded packages:"
           ls -lh *.rpm
@@ -94,14 +109,28 @@ jobs:
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
+          set -euo pipefail
+
+          # Validate GPG key is set
+          if [ -z "$GPG_PRIVATE_KEY" ]; then
+            echo "Error: GPG_PRIVATE_KEY secret not set"
+            exit 1
+          fi
+
           # Import GPG key for signing
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
 
           # Verify key imported
+          if ! gpg --list-secret-keys | grep -q .; then
+            echo "Error: Failed to import GPG key"
+            exit 1
+          fi
+
           gpg --list-secret-keys
 
       - name: Create repository metadata
         run: |
+          set -euo pipefail
           cd rpm/fedora/riscv64
 
           # Create repository metadata
@@ -111,6 +140,12 @@ jobs:
           # Sign repository metadata
           echo "Signing repository metadata..."
           gpg --batch --yes --detach-sign --armor repodata/repomd.xml
+
+          # Validate signature was created
+          if [ ! -f repodata/repomd.xml.asc ]; then
+            echo "Error: Failed to create signature for repomd.xml"
+            exit 1
+          fi
 
           echo ""
           echo "Repository metadata created and signed"

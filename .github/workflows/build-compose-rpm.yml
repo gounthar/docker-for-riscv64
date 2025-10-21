@@ -77,6 +77,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+
           # Get release tag
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
@@ -87,6 +89,12 @@ jobs:
                           awk '{print $1}')
           fi
 
+          # Validate RELEASE_TAG is not empty
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: No matching Compose release found"
+            exit 1
+          fi
+
           echo "Building package for release: $RELEASE_TAG"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
@@ -94,6 +102,13 @@ jobs:
           cd ~/rpmbuild/SOURCES
           rm -f docker-compose
           gh release download $RELEASE_TAG -p docker-compose --repo gounthar/docker-for-riscv64
+
+          # Validate binary was downloaded
+          if [ ! -f docker-compose ]; then
+            echo "Error: Failed to download docker-compose binary from release $RELEASE_TAG"
+            exit 1
+          fi
+
           chmod +x docker-compose
           ls -lh
 
