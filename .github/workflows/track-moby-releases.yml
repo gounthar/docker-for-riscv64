@@ -8,7 +8,7 @@ on:
 
 jobs:
   check-release:
-    runs-on: [self-hosted, riscv64]
+    runs-on: ubuntu-latest
     
     steps:
       - name: Checkout repository
