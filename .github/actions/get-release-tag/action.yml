@@ -42,6 +42,12 @@ runs:
         if [ -n "$RELEASE_TAG_INPUT" ]; then
           RELEASE_TAG="$RELEASE_TAG_INPUT"
           echo "Using manual release tag: $RELEASE_TAG"
+
+          # Validate that the release tag exists before proceeding
+          if ! gh release view "$RELEASE_TAG" --repo gounthar/docker-for-riscv64 >/dev/null 2>&1; then
+            echo "::error::Release tag '$RELEASE_TAG' provided via input does not exist."
+            exit 1
+          fi
         else
           # Find the latest release matching the tag pattern using JSON output
           echo "Searching for releases matching pattern: $TAG_PATTERN"
@@ -61,9 +67,10 @@ runs:
         # Check if release has existing assets (if enabled)
         if [ "$CHECK_EXISTING_ASSETS" = "true" ] && [ -n "$ASSET_PATTERN" ]; then
           echo "Checking for existing assets matching pattern: $ASSET_PATTERN"
-          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          # Use jq to directly filter for assets matching the pattern, which is more robust than piping to grep.
+          MATCHING_ASSETS=$(gh release view "$RELEASE_TAG" --repo gounthar/docker-for-riscv64 --json assets --jq ".assets[].name | select(test(\"$ASSET_PATTERN\"))" 2>/dev/null)
 
-          if echo "$ASSETS" | grep -qE "$ASSET_PATTERN"; then
+          if [ -n "$MATCHING_ASSETS" ]; then
             echo "Release $RELEASE_TAG already has matching assets - skipping build"
             echo "release-tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
             echo "has-new-release=false" >> $GITHUB_OUTPUT
