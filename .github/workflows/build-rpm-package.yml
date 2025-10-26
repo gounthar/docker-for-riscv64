@@ -75,6 +75,18 @@ jobs:
         run: |
           rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
+          # Add riscv64 architecture support to rpm
+          mkdir -p ~/.rpmmacros.d
+          cat > ~/.rpmmacros.d/riscv64 << 'EOF'
+          %_arch riscv64
+          %_target_cpu riscv64
+          %_host_cpu riscv64
+          EOF
+
+          # Also set in global rpmrc
+          echo "arch_canon: riscv64: riscv64 1" | sudo tee -a /usr/lib/rpm/rpmrc
+          echo "buildarchtranslate: riscv64: riscv64" | sudo tee -a /usr/lib/rpm/rpmrc
+
       - name: Download release binaries
         if: steps.check_release.outputs.has_new_release == 'true'
         env:
