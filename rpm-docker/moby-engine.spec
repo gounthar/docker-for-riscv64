@@ -22,10 +22,10 @@ Requires(preun): systemd
 Requires(postun): systemd
 
 Recommends:     ca-certificates
-Recommends:     git
-Recommends:     xz
 Recommends:     docker-cli
+Recommends:     git
 Recommends:     tini
+Recommends:     xz
 
 Conflicts:      docker-ce
 Conflicts:      docker-engine

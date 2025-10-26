@@ -8,8 +8,8 @@ Source0:        docker
 
 BuildArch:      riscv64
 
-Recommends:     moby-engine
 Recommends:     docker-compose-plugin
+Recommends:     moby-engine
 
 %description
 Docker CLI is the command-line interface for Docker. It provides the docker
