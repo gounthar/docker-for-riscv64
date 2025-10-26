@@ -21,43 +21,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Check if new release exists
-        id: check_release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-
-          # Skip check for manual dispatch
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual dispatch - proceeding with build"
-            echo "has_new_release=true" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Find the latest docker release using JSON output
-          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                        jq -r '.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
-                        head -1)
-
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "No Docker release found - skipping package build"
-            echo "has_new_release=false" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-
-          # Check if release already has .rpm packages
-          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
-          if echo "$ASSETS" | grep -q 'moby-engine.*\.rpm$'; then
-            echo "Release $RELEASE_TAG already has RPM packages - skipping build"
-            echo "has_new_release=false" >> $GITHUB_OUTPUT
-          else
-            echo "Release $RELEASE_TAG needs RPM packages - proceeding with build"
-            echo "has_new_release=true" >> $GITHUB_OUTPUT
-          fi
+      - name: Get release tag
+        id: release
+        uses: ./.github/actions/get-release-tag
+        with:
+          release-tag-input: ${{ github.event.inputs.release_tag || '' }}
+          tag-pattern: '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64$'
+          asset-pattern: 'moby-engine.*\.rpm$'
+          check-existing-assets: ${{ github.event_name != 'workflow_dispatch' }}
 
       - name: Install build dependencies
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         run: |
           # Check if running on Fedora or Debian
           if [ -f /etc/fedora-release ]; then
@@ -71,35 +45,19 @@ jobs:
           fi
 
       - name: Set up RPM build tree
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         run: |
           rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
       - name: Download release binaries
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           set -euo pipefail
 
-          # Get release tag from workflow_run or manual input
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
-          else
-            # Find the latest docker release created by the workflow using JSON output
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                          jq -r '.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
-                          head -1)
-          fi
-
-          # Validate RELEASE_TAG is not empty
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "Error: No matching release found"
-            exit 1
-          fi
-
           echo "Building package for release: $RELEASE_TAG"
-          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
           # Clean and download all binaries to SOURCES directory
           cd ~/rpmbuild/SOURCES
@@ -116,7 +74,7 @@ jobs:
           ls -lh
 
       - name: Copy spec files and sources
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         run: |
           # Copy systemd unit files to SOURCES
           cp rpm-docker/docker.service ~/rpmbuild/SOURCES/
@@ -129,7 +87,7 @@ jobs:
           cp rpm-runc/runc.spec ~/rpmbuild/SPECS/
 
       - name: Update package versions
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         run: |
           # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
@@ -139,7 +97,7 @@ jobs:
           sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/moby-engine.spec
 
       - name: Build RPM packages
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         run: |
           # Build each package (on native riscv64, no --target needed)
           cd ~/rpmbuild/SPECS
@@ -159,12 +117,12 @@ jobs:
           ls -lh ~/rpmbuild/RPMS/riscv64/
 
       - name: Run rpmlint checks
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         run: |
           rpmlint ~/rpmbuild/RPMS/riscv64/*.rpm || true
 
       - name: Package info
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         run: |
           for rpm in ~/rpmbuild/RPMS/riscv64/*.rpm; do
             echo "============================================"
@@ -183,7 +141,7 @@ jobs:
           done
 
       - name: Import GPG signing key
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
@@ -199,7 +157,7 @@ jobs:
           echo "GPG key imported successfully"
 
       - name: Sign RPM packages
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         run: |
           set -euo pipefail
           echo "Signing RPM packages..."
@@ -235,7 +193,7 @@ jobs:
           done
 
       - name: Upload packages to release
-        if: steps.check_release.outputs.has_new_release == 'true'
+        if: steps.release.outputs.has-new-release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
