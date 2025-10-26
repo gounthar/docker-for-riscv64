@@ -145,13 +145,13 @@ jobs:
           cd ~/rpmbuild/SPECS
 
           echo "Building runc..."
-          rpmbuild -bb runc.spec
+          rpmbuild -bb --target riscv64 runc.spec
 
           echo "Building containerd..."
-          rpmbuild -bb containerd.spec
+          rpmbuild -bb --target riscv64 containerd.spec
 
           echo "Building moby-engine..."
-          rpmbuild -bb moby-engine.spec
+          rpmbuild -bb --target riscv64 moby-engine.spec
 
           # List built packages
           echo ""
