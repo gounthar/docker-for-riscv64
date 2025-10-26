@@ -180,12 +180,18 @@ jobs:
           Built natively on RISC-V64 hardware (BananaPi F3)
           EOF
 
-          # For development builds, delete existing release if it exists
-          if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
-            echo "Checking for existing development release..."
-            if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
-              echo "Deleting existing release ${RELEASE_VERSION}..."
+          # Check if release already exists
+          if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+            if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
+              # For development builds, delete and recreate
+              echo "Deleting existing development release ${RELEASE_VERSION}..."
               gh release delete "${RELEASE_VERSION}" --yes
+            else
+              # For official releases, skip if already exists
+              echo "✅ Release ${RELEASE_VERSION} already exists, skipping creation"
+              echo "Existing release details:"
+              gh release view "${RELEASE_VERSION}"
+              exit 0
             fi
           fi
 
