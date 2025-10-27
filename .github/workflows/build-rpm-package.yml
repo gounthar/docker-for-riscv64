@@ -201,6 +201,7 @@ jobs:
         if: steps.release.outputs.has-new-release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
