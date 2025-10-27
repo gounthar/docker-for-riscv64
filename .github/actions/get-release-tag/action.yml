@@ -51,8 +51,9 @@ runs:
         else
           # Find the latest release matching the tag pattern using JSON output
           echo "Searching for releases matching pattern: $TAG_PATTERN"
+          # Use jq --arg to pass pattern safely, preventing shell expansion of regex characters
           RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                        jq -r ".[] | select(.tagName | test(\"$TAG_PATTERN\")) | .tagName" | \
+                        jq -r --arg pattern "$TAG_PATTERN" '.[] | select(.tagName | test($pattern)) | .tagName' | \
                         head -1)
 
           if [ -z "$RELEASE_TAG" ]; then
@@ -67,8 +68,9 @@ runs:
         # Check if release has existing assets (if enabled)
         if [ "$CHECK_EXISTING_ASSETS" = "true" ] && [ -n "$ASSET_PATTERN" ]; then
           echo "Checking for existing assets matching pattern: $ASSET_PATTERN"
-          # Use jq to directly filter for assets matching the pattern, which is more robust than piping to grep.
-          MATCHING_ASSETS=$(gh release view "$RELEASE_TAG" --repo gounthar/docker-for-riscv64 --json assets --jq ".assets[].name | select(test(\"$ASSET_PATTERN\"))" 2>/dev/null)
+          # Use jq --arg to pass pattern safely, preventing shell expansion of regex characters
+          # Note: Pipe gh output to jq instead of using gh --jq, as gh --jq doesn't support jq's --arg flag
+          MATCHING_ASSETS=$(gh release view "$RELEASE_TAG" --repo gounthar/docker-for-riscv64 --json assets | jq -r --arg pattern "$ASSET_PATTERN" '.assets[].name | select(test($pattern))' 2>/dev/null)
 
           if [ -n "$MATCHING_ASSETS" ]; then
             echo "Release $RELEASE_TAG already has matching assets - skipping build"
