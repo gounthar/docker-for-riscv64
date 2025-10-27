@@ -88,6 +88,8 @@ jobs:
 
       - name: Update package versions
         if: steps.release.outputs.has-new-release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
