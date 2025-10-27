@@ -1,6 +1,6 @@
 name: Build RPM Package
 
-on:
+'on':
   workflow_run:
     workflows: ["Weekly Docker RISC-V64 Build", "Track Moby Releases"]
     types: [completed]
@@ -88,6 +88,8 @@ jobs:
 
       - name: Update package versions
         if: steps.release.outputs.has-new-release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
@@ -178,7 +180,10 @@ jobs:
           # Sign each RPM package
           for rpm in ~/rpmbuild/RPMS/riscv64/*.rpm; do
             echo "Signing $(basename $rpm)..."
-            setsid rpmsign --addsign --define "_gpg_name $GPG_KEY_ID" "$rpm" || { echo "Error: Failed to sign $rpm"; exit 1; }
+            setsid rpmsign --addsign --define "_gpg_name $GPG_KEY_ID" "$rpm" || {
+              echo "Error: Failed to sign $rpm"
+              exit 1
+            }
           done
 
           echo ""
@@ -213,9 +218,10 @@ jobs:
           echo ""
           echo "Install with:"
           echo "  # Download all packages"
-          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/runc-*.riscv64.rpm"
-          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/containerd-*.riscv64.rpm"
-          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/moby-engine-*.riscv64.rpm"
+          RELEASE_URL="https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}"
+          echo "  wget ${RELEASE_URL}/runc-*.riscv64.rpm"
+          echo "  wget ${RELEASE_URL}/containerd-*.riscv64.rpm"
+          echo "  wget ${RELEASE_URL}/moby-engine-*.riscv64.rpm"
           echo ""
           echo "  # Install in dependency order"
           echo "  sudo dnf install -y runc-*.riscv64.rpm"
