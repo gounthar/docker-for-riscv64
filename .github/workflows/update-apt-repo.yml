@@ -155,7 +155,62 @@ jobs:
                      -m "Workflow: ${{ github.workflow }}" \
                      -m "Run: ${{ github.run_id }}"
 
-          git push
+          # Push with retry logic for concurrent workflow handling
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if git push; then
+              echo "✅ Successfully pushed changes"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⚠️  Push failed (attempt $RETRY_COUNT/$MAX_RETRIES). Pulling and retrying..."
+
+                # Fetch latest changes
+                git fetch origin apt-repo
+
+                # Try to rebase our changes on top of remote
+                if git rebase origin/apt-repo; then
+                  echo "✅ Rebased successfully, retrying push..."
+                else
+                  echo "⚠️  Rebase conflict detected. Resolving by accepting remote changes and re-adding package..."
+                  git rebase --abort
+
+                  # Reset to remote state
+                  git reset --hard origin/apt-repo
+
+                  # Re-add the package (reprepro will handle if it's already there)
+                  for deb in *.deb; do
+                    if [ -f "$deb" ]; then
+                      echo "Re-adding: $deb"
+                      reprepro -b . includedeb trixie "$deb" 2>&1 | grep -v "already registered with other version"
+                    fi
+                  done
+
+                  # Commit again if there are changes
+                  if ! git diff --quiet dists pool 2>/dev/null; then
+                    git add dists pool
+                    git commit -m "Add $PACKAGE_NAME $VERSION from release $RELEASE_TAG" \
+                               -m "Automated update from GitHub Actions (retry $RETRY_COUNT)." \
+                               -m "Package: ${PACKAGE_NAME}_${VERSION}-*_riscv64.deb" \
+                               -m "Release: $RELEASE_TAG" \
+                               -m "Workflow: ${{ github.workflow }}" \
+                               -m "Run: ${{ github.run_id }}"
+                  else
+                    echo "📝 Package already added by concurrent workflow"
+                    exit 0
+                  fi
+                fi
+
+                # Wait a bit before retrying (random delay to avoid thundering herd)
+                sleep $((RANDOM % 10 + 5))
+              else
+                echo "❌ Failed to push after $MAX_RETRIES attempts"
+                exit 1
+              fi
+            fi
+          done
 
           echo ""
           echo "✅ APT repository updated successfully!"
