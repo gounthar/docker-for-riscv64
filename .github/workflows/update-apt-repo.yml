@@ -159,7 +159,7 @@ jobs:
           MAX_RETRIES=5
           RETRY_COUNT=0
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if git push; then
+            if git push origin apt-repo; then
               echo "✅ Successfully pushed changes"
               break
             else
@@ -184,7 +184,17 @@ jobs:
                   for deb in *.deb; do
                     if [ -f "$deb" ]; then
                       echo "Re-adding: $deb"
-                      reprepro -b . includedeb trixie "$deb" 2>&1 | grep -v "already registered with other version"
+                      if reprepro -b . includedeb trixie "$deb" 2>&1 | tee /tmp/reprepro.log; then
+                        echo "✅ Package added successfully"
+                      else
+                        # Check if error is due to package already existing (exit code 254)
+                        if grep -q "already registered with other version" /tmp/reprepro.log; then
+                          echo "ℹ️  Package already in repository with different version - this is expected"
+                        else
+                          echo "⚠️  reprepro error occurred:"
+                          cat /tmp/reprepro.log
+                        fi
+                      fi
                     fi
                   done
 
