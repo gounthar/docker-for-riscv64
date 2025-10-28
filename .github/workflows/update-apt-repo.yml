@@ -167,8 +167,12 @@ jobs:
               if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
                 echo "⚠️  Push failed (attempt $RETRY_COUNT/$MAX_RETRIES). Pulling and retrying..."
 
-                # Fetch latest changes
-                git fetch origin apt-repo
+                # Fetch latest changes with error handling
+                if ! git fetch origin apt-repo; then
+                  echo "❌ Failed to fetch from remote. This may indicate network or authentication issues."
+                  echo "Skipping remaining retries and failing the workflow."
+                  exit 1
+                fi
 
                 # Try to rebase our changes on top of remote
                 if git rebase origin/apt-repo; then
