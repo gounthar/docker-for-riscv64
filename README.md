@@ -134,6 +134,44 @@ wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${VERSION
 sudo dnf install -y ./*.riscv64.rpm
 ```
 
+#### Gentoo Linux
+
+##### Option 1: Portage Overlay (Recommended)
+
+Install from our Gentoo overlay using emerge:
+
+```bash
+# Add the overlay
+eselect repository add docker-riscv64 git https://github.com/gounthar/docker-for-riscv64.git
+
+# Sync the overlay
+emerge --sync docker-riscv64
+
+# Install Docker
+emerge -av app-containers/docker
+
+# For systemd users
+systemctl enable docker
+systemctl start docker
+
+# For OpenRC users
+rc-update add docker default
+rc-service docker start
+
+# Add your user to docker group
+usermod -aG docker $USER
+```
+
+**Note**: Log out and back in for group changes to take effect.
+
+**Features:**
+- Pre-built binaries (no 1-2 hour compilation!)
+- Latest Docker versions for RISC-V64
+- Full Portage integration
+- Choice of systemd or OpenRC
+
+See `gentoo-overlay/README.md` for detailed Gentoo installation instructions.
+
 #### Manual Binary Installation (Any Distribution)
 
 Download the latest release binaries:
