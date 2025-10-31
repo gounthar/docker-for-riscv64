@@ -1,12 +1,21 @@
 #!/bin/bash
 # Generate Gentoo overlay for RISC-V64 Docker packages
 # Based on upstream Gentoo ebuilds with modifications for pre-built binaries
+#
+# Usage: ./generate-gentoo-overlay.sh [VERSION]
+# Example: ./generate-gentoo-overlay.sh 28.5.1
 
 set -e
 
 OVERLAY_DIR="gentoo-overlay"
 UPSTREAM_DIR="upstream-gentoo-ebuilds"
-VERSION="28.5.1"
+VERSION="${1:-28.5.1}"
+
+if [[ -z "${VERSION}" ]]; then
+    echo "Error: No version specified." >&2
+    echo "Usage: $0 <version>" >&2
+    exit 1
+fi
 
 echo "🔨 Generating Gentoo overlay for Docker ${VERSION}..."
 
@@ -28,6 +37,9 @@ EOF
 
 # Copy and modify metadata.xml
 cp "${UPSTREAM_DIR}/app-containers/docker/metadata.xml" "${OVERLAY_DIR}/app-containers/docker/"
+
+# Add overlay maintainer info after upstream maintainer
+sed -i '/<\/maintainer>/a\	<maintainer type="project">\n\t\t<email>docker-riscv64@example.com</email>\n\t\t<name>Docker for RISC-V64 Project</name>\n\t\t<description>Maintainer of the docker-riscv64 overlay providing pre-built binaries.</description>\n\t</maintainer>' "${OVERLAY_DIR}/app-containers/docker/metadata.xml"
 
 # Copy service files from upstream (they work as-is)
 cp "${UPSTREAM_DIR}/app-containers/docker/files"/* "${OVERLAY_DIR}/app-containers/docker/files/"
@@ -70,7 +82,7 @@ SRC_URI="
 LICENSE="Apache-2.0"
 SLOT="0"
 KEYWORDS="~riscv"
-IUSE="+container-init systemd"
+IUSE="+container-init +overlay2 systemd"
 RESTRICT="strip"
 
 # Runtime dependencies (simplified - no build deps needed)

@@ -13,15 +13,12 @@ scms:
 sources:
   docker-version:
     name: Get latest Docker ebuild version from Gentoo
-    kind: file
+    kind: shell
     scmid: gentoo-repo
     spec:
-      file: app-containers/docker
-      matchpattern: 'docker-(\d+\.\d+\.\d+)\.ebuild'
-    transformers:
-      - findsubmatch:
-          pattern: 'docker-(\d+\.\d+\.\d+)\.ebuild'
-          captureindex: 1
+      command: ls app-containers/docker/docker-*.ebuild 2>/dev/null | grep -oP 'docker-\K[0-9]+(?:\.[0-9]+)+(?:_[a-z0-9]+)?(?:-r[0-9]+)?' | sort -V | tail -1
+      environments:
+        - name: PATH
 
 conditions:
   check-ebuild-exists:
@@ -39,10 +36,7 @@ targets:
     sourceid: docker-version
     spec:
       file: upstream-gentoo-ebuilds/app-containers/docker/docker-{{ source "docker-version" }}.ebuild
-      content: |
-        {{ source "docker-version" }}
-    transformers:
-      - addprefix: "# UpdateCLI: New Docker ebuild version available: "
+      content: '{{ file (printf "app-containers/docker/docker-%s.ebuild" (source "docker-version")) "gentoo-repo" }}'
 
 actions:
   default:
