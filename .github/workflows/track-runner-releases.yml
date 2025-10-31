@@ -33,7 +33,27 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
       
-      - name: Create issue for new runner
+      - name: Trigger automated update
+        if: steps.check.outputs.needs_update == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+          CURRENT=${{ steps.check.outputs.current_version }}
+
+          echo "🚀 Triggering automated runner update..."
+          echo "  Current: $CURRENT"
+          echo "  Target: $LATEST"
+
+          # Trigger the update workflow
+          gh workflow run update-runner.yml \
+            --repo gounthar/docker-for-riscv64 \
+            -f version="$LATEST"
+
+          echo "✅ Update workflow triggered"
+          echo "📊 Monitor progress: gh run list --workflow=update-runner.yml"
+
+      - name: Create tracking issue
         if: steps.check.outputs.needs_update == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
@@ -42,12 +62,20 @@ jobs:
           CURRENT=${{ steps.check.outputs.current_version }}
 
           cat > issue-body.md << EOF
-          New runner version available!
+          Automated runner update triggered!
 
           **Current version:** $CURRENT
           **New version:** $LATEST
 
-          **Update steps:**
+          **Status:** Update workflow has been triggered automatically.
+
+          **Monitor progress:**
+          \`\`\`bash
+          gh run list --workflow=update-runner.yml --limit 5
+          gh run watch
+          \`\`\`
+
+          **Manual update (if automation fails):**
           \`\`\`bash
           ssh poddingue@192.168.1.185
           cd ~/github-act-runner-test
@@ -57,6 +85,11 @@ jobs:
           # Restart runner service
           sudo systemctl restart github-runner
           \`\`\`
+
+          **Logs:**
+          - Build logs: \`~/github-act-runner-test/build.log\`
+          - Restart logs: \`/tmp/runner-restart.log\`
+          - Service status: \`systemctl status github-runner\`
 
           Release notes: https://github.com/ChristopherHX/github-act-runner/releases/tag/$LATEST
           EOF
