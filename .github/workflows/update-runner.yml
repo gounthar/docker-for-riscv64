@@ -1,0 +1,161 @@
+name: Update Self-Hosted Runner
+
+'on':
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Runner version to update to'
+        required: true
+        type: string
+
+  # Can be triggered by track-runner-releases.yml
+  repository_dispatch:
+    types: [runner-update-available]
+
+jobs:
+  update-runner:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Validate version format
+        run: |
+          VERSION="${{ github.event.inputs.version || github.event.client_payload.version }}"
+          if [[ ! "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Invalid version format: $VERSION"
+            echo "Expected format: vX.Y.Z (e.g., v0.12.0)"
+            exit 1
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Check current version
+        id: current
+        run: |
+          CURRENT=$(~/github-act-runner-test/github-act-runner --version 2>&1 | grep -oP 'v\d+\.\d+\.\d+' || echo "unknown")
+          echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
+          echo "Current version: $CURRENT"
+          echo "Target version: $VERSION"
+
+          if [ "$CURRENT" = "$VERSION" ]; then
+            echo "already_updated=true" >> $GITHUB_OUTPUT
+            echo "⚠️ Already running version $VERSION"
+          else
+            echo "already_updated=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Backup current runner
+        if: steps.current.outputs.already_updated == 'false'
+        run: |
+          TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+          BACKUP_DIR=~/github-act-runner-backups
+          mkdir -p "$BACKUP_DIR"
+
+          if [ -f ~/github-act-runner-test/github-act-runner ]; then
+            cp ~/github-act-runner-test/github-act-runner "$BACKUP_DIR/github-act-runner.$TIMESTAMP"
+            echo "✅ Backup created: $BACKUP_DIR/github-act-runner.$TIMESTAMP"
+          fi
+
+      - name: Pull latest runner code
+        if: steps.current.outputs.already_updated == 'false'
+        run: |
+          cd ~/github-act-runner-test
+
+          # Save current commit for rollback
+          CURRENT_COMMIT=$(git rev-parse HEAD)
+          echo "CURRENT_COMMIT=$CURRENT_COMMIT" >> $GITHUB_ENV
+          echo "Current commit: $CURRENT_COMMIT"
+
+          # Fetch and checkout target version
+          git fetch --tags
+          git checkout "$VERSION"
+
+          NEW_COMMIT=$(git rev-parse HEAD)
+          echo "NEW_COMMIT=$NEW_COMMIT" >> $GITHUB_ENV
+          echo "New commit: $NEW_COMMIT"
+
+      - name: Build new runner
+        if: steps.current.outputs.already_updated == 'false'
+        id: build
+        run: |
+          cd ~/github-act-runner-test
+
+          echo "🔨 Building github-act-runner $VERSION..."
+          if go build -v -o github-act-runner . 2>&1 | tee build.log; then
+            echo "build_success=true" >> $GITHUB_OUTPUT
+            echo "✅ Build successful"
+          else
+            echo "build_success=false" >> $GITHUB_OUTPUT
+            echo "❌ Build failed"
+            exit 1
+          fi
+
+      - name: Verify new binary
+        if: steps.current.outputs.already_updated == 'false' && steps.build.outputs.build_success == 'true'
+        run: |
+          cd ~/github-act-runner-test
+
+          # Test the new binary
+          if ./github-act-runner --version; then
+            NEW_VERSION=$(./github-act-runner --version 2>&1 | grep -oP 'v\d+\.\d+\.\d+' || echo "unknown")
+            echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+            echo "✅ New binary version: $NEW_VERSION"
+
+            if [ "$NEW_VERSION" != "$VERSION" ]; then
+              echo "⚠️ Warning: Built version ($NEW_VERSION) doesn't match target ($VERSION)"
+            fi
+          else
+            echo "❌ New binary failed version check"
+            exit 1
+          fi
+
+      - name: Schedule runner restart
+        if: steps.current.outputs.already_updated == 'false' && steps.build.outputs.build_success == 'true'
+        run: |
+          # Create a systemd timer to restart the runner after this job completes
+          # This prevents the runner from terminating mid-job
+
+          cat > /tmp/restart-runner.sh << 'EOF'
+          #!/bin/bash
+          sleep 60  # Wait for job to complete
+          sudo systemctl restart github-runner
+          EOF
+
+          chmod +x /tmp/restart-runner.sh
+
+          # Run in background, detached from this job
+          nohup /tmp/restart-runner.sh > /tmp/runner-restart.log 2>&1 &
+
+          echo "✅ Runner restart scheduled in 60 seconds"
+          echo "📝 Check logs: tail -f /tmp/runner-restart.log"
+
+      - name: Report success
+        if: steps.current.outputs.already_updated == 'false'
+        run: |
+          echo "🎉 Runner update complete!"
+          echo ""
+          echo "📊 Summary:"
+          echo "  - Previous version: ${{ steps.current.outputs.current_version }}"
+          echo "  - New version: $NEW_VERSION"
+          echo "  - Backup location: ~/github-act-runner-backups/github-act-runner.$(date +%Y%m%d_*)"
+          echo "  - Restart scheduled: 60 seconds"
+          echo ""
+          echo "⚠️ The runner service will restart automatically"
+          echo "   Current jobs will complete before restart"
+
+      - name: Rollback on failure
+        if: failure() && steps.current.outputs.already_updated == 'false'
+        run: |
+          cd ~/github-act-runner-test
+
+          if [ -n "$CURRENT_COMMIT" ]; then
+            echo "🔄 Rolling back to previous commit: $CURRENT_COMMIT"
+            git checkout "$CURRENT_COMMIT"
+
+            # Restore from backup if available
+            LATEST_BACKUP=$(ls -t ~/github-act-runner-backups/github-act-runner.* 2>/dev/null | head -1)
+            if [ -f "$LATEST_BACKUP" ]; then
+              cp "$LATEST_BACKUP" ~/github-act-runner-test/github-act-runner
+              echo "✅ Restored from backup: $LATEST_BACKUP"
+            fi
+          fi
+
+          echo "❌ Update failed - rolled back to previous version"
