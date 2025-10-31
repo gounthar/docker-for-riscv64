@@ -17,17 +17,19 @@ jobs:
           # Get latest runner release
           LATEST=$(gh api repos/ChristopherHX/github-act-runner/releases/latest --jq '.tag_name')
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
-          
-          # Check current version
-          CURRENT=$(~/github-act-runner-test/github-act-runner --version 2>&1 | grep -oP 'v\d+\.\d+\.\d+' || echo "unknown")
+
+          # Check current version from git tag (more reliable than --version)
+          cd ~/github-act-runner-test
+          CURRENT=$(git describe --tags --exact-match 2>/dev/null || echo "unknown")
+          cd - > /dev/null
           echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
-          
+
           if [ "$LATEST" != "$CURRENT" ]; then
             echo "needs_update=true" >> $GITHUB_OUTPUT
           else
             echo "needs_update=false" >> $GITHUB_OUTPUT
           fi
-          
+
           echo "Latest runner: $LATEST"
           echo "Current runner: $CURRENT"
         env:

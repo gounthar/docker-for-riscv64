@@ -30,7 +30,11 @@ jobs:
       - name: Check current version
         id: current
         run: |
-          CURRENT=$(~/github-act-runner-test/github-act-runner --version 2>&1 | grep -oP 'v\d+\.\d+\.\d+' || echo "unknown")
+          # Check version from git tag (more reliable than binary --version)
+          cd ~/github-act-runner-test
+          CURRENT=$(git describe --tags --exact-match 2>/dev/null || echo "unknown")
+          cd - > /dev/null
+
           echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
           echo "Current version: $CURRENT"
           echo "Target version: $VERSION"
@@ -95,12 +99,17 @@ jobs:
 
           # Test the new binary
           if ./github-act-runner --version; then
-            NEW_VERSION=$(./github-act-runner --version 2>&1 | grep -oP 'v\d+\.\d+\.\d+' || echo "unknown")
+            # Get version from git tag (reliable) and binary output (for display)
+            NEW_VERSION=$(git describe --tags --exact-match 2>/dev/null || echo "unknown")
+            BINARY_VERSION=$(./github-act-runner --version 2>&1 | head -1)
+
             echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
-            echo "✅ New binary version: $NEW_VERSION"
+            echo "✅ New binary version (git tag): $NEW_VERSION"
+            echo "✅ Binary reports: $BINARY_VERSION"
 
             if [ "$NEW_VERSION" != "$VERSION" ]; then
-              echo "⚠️ Warning: Built version ($NEW_VERSION) doesn't match target ($VERSION)"
+              echo "⚠️ Warning: Git tag ($NEW_VERSION) doesn't match target ($VERSION)"
+              echo "This may indicate the checkout didn't work as expected"
             fi
           else
             echo "❌ New binary failed version check"
