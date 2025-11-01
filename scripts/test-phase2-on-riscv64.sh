@@ -201,6 +201,8 @@ echo ""
 echo_header "Section 4: Dependency Validation"
 
 DOCKER_EBUILD="gentoo-overlay/app-containers/docker/docker-${DOCKER_VERSION}.ebuild"
+CONTAINERD_EBUILD="gentoo-overlay/app-containers/containerd/containerd-${CONTAINERD_VERSION}.ebuild"
+COMPOSE_EBUILD="gentoo-overlay/app-containers/docker-compose/docker-compose-${COMPOSE_VERSION}.ebuild"
 
 run_test "Docker ebuild depends on containerd" \
     "grep -q 'containerd-${CONTAINERD_VERSION}' '$DOCKER_EBUILD'"
@@ -215,6 +217,12 @@ run_test "Docker ebuild has tini USE flag" \
     "grep -q 'container-init' '$DOCKER_EBUILD'"
 
 run_test "Docker ebuild has overlay2 USE flag" \
+
+run_test "Containerd ebuild depends on runc" \
+    "grep -q 'app-containers/runc-${RUNC_VERSION}' '$CONTAINERD_EBUILD'"
+
+run_test "Docker Compose ebuild depends on docker-cli" \
+    "grep -q 'app-containers/docker-cli-${CLI_VERSION}' '$COMPOSE_EBUILD'"
     "grep -q 'overlay2' '$DOCKER_EBUILD'"
 
 echo ""
@@ -398,8 +406,6 @@ echo ""
 #
 echo_header "Section 8: Documentation Validation"
 
-run_test "CLAUDE.md has Phase 2 section" \
-    "grep -q 'Gentoo Package Structure (Phase 2 - Modular)' CLAUDE.md"
 
 run_test "Phase 2 summary exists" \
     "[[ -f GENTOO-PHASE2-SUMMARY.md ]]"

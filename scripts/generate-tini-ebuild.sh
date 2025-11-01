@@ -81,7 +81,7 @@ EBUILD_EOF
 
 # Copy or create metadata.xml
 if [[ -f "upstream-gentoo-ebuilds/sys-process/tini/metadata.xml" ]]; then
-    cp "upstream-gentoo-ebuilds/sys-process/tini/metadata.xml" "${OUTPUT_DIR}/" 2>/dev/null || true
+    cp "upstream-gentoo-ebuilds/sys-process/tini/metadata.xml" "${OUTPUT_DIR}/"
 else
     cat > "${OUTPUT_DIR}/metadata.xml" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>

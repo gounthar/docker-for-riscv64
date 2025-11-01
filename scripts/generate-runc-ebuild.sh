@@ -80,7 +80,7 @@ sed -i "s/DOCKER_VERSION_PLACEHOLDER/${DOCKER_VERSION}/" "${OUTPUT_DIR}/runc-${R
 
 # Copy or create metadata.xml
 if [[ -f "upstream-gentoo-ebuilds/app-containers/runc/metadata.xml" ]]; then
-    cp "upstream-gentoo-ebuilds/app-containers/runc/metadata.xml" "${OUTPUT_DIR}/" 2>/dev/null || true
+    cp "upstream-gentoo-ebuilds/app-containers/runc/metadata.xml" "${OUTPUT_DIR}/"
 else
     cat > "${OUTPUT_DIR}/metadata.xml" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>

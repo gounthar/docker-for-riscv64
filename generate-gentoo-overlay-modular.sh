@@ -112,7 +112,7 @@ mkdir -p "${OVERLAY_DIR}/app-containers/docker/files"
 
 # Copy service files from upstream
 if [[ -d "upstream-gentoo-ebuilds/app-containers/docker/files" ]]; then
-    cp -r upstream-gentoo-ebuilds/app-containers/docker/files/* "${OVERLAY_DIR}/app-containers/docker/files/" 2>/dev/null || true
+    cp -r upstream-gentoo-ebuilds/app-containers/docker/files/* "${OVERLAY_DIR}/app-containers/docker/files/"
 fi
 
 # Add daemon.json configuration

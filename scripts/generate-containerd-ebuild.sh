@@ -24,7 +24,7 @@ mkdir -p "${OUTPUT_DIR}/files"
 
 # Copy service files from upstream if they exist
 if [[ -d "upstream-gentoo-ebuilds/app-containers/containerd/files" ]]; then
-    cp -r upstream-gentoo-ebuilds/app-containers/containerd/files/* "${OUTPUT_DIR}/files/" 2>/dev/null || true
+    cp -r upstream-gentoo-ebuilds/app-containers/containerd/files/* "${OUTPUT_DIR}/files/"
 fi
 
 # Generate ebuild
