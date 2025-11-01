@@ -1,0 +1,72 @@
+name: UpdateCLI - Gentoo Packages
+
+on:
+  schedule:
+    # Run daily at 08:00 UTC (after component releases typically happen)
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+    inputs:
+      manifest:
+        description: 'Specific manifest to run (e.g., gentoo-containerd.yaml)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  updatecli:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        manifest:
+          - gentoo-containerd.yaml
+          - gentoo-runc.yaml
+          - gentoo-docker-cli.yaml
+          - gentoo-docker-compose.yaml
+          - gentoo-tini.yaml
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install UpdateCLI
+        uses: updatecli/updatecli-action@v2
+        with:
+          version: latest
+
+      - name: Install GitHub CLI
+        run: |
+          type -p gh > /dev/null || {
+            type -p curl >/dev/null || sudo apt update && sudo apt install curl -y
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+            && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+            && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+            && sudo apt update \
+            && sudo apt install gh -y
+          }
+
+      - name: Run UpdateCLI for ${{ matrix.manifest }}
+        if: ${{ github.event.inputs.manifest == '' || github.event.inputs.manifest == matrix.manifest }}
+        env:
+          UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          echo "Running UpdateCLI for ${{ matrix.manifest }}..."
+          updatecli diff --config .updatecli.d/${{ matrix.manifest }} || true
+          updatecli apply --config .updatecli.d/${{ matrix.manifest }} || echo "No updates needed or update failed"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "### UpdateCLI Run Complete: ${{ matrix.manifest }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Manifest: \`.updatecli.d/${{ matrix.manifest }}\`" >> $GITHUB_STEP_SUMMARY
