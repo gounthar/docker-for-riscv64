@@ -90,7 +90,7 @@ cat > "${OUTPUT_DIR}/metadata.xml" << 'EOF'
 <!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
 	<maintainer type="project">
-		<email>docker-riscv64@example.com</email>
+		<email>gounthar@gmail.com</email>
 		<name>Docker for RISC-V64 Project</name>
 		<description>Pre-built Docker Compose v2 binaries for RISC-V64</description>
 	</maintainer>
