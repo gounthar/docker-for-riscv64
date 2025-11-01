@@ -3,20 +3,18 @@
 #
 # This ebuild is based on the official Gentoo Docker package but modified
 # to use pre-built binaries for RISC-V64 architecture.
+# This is a modular package that depends on separate component packages.
 # Upstream: https://github.com/gentoo/gentoo/tree/master/app-containers/docker
 
 EAPI=8
 
 inherit linux-info systemd
 
-DESCRIPTION="Docker Engine - Pre-built binaries for RISC-V64"
+DESCRIPTION="Docker Engine - Pre-built binaries for RISC-V64 (modular package)"
 HOMEPAGE="https://github.com/gounthar/docker-for-riscv64"
 SRC_URI="
 	https://github.com/gounthar/docker-for-riscv64/releases/download/v${PV}-riscv64/dockerd -> ${P}-dockerd
 	https://github.com/gounthar/docker-for-riscv64/releases/download/v${PV}-riscv64/docker-proxy -> ${P}-docker-proxy
-	https://github.com/gounthar/docker-for-riscv64/releases/download/v${PV}-riscv64/containerd -> ${P}-containerd
-	https://github.com/gounthar/docker-for-riscv64/releases/download/v${PV}-riscv64/containerd-shim-runc-v2 -> ${P}-containerd-shim-runc-v2
-	https://github.com/gounthar/docker-for-riscv64/releases/download/v${PV}-riscv64/runc -> ${P}-runc
 "
 
 LICENSE="Apache-2.0"
@@ -25,7 +23,7 @@ KEYWORDS="~riscv"
 IUSE="+container-init +overlay2 systemd"
 RESTRICT="strip"
 
-# Runtime dependencies (simplified - no build deps needed)
+# Runtime dependencies - now uses separate packages
 RDEPEND="
 	acct-group/docker
 	>=net-firewall/iptables-1.4
@@ -33,6 +31,9 @@ RDEPEND="
 	>=dev-vcs/git-1.7
 	>=app-arch/xz-utils-4.9
 	sys-libs/libseccomp
+	~app-containers/containerd-1.7.28
+	~app-containers/runc-1.3.0
+	>=app-containers/docker-cli-28.5.1
 	systemd? ( sys-apps/systemd )
 	container-init? ( >=sys-process/tini-0.19.0[static] )
 "
@@ -69,12 +70,11 @@ src_unpack() {
 }
 
 src_install() {
-	# Install binaries
+	# Install Docker Engine binaries
 	newbin "${DISTDIR}/${P}-dockerd" dockerd
 	newbin "${DISTDIR}/${P}-docker-proxy" docker-proxy
-	newbin "${DISTDIR}/${P}-containerd" containerd
-	newbin "${DISTDIR}/${P}-containerd-shim-runc-v2" containerd-shim-runc-v2
-	newbin "${DISTDIR}/${P}-runc" runc
+
+	# Note: containerd, runc, and containerd-shim are provided by separate packages
 
 	# Install systemd unit or OpenRC init
 	if use systemd; then
@@ -96,8 +96,16 @@ src_install() {
 pkg_postinst() {
 	elog "Docker Engine ${PV} for RISC-V64 has been installed."
 	elog ""
-	elog "These are pre-built binaries from:"
+	elog "This is a modular package using pre-built binaries from:"
 	elog "  https://github.com/gounthar/docker-for-riscv64"
+	elog ""
+	elog "Component packages installed:"
+	elog "  - app-containers/containerd (container runtime)"
+	elog "  - app-containers/runc (OCI runtime)"
+	elog "  - app-containers/docker-cli (Docker CLI)"
+	if use container-init; then
+		elog "  - sys-process/tini (init process for --init flag)"
+	fi
 	elog ""
 	elog "To use Docker, add yourself to the docker group:"
 	elog "  usermod -aG docker <username>"
@@ -110,6 +118,4 @@ pkg_postinst() {
 		elog "  rc-update add docker default"
 		elog "  rc-service docker start"
 	fi
-	elog ""
-	elog "Note: containerd and runc are bundled with this package."
 }

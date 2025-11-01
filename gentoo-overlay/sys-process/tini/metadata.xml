@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
+<pkgmetadata>
+	<maintainer type="project">
+		<email>docker-riscv64@example.com</email>
+		<name>Docker for RISC-V64 Project</name>
+		<description>Pre-built tini binaries for RISC-V64</description>
+	</maintainer>
+	<upstream>
+		<remote-id type="github">krallin/tini</remote-id>
+	</upstream>
+	<use>
+		<flag name="static">Install statically linked binary</flag>
+	</use>
+</pkgmetadata>
