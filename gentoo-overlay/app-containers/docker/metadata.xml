@@ -13,7 +13,7 @@
 		<name>William Hubbs</name>
 	</maintainer>
 	<maintainer type="project">
-		<email>docker-riscv64@example.com</email>
+		<email>gounthar@gmail.com</email>
 		<name>Docker for RISC-V64 Project</name>
 		<description>Maintainer of the docker-riscv64 overlay providing pre-built binaries.</description>
 	</maintainer>

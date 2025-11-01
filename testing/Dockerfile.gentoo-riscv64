@@ -1,0 +1,31 @@
+# Gentoo RISC-V64 Test Environment
+# Used for testing Docker overlay before real package builds
+#
+# Build: docker build -f testing/Dockerfile.gentoo-riscv64 -t gentoo-test:riscv64 .
+# Run: docker run --rm -v $(pwd):/overlay gentoo-test:riscv64
+
+FROM scratch AS stage3
+# Note: Gentoo doesn't yet have official RISC-V64 stage3 tarballs in Docker Hub
+# We'll use a minimal busybox-based approach to test the overlay structure
+
+FROM busybox:latest
+
+# Install basic tools for testing
+RUN mkdir -p /var/db/repos /etc/portage /usr/portage
+
+# Simulate Gentoo environment
+RUN echo "RISC-V64 Test Environment" > /etc/gentoo-release
+
+WORKDIR /test
+
+# Copy test scripts
+COPY scripts/test-gentoo-integration.sh /test/
+COPY scripts/benchmark-gentoo-docker.sh /test/
+
+# Simulated equery for package verification
+RUN mkdir -p /usr/bin && \
+    echo '#!/bin/sh' > /usr/bin/equery && \
+    echo 'echo "app-containers/docker-cli-28.5.1"' >> /usr/bin/equery && \
+    chmod +x /usr/bin/equery
+
+CMD ["/bin/sh"]
