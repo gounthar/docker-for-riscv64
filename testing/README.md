@@ -370,7 +370,7 @@ When adding new features:
 
 ## References
 
-- **Main Testing Guide**: `../GENTOO-TESTING.md`
+- **Main Testing Guide**: `../TESTING-RISC-V64.md`
 - **Security Guide**: `../GENTOO-SECURITY.md`
 - **Phase 2 Summary**: `../GENTOO-PHASE2-SUMMARY.md`
 - **Integration Tests**: `../scripts/test-gentoo-integration.sh`

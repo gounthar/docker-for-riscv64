@@ -4,7 +4,7 @@ Quick guide for testing the Gentoo overlay on your BananaPi F3 RISC-V64 machine.
 
 ## Prerequisites
 
-- RISC-V64 machine (BananaPi F3) at 192.168.1.185
+- RISC-V64 machine (BananaPi F3) at <riscv64-ip-address>
 - Docker installed and running
 - Git and GitHub CLI configured
 - SSH access configured
@@ -15,17 +15,17 @@ Quick guide for testing the Gentoo overlay on your BananaPi F3 RISC-V64 machine.
 
 ```bash
 # From development machine (WSL2/x86_64)
-cd /mnt/c/support/users/dev/riscv/docker/docker-dev
+cd /path/to/your/docker-dev
 
 # Sync to RISC-V64 machine
 rsync -avz --exclude='.git' --exclude='moby' --exclude='compose' \
-  . 192.168.1.185:~/docker-for-riscv64/
+  . <riscv64-ip-address>:~/docker-for-riscv64/
 ```
 
 ### Step 2: SSH to RISC-V64 Machine
 
 ```bash
-ssh 192.168.1.185
+ssh <riscv64-ip-address>
 cd ~/docker-for-riscv64
 ```
 
@@ -222,7 +222,7 @@ emerge -av app-containers/docker
 ```bash
 # On RISC-V64 machine
 # Add to crontab: crontab -e
-0 2 * * * cd /home/user/docker-for-riscv64 && ./testing/run-all-tests.sh > /tmp/nightly-test-$(date +\%Y\%m\%d).log 2>&1
+0 2 * * * cd $HOME/docker-for-riscv64 && ./testing/run-all-tests.sh > /tmp/nightly-test-$(date +\%Y\%m\%d).log 2>&1
 ```
 
 ### GitHub Actions (Future)

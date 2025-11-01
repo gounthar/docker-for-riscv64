@@ -207,12 +207,12 @@ echo ""
 echo_header "Step 5: Create GitHub Release for Gentoo Overlay (Optional)"
 
 if [[ "$DRY_RUN" == "true" ]]; then
-    echo_info "Would create release tag: gentoo-overlay-$(date +%Y%m%d)"
+    echo_info "Would create release tag: gentoo-overlay-$(date +%Y%m%d-%H%M%S)"
 else
     read -p "Create GitHub release tag for this overlay version? [y/N] " -n 1 -r
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
-        RELEASE_TAG="gentoo-overlay-$(date +%Y%m%d)"
+        RELEASE_TAG="gentoo-overlay-$(date +%Y%m%d-%H%M%S)"
         gh release create "$RELEASE_TAG" \
             --title "Gentoo Overlay $(date +%Y-%m-%d)" \
             --notes "Gentoo overlay for RISC-V64 Docker

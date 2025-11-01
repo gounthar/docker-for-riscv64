@@ -262,14 +262,14 @@ sed -i "s/TINI_VERSION_PLACEHOLDER/${TINI_VERSION}/" "${OVERLAY_DIR}/app-contain
 if [[ -f "upstream-gentoo-ebuilds/app-containers/docker/metadata.xml" ]]; then
     cp "upstream-gentoo-ebuilds/app-containers/docker/metadata.xml" "${OVERLAY_DIR}/app-containers/docker/"
     # Add overlay maintainer info
-    sed -i '/<\/maintainer>/a\	<maintainer type="project">\n\t\t<email>docker-riscv64@example.com</email>\n\t\t<name>Docker for RISC-V64 Project</name>\n\t\t<description>Maintainer of the docker-riscv64 overlay providing pre-built binaries.</description>\n\t</maintainer>' "${OVERLAY_DIR}/app-containers/docker/metadata.xml"
+    sed -i '/<\/maintainer>/a\	<maintainer type="project">\n\t\t<email>gounthar@gmail.com</email>\n\t\t<name>Docker for RISC-V64 Project</name>\n\t\t<description>Maintainer of the docker-riscv64 overlay providing pre-built binaries.</description>\n\t</maintainer>' "${OVERLAY_DIR}/app-containers/docker/metadata.xml"
 else
     cat > "${OVERLAY_DIR}/app-containers/docker/metadata.xml" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE pkgmetadata SYSTEM "https://www.gentoo.org/dtd/metadata.dtd">
 <pkgmetadata>
 	<maintainer type="project">
-		<email>docker-riscv64@example.com</email>
+		<email>gounthar@gmail.com</email>
 		<name>Docker for RISC-V64 Project</name>
 		<description>Pre-built Docker Engine binaries for RISC-V64</description>
 	</maintainer>
