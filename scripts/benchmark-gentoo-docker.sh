@@ -227,7 +227,7 @@ benchmark "3 parallel containers" \
     5
 
 benchmark "5 parallel containers" \
-    "for i in {1..5}; do docker run -d --name bench-\$i $TEST_IMAGE sleep 5 > /dev/null; done; docker wait bench-{1..5} > /dev/null; docker rm bench-{1..5} > /dev/null" \
+    "for i in {1..5}; do docker run -d --name bench-\$i $TEST_IMAGE sleep 5 > /dev/null; done; docker wait bench-{1..5} > /dev/null; for j in 1 2 3 4 5; do docker rm bench-$j; done > /dev/null" \
     3
 
 echo ""
@@ -252,14 +252,9 @@ echo ""
 # Display summary
 echo "Summary Statistics:"
 echo "==================="
-tail -n +15 "$OUTPUT_FILE" | awk -F',' '
-BEGIN {
-    print "Test                                      | Mean (s) | Min (s)  | Max (s)"
-    print "------------------------------------------|----------|----------|----------"
-}
-NR > 1 {
-    printf "%-42s| %8.3f | %8.3f | %8.3f\n", $1, $2, $3, $4
-}'
+awk 'BEGIN {p=0; FS=","}
+/^Test Name,Mean,Min,Max$/ {p=1; print "Test                                      | Mean (s) | Min (s)  | Max (s)"; print "------------------------------------------|----------|----------|----------"; next}
+p {printf "%-42s| %8.3f | %8.3f | %8.3f\n", $1, $2, $3, $4}' "$OUTPUT_FILE"
 
 echo ""
 echo_result "Benchmark complete! Review full results in: $OUTPUT_FILE"

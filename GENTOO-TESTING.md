@@ -443,7 +443,7 @@ time docker pull busybox:latest
 # Simple build test
 cat > /tmp/Dockerfile.bench <<'EOF'
 FROM busybox:latest
-RUN for i in {1..100}; do echo "iteration $i"; done > /test.log
+RUN for i in $(seq 1 100); do echo "iteration $i"; done > /test.log
 EOF
 
 # Time the build
@@ -460,7 +460,7 @@ rm /tmp/Dockerfile.bench
 
 ```bash
 # Start long-running container
-docker run -d --name stability-test busybox:latest sh -c "i=0; while true; do echo iteration \$i; i=\$((i+1)); sleep 60; done"
+docker run -d --name stability-test busybox:latest sh -c "i=0; while true; do echo iteration \$i; i=\$(expr $i + 1); sleep 60; done"
 
 # Monitor for 30 minutes
 watch -n 60 "docker inspect stability-test | grep -A 5 State"

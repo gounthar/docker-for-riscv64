@@ -160,6 +160,10 @@ Create/edit `/etc/docker/daemon.json`:
 
 Create `/etc/docker/seccomp-default.json`:
 
+> **Note:** The architecture identifier for RISC-V64 may vary depending on your Docker and libseccomp versions.
+> Common values are `SCMP_ARCH_RISCV64` and `riscv64`. Check your system documentation or
+> `/usr/include/seccomp.h` to confirm the correct value for your installation.
+
 ```json
 {
   "defaultAction": "SCMP_ACT_ERRNO",
@@ -300,7 +304,7 @@ docker run --user 1000:1000 busybox:latest
 
 ```bash
 # Run with read-only root
-docker run --read-only -v /tmp busybox:latest
+docker run --read-only --tmpfs /tmp busybox:latest
 
 # Or in docker-compose.yml
 services:
@@ -473,7 +477,7 @@ Use minimal images:
 
 ```dockerfile
 # Build stage
-FROM golang:1.21 AS builder
+FROM golang:1.22 AS builder
 WORKDIR /app
 COPY . .
 RUN go build -o myapp
@@ -520,7 +524,7 @@ Enable auditd:
 emerge -av sys-process/audit
 
 # Add Docker audit rules
-cat >> /etc/audit/rules.d/docker.rules <<'EOF'
+cat > /etc/audit/rules.d/docker.rules <<'EOF'
 -w /usr/bin/docker -k docker
 -w /var/lib/docker -k docker
 -w /etc/docker -k docker

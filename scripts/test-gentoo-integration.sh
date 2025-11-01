@@ -310,7 +310,7 @@ if [[ "$TEST_MODE" == "--full" ]]; then
         "for i in {1..5}; do docker run -d --name stress-\$i $TEST_IMAGE sleep 30; done && sleep 2 && docker ps | grep -c stress- | grep -q 5 && for i in {1..5}; do docker rm -f stress-\$i; done &> /dev/null"
 
     run_test "Rapid container creation/deletion" \
-        "for i in {1..10}; do docker run --rm $TEST_IMAGE echo test-\$i; done | grep -q test-10"
+        "for i in {1..10}; do docker run --rm $TEST_IMAGE echo test-\$i; done | grep -c '^test-[0-9]\+$' | grep -q '^10$'"
 
     echo ""
 fi
@@ -360,7 +360,11 @@ fi
 
 echo ""
 
-PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($TESTS_PASSED / $TESTS_TOTAL) * 100}")
+if [[ $TESTS_TOTAL -gt 0 ]]; then
+  PASS_RATE=$(awk "BEGIN {printf \"%.1f\", ($TESTS_PASSED / $TESTS_TOTAL) * 100}")
+else
+  PASS_RATE="0.0"
+fi
 echo_info "Pass Rate: ${PASS_RATE}%"
 
 echo ""
