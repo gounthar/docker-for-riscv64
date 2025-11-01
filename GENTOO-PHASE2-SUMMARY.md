@@ -261,7 +261,6 @@ Implements Phase 2 of Gentoo packaging using modular approach with separate pack
 - Automated PRs for version updates
 
 **Documentation:**
-- Updated CLAUDE.md with Phase 2 section
 - Summary: GENTOO-PHASE2-SUMMARY.md
 - Overlay README: gentoo-overlay/README.md
 

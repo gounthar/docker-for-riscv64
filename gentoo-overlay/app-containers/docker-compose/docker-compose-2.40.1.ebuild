@@ -18,7 +18,7 @@ RESTRICT="strip"
 
 # Requires Docker CLI to function as a plugin
 RDEPEND="
-	>=app-containers/docker-cli-20.10.0
+	>=app-containers/docker-cli-28.5.1
 "
 
 DEPEND="${RDEPEND}"

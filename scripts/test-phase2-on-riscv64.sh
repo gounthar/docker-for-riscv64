@@ -216,15 +216,15 @@ run_test "Docker ebuild depends on docker-cli" \
 run_test "Docker ebuild has tini USE flag" \
     "grep -q 'container-init' '$DOCKER_EBUILD'"
 
+
 run_test "Docker ebuild has overlay2 USE flag" \
+    "grep -q 'overlay2' '$DOCKER_EBUILD'"
 
 run_test "Containerd ebuild depends on runc" \
     "grep -q 'app-containers/runc-${RUNC_VERSION}' '$CONTAINERD_EBUILD'"
 
 run_test "Docker Compose ebuild depends on docker-cli" \
     "grep -q 'app-containers/docker-cli-${CLI_VERSION}' '$COMPOSE_EBUILD'"
-    "grep -q 'overlay2' '$DOCKER_EBUILD'"
-
 echo ""
 
 #
