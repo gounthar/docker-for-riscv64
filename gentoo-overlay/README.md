@@ -2,6 +2,8 @@
 
 Pre-built Docker binaries for RISC-V64 architecture, packaged for Gentoo Linux using a modular approach.
 
+> **Note:** This overlay uses **ebuilds that download pre-built binaries** from GitHub releases. Gentoo uses a different packaging system than Debian/RPM - we provide Portage overlays with ebuilds, not .deb or .rpm files. See [GENTOO-FAQ.md](../GENTOO-FAQ.md) for details on why Gentoo packaging differs from other distributions.
+
 ## Architecture
 
 This overlay follows Gentoo's standard packaging philosophy by providing separate packages for each Docker component:
