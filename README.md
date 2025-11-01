@@ -170,6 +170,8 @@ usermod -aG docker $USER
 - Full Portage integration
 - Choice of systemd or OpenRC
 
+**Why no .deb/.rpm for Gentoo?** Gentoo uses overlays with ebuilds (not standalone binary packages). Our ebuilds download pre-built binaries from GitHub releases and install them in the Gentoo-native way. See [GENTOO-FAQ.md](GENTOO-FAQ.md) for a detailed explanation.
+
 See `gentoo-overlay/README.md` for detailed Gentoo installation instructions.
 
 #### Manual Binary Installation (Any Distribution)
