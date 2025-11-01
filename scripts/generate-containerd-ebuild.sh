@@ -2,14 +2,14 @@
 # Generate containerd ebuild for RISC-V64 pre-built binaries
 # Based on upstream Gentoo containerd ebuild
 #
-# Usage: ./generate-containerd-ebuild.sh <CONTAINERD_VERSION> <DOCKER_ENGINE_VERSION>
-# Example: ./generate-containerd-ebuild.sh 1.7.28 28.5.1
-
+# Usage: ./generate-containerd-ebuild.sh <CONTAINERD_VERSION> <DOCKER_ENGINE_VERSION> [OUTPUT_DIR] [RUNC_VERSION]
+# Example: ./generate-containerd-ebuild.sh 1.7.28 28.5.1 gentoo-overlay/app-containers/containerd 1.3.0
 set -e
 
 CONTAINERD_VERSION="${1:-1.7.28}"
 DOCKER_VERSION="${2:-28.5.1}"
 OUTPUT_DIR="${3:-gentoo-overlay/app-containers/containerd}"
+RUNC_VERSION="${4:-1.3.0}"
 
 if [[ -z "${CONTAINERD_VERSION}" || -z "${DOCKER_VERSION}" ]]; then
     echo "Error: Both containerd and docker versions required." >&2
@@ -57,7 +57,7 @@ RESTRICT="strip"
 
 # Runtime dependencies - simplified for pre-built binaries
 RDEPEND="
-	>=app-containers/runc-1.3.0
+	>=app-containers/runc-RUNC_VERSION_PLACEHOLDER
 	systemd? ( sys-apps/systemd )
 "
 
@@ -144,6 +144,7 @@ EBUILD_EOF
 
 # Replace version placeholder
 sed -i "s/DOCKER_VERSION_PLACEHOLDER/${DOCKER_VERSION}/" "${OUTPUT_DIR}/containerd-${CONTAINERD_VERSION}.ebuild"
+sed -i "s/RUNC_VERSION_PLACEHOLDER/${RUNC_VERSION}/" "${OUTPUT_DIR}/containerd-${CONTAINERD_VERSION}.ebuild"
 
 # Copy metadata.xml from upstream or create it
 if [[ -f "upstream-gentoo-ebuilds/app-containers/containerd/metadata.xml" ]]; then

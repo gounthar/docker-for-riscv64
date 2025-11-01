@@ -2,13 +2,14 @@
 # Generate docker-compose-plugin ebuild for RISC-V64 pre-built binaries
 # Based on Debian docker-compose-plugin packaging
 #
-# Usage: ./generate-docker-compose-ebuild.sh <COMPOSE_VERSION>
-# Example: ./generate-docker-compose-ebuild.sh 2.40.1
+# Usage: ./generate-docker-compose-ebuild.sh <COMPOSE_VERSION> [OUTPUT_DIR] [CLI_VERSION]
+# Example: ./generate-docker-compose-ebuild.sh 2.40.1 gentoo-overlay/app-containers/docker-compose 28.5.1
 
 set -e
 
 COMPOSE_VERSION="${1:-2.40.1}"
 OUTPUT_DIR="${2:-gentoo-overlay/app-containers/docker-compose}"
+CLI_VERSION="${3:-28.5.1}"
 
 if [[ -z "${COMPOSE_VERSION}" ]]; then
     echo "Error: Compose version required." >&2
@@ -43,7 +44,7 @@ RESTRICT="strip"
 
 # Requires Docker CLI to function as a plugin
 RDEPEND="
-	>=app-containers/docker-cli-20.10.0
+	>=app-containers/docker-cli-CLI_VERSION_PLACEHOLDER
 "
 
 DEPEND="${RDEPEND}"
@@ -80,6 +81,8 @@ pkg_postinst() {
 	elog "Note: This requires app-containers/docker-cli to be installed."
 }
 EBUILD_EOF
+# Replace version placeholder
+sed -i "s/CLI_VERSION_PLACEHOLDER/${CLI_VERSION}/" "${OUTPUT_DIR}/docker-compose-${COMPOSE_VERSION}.ebuild"
 
 # Create metadata.xml
 cat > "${OUTPUT_DIR}/metadata.xml" << 'EOF'

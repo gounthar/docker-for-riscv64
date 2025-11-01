@@ -88,7 +88,7 @@ echo "📦 Generating individual package ebuilds..."
 
 # Generate containerd package
 echo "  - containerd ${CONTAINERD_VERSION}..."
-./scripts/generate-containerd-ebuild.sh "${CONTAINERD_VERSION}" "${DOCKER_VERSION}" "${OVERLAY_DIR}/app-containers/containerd"
+./scripts/generate-containerd-ebuild.sh "${CONTAINERD_VERSION}" "${DOCKER_VERSION}" "${OVERLAY_DIR}/app-containers/containerd" "${RUNC_VERSION}"
 
 # Generate runc package
 echo "  - runc ${RUNC_VERSION}..."
@@ -100,7 +100,7 @@ echo "  - docker-cli ${CLI_VERSION}..."
 
 # Generate docker-compose package
 echo "  - docker-compose ${COMPOSE_VERSION}..."
-./scripts/generate-docker-compose-ebuild.sh "${COMPOSE_VERSION}" "${OVERLAY_DIR}/app-containers/docker-compose"
+./scripts/generate-docker-compose-ebuild.sh "${COMPOSE_VERSION}" "${OVERLAY_DIR}/app-containers/docker-compose" "${CLI_VERSION}"
 
 # Generate tini package
 echo "  - tini ${TINI_VERSION}..."
