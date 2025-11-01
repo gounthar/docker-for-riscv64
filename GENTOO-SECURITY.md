@@ -268,6 +268,19 @@ Update daemon.json:
 }
 ```
 
+> **WARNING: Network Exposure Risk**
+> 
+> Binding the Docker daemon to `0.0.0.0:2376` exposes it to the entire network. While TLS provides encryption and authentication, this configuration should be combined with strict firewall rules.
+> 
+> **Required Firewall Configuration:**
+> ```bash
+> # Only allow Docker API access from trusted IPs
+> iptables -A INPUT -p tcp --dport 2376 -s 192.168.1.0/24 -j ACCEPT
+> iptables -A INPUT -p tcp --dport 2376 -j DROP
+> ```
+> 
+> For local-only access, use `"hosts": ["tcp://127.0.0.1:2376", "unix:///var/run/docker.sock"]` instead.
+
 ## Container Security
 
 ### Run Containers as Non-Root
@@ -391,10 +404,16 @@ In daemon.json:
 }
 ```
 
-Enable only for specific containers:
+Enable communication between specific containers using custom networks:
 ```bash
-docker run --link container2:alias busybox:latest
-```
+# Create a custom network for containers that need to communicate
+docker network create my-app-net
+
+# Run containers on that network - they can reach each other by container name
+docker run -d --name service-a --network=my-app-net myapp-a:latest
+docker run -d --name service-b --network=my-app-net myapp-b:latest
+
+# service-a can now access service-b via: http://service-b:port
 
 ### Network Policies with iptables
 
