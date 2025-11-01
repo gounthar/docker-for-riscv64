@@ -1,0 +1,78 @@
+---
+name: Track Gentoo Docker Ebuild Updates
+
+scms:
+  gentoo-repo:
+    kind: github
+    spec:
+      user: gentoo
+      owner: gentoo
+      repository: gentoo
+      branch: master
+
+sources:
+  docker-version:
+    name: Get latest Docker ebuild version from Gentoo
+    kind: shell
+    scmid: gentoo-repo
+    spec:
+      command: ls app-containers/docker/docker-*.ebuild 2>/dev/null | grep -oP 'docker-\K[0-9]+(?:\.[0-9]+)+(?:_[a-z0-9]+)?(?:-r[0-9]+)?' | sort -V | tail -1
+      environments:
+        - name: PATH
+
+conditions:
+  check-ebuild-exists:
+    name: Check if ebuild file exists in Gentoo repo
+    kind: file
+    scmid: gentoo-repo
+    spec:
+      file: 'app-containers/docker/docker-{{ source "docker-version" }}.ebuild'
+
+targets:
+  update-upstream-ebuild:
+    name: Download new Docker ebuild from Gentoo
+    kind: file
+    scmid: default
+    sourceid: docker-version
+    spec:
+      file: upstream-gentoo-ebuilds/app-containers/docker/docker-{{ source "docker-version" }}.ebuild
+      content: '{{ file (printf "app-containers/docker/docker-%s.ebuild" (source "docker-version")) "gentoo-repo" }}'
+
+actions:
+  default:
+    kind: github/pullrequest
+    scmid: default
+    title: 'chore(gentoo): update to Docker {{ source "docker-version" }} ebuild'
+    spec:
+      labels:
+        - gentoo
+        - ebuild-update
+        - dependencies
+      description: |
+        ## Gentoo Docker Ebuild Update
+
+        New Docker ebuild detected in Gentoo repository:
+        **Version:** {{ source "docker-version" }}
+
+        ### Changes
+
+        - Updated `upstream-gentoo-ebuilds/app-containers/docker/docker-{{ source "docker-version" }}.ebuild`
+
+        ### Next Steps
+
+        1. Review the new ebuild for any structural changes
+        2. Test `generate-gentoo-overlay.sh` to ensure it still works
+        3. Update overlay generation script if needed
+        4. Regenerate overlay with new version
+
+        ### Testing
+
+        ```bash
+        # Regenerate overlay
+        ./generate-gentoo-overlay.sh
+
+        # Test ebuild syntax (if running on Gentoo)
+        ebuild gentoo-overlay/app-containers/docker/docker-*.ebuild manifest
+        ```
+
+        **Upstream ebuild:** https://github.com/gentoo/gentoo/blob/master/app-containers/docker/docker-{{ source "docker-version" }}.ebuild
