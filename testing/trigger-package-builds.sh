@@ -110,17 +110,25 @@ if [[ -n "$DOCKER_VERSION" ]]; then
     # Get containerd version from release assets
     CONTAINERD_ASSET=$(gh release view "$DOCKER_RELEASE" --json assets -q '.assets[].name' | grep "^containerd$")
     if [[ -n "$CONTAINERD_ASSET" ]]; then
-        # Containerd version is typically specified in release notes or we use a known version
-        # For now, use the version from the generator script default
+        # TODO: Implement dynamic version detection for containerd from release notes or VERSIONS.txt
+        echo_warn "Using hardcoded containerd version: 1.7.28. This should be determined dynamically."
         CONTAINERD_VERSION="1.7.28"
         echo_success "Containerd: $CONTAINERD_VERSION (from Docker Engine release)"
+    else
+        echo_warn "Could not find containerd asset in release $DOCKER_RELEASE. Cannot determine version."
+        CONTAINERD_VERSION=""
     fi
 
     # Get runc version
     RUNC_ASSET=$(gh release view "$DOCKER_RELEASE" --json assets -q '.assets[].name' | grep "^runc$")
     if [[ -n "$RUNC_ASSET" ]]; then
+        # TODO: Implement dynamic version detection for runc from release notes or VERSIONS.txt
+        echo_warn "Using hardcoded runc version: 1.3.0. This should be determined dynamically."
         RUNC_VERSION="1.3.0"
         echo_success "Runc: $RUNC_VERSION (from Docker Engine release)"
+    else
+        echo_warn "Could not find runc asset in release $DOCKER_RELEASE. Cannot determine version."
+        RUNC_VERSION=""
     fi
 fi
 
