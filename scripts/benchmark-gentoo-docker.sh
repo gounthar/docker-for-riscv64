@@ -13,7 +13,20 @@
 set -e
 
 # Configuration
-OUTPUT_FILE="${1#--output=}"
+OUTPUT_FILE=""
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --output=*)
+            OUTPUT_FILE="${1#--output=}"
+            shift
+            ;;
+        *)
+            echo "Unknown option: $1" >&2
+            exit 1
+            ;;
+    esac
+done
+
 if [[ -z "$OUTPUT_FILE" ]]; then
     OUTPUT_FILE="benchmark-results-$(date +%Y%m%d-%H%M%S).txt"
 fi
@@ -227,7 +240,7 @@ benchmark "3 parallel containers" \
     5
 
 benchmark "5 parallel containers" \
-    "for i in {1..5}; do docker run -d --name bench-\$i $TEST_IMAGE sleep 5 > /dev/null; done; docker wait bench-{1..5} > /dev/null; for j in 1 2 3 4 5; do docker rm bench-$j; done > /dev/null" \
+    "for i in 1 2 3 4 5; do docker run -d --name bench-\$i $TEST_IMAGE sleep 5 > /dev/null; done; for i in 1 2 3 4 5; do docker wait bench-\$i > /dev/null; done; for i in 1 2 3 4 5; do docker rm bench-\$i > /dev/null; done" \
     3
 
 echo ""

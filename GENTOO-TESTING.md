@@ -22,7 +22,7 @@ zgrep -E 'CONFIG_(NAMESPACES|NET_NS|PID_NS|IPC_NS|UTS_NS|CGROUPS|CGROUP_CPUACCT|
 ```
 
 Required options:
-```
+```text
 CONFIG_NAMESPACES=y
 CONFIG_NET_NS=y
 CONFIG_PID_NS=y
@@ -73,7 +73,7 @@ eselect repository list -i
 ```
 
 Expected output:
-```
+```text
 docker-riscv64 [Git] https://github.com/gounthar/docker-for-riscv64.git
 ```
 
@@ -698,7 +698,7 @@ If you encounter issues during testing:
    journalctl -u docker.service -n 100 --no-pager
    ```
 
-2. **Open Issue**: https://github.com/gounthar/docker-for-riscv64/issues
+2. **Open Issue**: [GitHub Issues](https://github.com/gounthar/docker-for-riscv64/issues)
 
 3. **Include**:
    - Hardware details (RISC-V64 board/CPU)
