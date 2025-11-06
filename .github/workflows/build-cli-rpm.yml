@@ -187,9 +187,11 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+
           for rpm in ~/rpmbuild/RPMS/riscv64/docker-cli-*.rpm; do
             echo "Uploading $(basename $rpm)..."
-            gh release upload $RELEASE_TAG "$rpm" --repo gounthar/docker-for-riscv64 --clobber
+            gh release upload "$RELEASE_TAG" "$rpm" --repo gounthar/docker-for-riscv64 --clobber
           done
 
           echo ""
