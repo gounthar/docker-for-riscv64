@@ -89,6 +89,13 @@ jobs:
           chmod +x *
           ls -lh
 
+      - name: Prepare Debian packaging
+        if: steps.check_release.outputs.has_new_release == 'true'
+        run: |
+          # Copy debian packaging files from debian-docker to debian
+          cp -r debian-docker debian
+          echo "Debian packaging prepared"
+
       - name: Update package version in changelog
         if: steps.check_release.outputs.has_new_release == 'true'
         run: |
@@ -122,7 +129,9 @@ jobs:
       - name: Build package
         if: steps.check_release.outputs.has_new_release == 'true'
         run: |
-          dpkg-buildpackage -us -uc -b
+          # Use -d to skip build dependency checks (we're packaging prebuilt binaries)
+          # Use -a riscv64 to specify target architecture (building on amd64 host)
+          dpkg-buildpackage -us -uc -b -d -a riscv64
 
       - name: Run lintian checks
         if: steps.check_release.outputs.has_new_release == 'true'
