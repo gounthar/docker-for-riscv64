@@ -232,16 +232,18 @@ jobs:
           git add dists pool
 
           # Create commit message with all package versions
-          COMMIT_MSG="Update APT repository with latest packages
-
-Triggered by: $PACKAGE_NAME $VERSION (release $RELEASE_TAG)
-
-All packages updated:
-$(reprepro -b . list trixie | sed 's/^/  - /')
-
-Automated update from GitHub Actions.
-Workflow: ${{ github.workflow }}
-Run: ${{ github.run_id }}"
+          # Capture package list with error handling
+          PACKAGE_LIST=$(reprepro -b . list trixie | sed 's/^/  - /' || echo "  - Failed to list packages")
+          
+          # Build commit message using printf for proper multi-line handling
+          printf -v COMMIT_MSG '%s\n\n%s\n\n%s\n%s\n\n%s\n%s\n%s' \
+            "Update APT repository with latest packages" \
+            "Triggered by: $PACKAGE_NAME $VERSION (release $RELEASE_TAG)" \
+            "All packages updated:" \
+            "$PACKAGE_LIST" \
+            "Automated update from GitHub Actions." \
+            "Workflow: ${{ github.workflow }}" \
+            "Run: ${{ github.run_id }}"
 
           git commit -m "$COMMIT_MSG"
 
