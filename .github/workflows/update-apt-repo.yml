@@ -39,8 +39,11 @@ jobs:
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
             # Find the latest -riscv64 release (docker, compose, or cli) using JSON output
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                          jq -r '.[] | select(.tagName | test("^(compose-|cli-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 \
+                          --limit 50 --json tagName | \
+                          jq -r '.[] | select(.tagName |
+                            test("^(compose-|cli-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) |
+                            .tagName' | \
                           head -1)
           fi
 
@@ -59,33 +62,73 @@ jobs:
           echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           echo "📦 Processing release: $RELEASE_TAG (type: $PACKAGE_TYPE)"
 
-      - name: Download .deb package
+      - name: Download all latest .deb packages
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          RELEASE_TAG="${{ steps.release_info.outputs.release_tag }}"
-          PACKAGE_TYPE="${{ steps.release_info.outputs.package_type }}"
+          set -euo pipefail
 
-          if [ "$PACKAGE_TYPE" = "compose" ]; then
-            echo "Downloading docker-compose-plugin package from $RELEASE_TAG..."
-            PATTERN="docker-compose-plugin_*.deb"
-          elif [ "$PACKAGE_TYPE" = "cli" ]; then
-            echo "Downloading docker-cli package from $RELEASE_TAG..."
-            PATTERN="docker-cli_*.deb"
-          else
-            echo "Downloading docker.io package from $RELEASE_TAG..."
-            PATTERN="docker.io_*.deb"
+          echo "📦 Downloading latest packages from all release types..."
+          echo ""
+
+          # Find latest Engine release (docker.io, containerd, runc)
+          DOCKER_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
+                           jq -r '.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           head -1)
+          echo "Latest Engine release: $DOCKER_RELEASE"
+
+          # Find latest CLI release
+          CLI_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
+                        jq -r '.[] | select(.tagName | test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                        head -1)
+          echo "Latest CLI release: $CLI_RELEASE"
+
+          # Find latest Compose release
+          COMPOSE_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+                            --limit 50 --json tagName | \
+                            jq -r '.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | \
+                            .tagName' | \
+                            head -1)
+          echo "Latest Compose release: $COMPOSE_RELEASE"
+          echo ""
+
+          # Download Engine packages (docker.io, containerd, runc)
+          if [ -n "$DOCKER_RELEASE" ]; then
+            echo "Downloading Engine packages from $DOCKER_RELEASE..."
+            gh release download "$DOCKER_RELEASE" -p 'docker.io_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+            gh release download "$DOCKER_RELEASE" -p 'containerd_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+            gh release download "$DOCKER_RELEASE" -p 'runc_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
           fi
 
-          # Download all matching .deb files from the release
-          gh release download $RELEASE_TAG -p "$PATTERN" --clobber --repo gounthar/docker-for-riscv64 || {
-            echo "❌ No .deb file found in release $RELEASE_TAG"
-            echo "Available assets:"
-            gh release view $RELEASE_TAG --repo gounthar/docker-for-riscv64
-            exit 1
-          }
+          # Download CLI package
+          if [ -n "$CLI_RELEASE" ]; then
+            echo "Downloading CLI package from $CLI_RELEASE..."
+            gh release download "$CLI_RELEASE" -p 'docker-cli_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+          fi
 
-          ls -lh *.deb
+          # Download Compose package
+          if [ -n "$COMPOSE_RELEASE" ]; then
+            echo "Downloading Compose package from $COMPOSE_RELEASE..."
+            gh release download "$COMPOSE_RELEASE" -p 'docker-compose-plugin_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+          fi
+
+          echo ""
+          echo "Cleaning up: keeping only the latest version of each package..."
+          # For each package prefix, keep only the newest file (by timestamp)
+          for pattern in docker.io docker-cli docker-compose-plugin containerd runc; do
+            # Get all matching files sorted by modification time (newest first)
+            # Keep the first (newest), delete the rest
+            ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v
+          done
+
+          echo ""
+          echo "Downloaded packages:"
+          ls -lh *.deb 2>/dev/null || echo "No .deb files found"
 
       - name: Import GPG key for signing
         env:
@@ -99,9 +142,12 @@ jobs:
 
           echo "GPG key imported successfully"
 
-      - name: Add package to repository
+      - name: Add all packages to repository
         run: |
-          echo "Adding package(s) to APT repository..."
+          set -euo pipefail
+
+          echo "Adding all packages to APT repository..."
+          echo ""
 
           # Add all .deb packages (reprepro will handle duplicates)
           for deb in *.deb; do
@@ -109,14 +155,51 @@ jobs:
               echo "Processing: $deb"
               reprepro -b . includedeb trixie "$deb" || {
                 echo "⚠️  Package already in repository or error occurred"
-                reprepro -b . list trixie
               }
             fi
           done
 
           echo ""
-          echo "Repository contents:"
+          echo "📋 Final repository contents:"
           reprepro -b . list trixie
+
+      - name: Verify all packages present
+        run: |
+          set -euo pipefail
+
+          echo "🔍 Verifying all expected packages are in the repository..."
+          echo ""
+
+          # Expected packages (at least these should be present)
+          EXPECTED_PACKAGES=(
+            "containerd"
+            "docker-cli"
+            "docker.io"
+            "runc"
+          )
+
+          MISSING_PACKAGES=()
+          for pkg in "${EXPECTED_PACKAGES[@]}"; do
+            if reprepro -b . list trixie | grep -q "^trixie|main|riscv64: $pkg "; then
+              echo "✅ $pkg found"
+            else
+              echo "❌ $pkg MISSING"
+              MISSING_PACKAGES+=("$pkg")
+            fi
+          done
+
+          echo ""
+          if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
+            echo "⚠️  WARNING: ${#MISSING_PACKAGES[@]} package(s) missing from repository:"
+            printf '  - %s\n' "${MISSING_PACKAGES[@]}"
+            echo ""
+            echo "This indicates the APT repository update may have failed."
+            echo "Current repository state:"
+            reprepro -b . list trixie
+            exit 1
+          else
+            echo "✅ All expected packages are present in the repository!"
+          fi
 
       - name: Commit and push changes
         run: |
@@ -143,17 +226,28 @@ jobs:
 
           # Check if there are changes
           if git diff --quiet dists pool 2>/dev/null; then
-            echo "📝 No changes to commit (package may already exist)"
+            echo "📝 No changes to commit (all packages already up to date)"
             exit 0
           fi
 
           git add dists pool
-          git commit -m "Add $PACKAGE_NAME $VERSION from release $RELEASE_TAG" \
-                     -m "Automated update from GitHub Actions." \
-                     -m "Package: ${PACKAGE_NAME}_${VERSION}-*_riscv64.deb" \
-                     -m "Release: $RELEASE_TAG" \
-                     -m "Workflow: ${{ github.workflow }}" \
-                     -m "Run: ${{ github.run_id }}"
+
+
+          # Create commit message with all package versions
+          # Capture package list with error handling
+          PACKAGE_LIST=$(reprepro -b . list trixie | sed 's/^/  - /' || echo "  - Failed to list packages")
+          
+          # Build commit message using printf (YAML-safe)
+          COMMIT_MSG=$(printf "%s\n\n%s\n\n%s\n%s\n\n%s\n%s\n%s" \
+            "Update APT repository with latest packages" \
+            "Triggered by: $PACKAGE_NAME $VERSION (release $RELEASE_TAG)" \
+            "All packages updated:" \
+            "$PACKAGE_LIST" \
+            "Automated update from GitHub Actions." \
+            "Workflow: ${{ github.workflow }}" \
+            "Run: ${{ github.run_id }}")
+
+          git commit -m "$COMMIT_MSG"
 
           # Push with retry logic for concurrent workflow handling
           MAX_RETRIES=5
@@ -230,6 +324,12 @@ jobs:
           echo "✅ APT repository updated successfully!"
           echo "📍 Repository URL: https://gounthar.github.io/docker-for-riscv64"
           echo ""
-          echo "Users can now install with:"
+          echo "📦 Available packages:"
+          reprepro -b . list trixie | sed 's/^/  /'
+          echo ""
+          echo "Users can install/upgrade with:"
           echo "  sudo apt-get update"
-          echo "  sudo apt-get install $INSTALL_CMD"
+          echo "  sudo apt-get install docker.io docker-cli"
+          echo ""
+          echo "Or upgrade existing packages:"
+          echo "  sudo apt-get upgrade"
