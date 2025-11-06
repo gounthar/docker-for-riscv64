@@ -79,6 +79,9 @@ jobs:
         run: |
           set -euo pipefail
 
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+          echo "Updating version for release: $RELEASE_TAG"
+
           # Extract version from tag (cli-v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^cli-v//; s/-riscv64$//')
           echo "Package version: $VERSION"
