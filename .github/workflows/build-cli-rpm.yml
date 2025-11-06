@@ -14,7 +14,7 @@ on:
 
 jobs:
   build-cli-rpm:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, riscv64]
     if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
 
     steps:
@@ -99,8 +99,8 @@ jobs:
         if: steps.release.outputs.has-new-release == 'true'
         run: |
           cd ~/rpmbuild/SPECS
-          # Use --target riscv64 when building on amd64 host
-          rpmbuild -bb --target riscv64 docker-cli.spec
+          # Building on native riscv64, no --target needed
+          rpmbuild -bb docker-cli.spec
 
           echo ""
           echo "Built RPM package:"
