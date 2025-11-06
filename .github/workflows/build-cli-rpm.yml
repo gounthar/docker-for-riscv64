@@ -99,7 +99,8 @@ jobs:
         if: steps.release.outputs.has-new-release == 'true'
         run: |
           cd ~/rpmbuild/SPECS
-          rpmbuild -bb docker-cli.spec
+          # Use --target riscv64 when building on amd64 host
+          rpmbuild -bb --target riscv64 docker-cli.spec
 
           echo ""
           echo "Built RPM package:"
