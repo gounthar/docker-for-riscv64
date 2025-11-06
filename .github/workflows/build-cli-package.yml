@@ -73,7 +73,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get update
-          sudo apt-get install -y debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
+          sudo apt-get install -y build-essential debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
           if ! command -v gh >/dev/null 2>&1; then
             sudo apt-get install -y gh || true
           fi
@@ -142,7 +142,8 @@ jobs:
         if: steps.check_release.outputs.skip != 'true'
         run: |
           # Build package (debian/ already created in previous step)
-          dpkg-buildpackage -us -uc -b
+          # Use -d to skip build dependency checks (we're packaging prebuilt binaries)
+          dpkg-buildpackage -us -uc -b -d
 
           ls -lh ../*.deb
 
