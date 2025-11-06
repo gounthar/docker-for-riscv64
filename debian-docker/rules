@@ -15,10 +15,13 @@ override_dh_auto_install:
 	install -D -m 0644 debian-docker/docker.socket debian/docker.io/usr/lib/systemd/system/docker.socket
 
 override_dh_shlibdeps:
-	dh_shlibdeps --dpkg-shlibdeps-params=--ignore-missing-info
+	# Skip shlibdeps for prebuilt binary (no cross-compilation toolchain)
 
 override_dh_strip:
-	dh_strip --no-automatic-dbgsym
+	# Skip strip for prebuilt binary (no cross-compilation toolchain)
 
 override_dh_dwz:
 	# Skip dwz (Go binaries, no debug symbols)
+
+override_dh_makeshlibs:
+	# Skip makeshlibs for prebuilt binary (no cross-compilation toolchain)
