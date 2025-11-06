@@ -26,10 +26,10 @@ Description: Container runtime for RISC-V64 architecture
  Built on BananaPi F3 running Armbian Trixie.
 
 Package: docker-cli
-Version: 28.5.1-riscv64-1
+Version: 28.5.2-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 27186
+Installed-Size: 39761
 Recommends: docker.io
 Conflicts: docker (<< 1.5~), docker.io (<< 18.09)
 Breaks: docker (<< 1.5~), docker.io (<< 18.09)
@@ -38,11 +38,11 @@ Provides: docker
 Homepage: https://github.com/docker/cli
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker-cli/docker-cli_28.5.1-riscv64-1_riscv64.deb
-Size: 6473288
-SHA256: 6be4cc0709b9e5a2a0bcc01d0f5f11683224789f35fb7d73ca662e0c37793b59
-SHA1: 94b9d48afe99c85e477a10190fc049427e83b595
-MD5sum: bbf594f60e4477206ae7c4d4d2f96962
+Filename: pool/main/d/docker-cli/docker-cli_28.5.2-riscv64-1_riscv64.deb
+Size: 15978952
+SHA256: 940ab4ed562ca55936d03d39a7baf63292db352cff1aeb5662f888c540679022
+SHA1: 370a521ffd9249604d3d8006087f315ea043d24b
+MD5sum: 18f9765df5ba52c77040d396bd8b50c7
 Description: Docker command-line interface (CLI) for RISC-V64
  The Docker CLI is the command-line interface for Docker, allowing users
  to interact with Docker containers and images from the terminal. It provides
