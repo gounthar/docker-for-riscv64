@@ -86,8 +86,7 @@ jobs:
           # Find latest Compose release
           COMPOSE_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
                             --limit 50 --json tagName | \
-                            jq -r '.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | \
-                            .tagName' | \
+                            jq -r '.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                             head -1)
           echo "Latest Compose release: $COMPOSE_RELEASE"
           echo ""
