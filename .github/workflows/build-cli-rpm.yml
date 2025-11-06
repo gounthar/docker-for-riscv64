@@ -2,7 +2,7 @@ name: Build CLI RPM Package
 
 on:
   workflow_run:
-    workflows: ["Weekly CLI RISC-V64 Build", "Track CLI Releases"]
+    workflows: ["Weekly Docker CLI RISC-V64 Build", "Track Docker CLI Releases"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
