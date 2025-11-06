@@ -45,6 +45,13 @@ jobs:
         run: |
           rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
+      - name: Clean previous RPM builds
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          # Remove any existing RPM files to prevent uploading old versions
+          rm -f ~/rpmbuild/RPMS/riscv64/docker-compose-plugin-*.rpm
+          echo "Cleaned previous docker-compose-plugin RPM files"
+
       - name: Download compose binary
         if: steps.release.outputs.has-new-release == 'true'
         env:
