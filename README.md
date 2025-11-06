@@ -505,7 +505,8 @@ docker --version
 - **Docker Engine releases**: `vX.Y.Z-riscv64` (e.g., `v27.5.1-riscv64`)
 - **Docker CLI releases**: `cli-vX.Y.Z-riscv64` (e.g., `cli-v28.5.1-riscv64`)
 - **Docker Compose releases**: `compose-vX.Y.Z-riscv64` (e.g., `compose-v2.40.1-riscv64`)
-- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, or `compose-vYYYYMMDD-dev`
+- **Tini releases**: `tini-vX.Y.Z-riscv64` (e.g., `tini-v0.19.0-riscv64`)
+- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, `compose-vYYYYMMDD-dev`, or `tini-vYYYYMMDD-dev`
 
 ### Automated Builds
 
@@ -516,10 +517,15 @@ docker --version
 
 **Docker CLI:**
 - Weekly builds: Every Sunday at 04:00 UTC (latest CLI master)
+- Release tracking: Daily check for new official CLI releases
 - Manual trigger support for specific versions
 
 **Docker Compose:**
 - Weekly builds: Every Sunday at 03:00 UTC (latest Compose main)
+- Manual trigger support for specific versions
+
+**Tini:**
+- Weekly builds: Every Sunday at 05:00 UTC (latest Tini master)
 - Manual trigger support for specific versions
 
 ### Components
