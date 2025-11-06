@@ -142,7 +142,8 @@ jobs:
         if: steps.check_release.outputs.skip != 'true'
         run: |
           # Build package (debian/ already created in previous step)
-          dpkg-buildpackage -us -uc -b
+          # Use -d to skip build dependency checks (we're packaging prebuilt binaries)
+          dpkg-buildpackage -us -uc -b -d
 
           ls -lh ../*.deb
 
