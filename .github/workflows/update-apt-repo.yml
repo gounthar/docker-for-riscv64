@@ -39,8 +39,11 @@ jobs:
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
             # Find the latest -riscv64 release (docker, compose, or cli) using JSON output
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                          jq -r '.[] | select(.tagName | test("^(compose-|cli-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 \
+                          --limit 50 --json tagName | \
+                          jq -r '.[] | select(.tagName |
+                            test("^(compose-|cli-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) |
+                            .tagName' | \
                           head -1)
           fi
 
@@ -81,7 +84,8 @@ jobs:
           echo "Latest CLI release: $CLI_RELEASE"
 
           # Find latest Compose release
-          COMPOSE_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
+          COMPOSE_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+                            --limit 50 --json tagName | \
                             jq -r '.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                             head -1)
           echo "Latest Compose release: $COMPOSE_RELEASE"
@@ -90,21 +94,26 @@ jobs:
           # Download Engine packages (docker.io, containerd, runc)
           if [ -n "$DOCKER_RELEASE" ]; then
             echo "Downloading Engine packages from $DOCKER_RELEASE..."
-            gh release download "$DOCKER_RELEASE" -p 'docker.io_*.deb' --repo gounthar/docker-for-riscv64 --clobber || true
-            gh release download "$DOCKER_RELEASE" -p 'containerd_*.deb' --repo gounthar/docker-for-riscv64 --clobber || true
-            gh release download "$DOCKER_RELEASE" -p 'runc_*.deb' --repo gounthar/docker-for-riscv64 --clobber || true
+            gh release download "$DOCKER_RELEASE" -p 'docker.io_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+            gh release download "$DOCKER_RELEASE" -p 'containerd_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+            gh release download "$DOCKER_RELEASE" -p 'runc_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
           fi
 
           # Download CLI package
           if [ -n "$CLI_RELEASE" ]; then
             echo "Downloading CLI package from $CLI_RELEASE..."
-            gh release download "$CLI_RELEASE" -p 'docker-cli_*.deb' --repo gounthar/docker-for-riscv64 --clobber || true
+            gh release download "$CLI_RELEASE" -p 'docker-cli_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
           fi
 
           # Download Compose package
           if [ -n "$COMPOSE_RELEASE" ]; then
             echo "Downloading Compose package from $COMPOSE_RELEASE..."
-            gh release download "$COMPOSE_RELEASE" -p 'docker-compose-plugin_*.deb' --repo gounthar/docker-for-riscv64 --clobber || true
+            gh release download "$COMPOSE_RELEASE" -p 'docker-compose-plugin_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
           fi
 
           echo ""
