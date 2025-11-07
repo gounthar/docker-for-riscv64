@@ -9,7 +9,7 @@ Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
 Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
 
 Package: docker-buildx-plugin
-Architecture: any
+Architecture: riscv64
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Recommends: docker.io (>= 20.10) | docker-ce (>= 20.10)
 Description: Docker CLI plugin for extended build capabilities
