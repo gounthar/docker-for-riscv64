@@ -1,0 +1,94 @@
+name: Track Docker Buildx Releases
+
+on:
+  schedule:
+    # Check for new releases daily at 08:00 UTC (after CLI tracking)
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check for new Docker Buildx release
+        id: check
+        run: |
+          # Get latest stable release from docker/buildx repository
+          LATEST=$(gh api repos/docker/buildx/releases/latest --jq '.tag_name')
+
+          echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
+
+          # Check if we've already built this (using buildx-v*-riscv64 format)
+          # Docker Buildx tags are like v0.29.1, we create buildx-v0.29.1-riscv64
+          CLEAN_VERSION="${LATEST#v}"
+          OUR_TAG="buildx-v${CLEAN_VERSION}-riscv64"
+
+          if gh release view "${OUR_TAG}" >/dev/null 2>&1; then
+            echo "already_built=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_built=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Latest Docker Buildx release: $LATEST"
+          echo "Checking for: ${OUR_TAG}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger automatic build for new release
+        if: steps.check.outputs.already_built == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+
+          echo "New Docker Buildx release detected: $LATEST"
+          echo "Triggering automatic build..."
+
+          # Trigger the build workflow with the version tag
+          gh workflow run buildx-weekly-build.yml -f buildx_ref=$LATEST
+
+          # Create tracking issue
+          CLEAN_VERSION="${LATEST#v}"
+          cat > issue-body.md << EOF
+          New Docker Buildx release detected: **$LATEST**
+
+          **Status:** Build automatically triggered
+
+          The buildx-weekly-build workflow has been started automatically.
+          Expected completion time: ~35-40 minutes on self-hosted riscv64 runner
+
+          **Monitor build progress:**
+          \`\`\`bash
+          gh run list --workflow=buildx-weekly-build.yml --limit 1
+          gh run watch
+          \`\`\`
+
+          **Expected release:** buildx-v${CLEAN_VERSION}-riscv64
+
+          **Upstream release notes:** https://github.com/docker/buildx/releases/tag/$LATEST
+
+          **What is Docker Buildx?**
+          Docker Buildx is a CLI plugin that extends the docker build command with the full BuildKit features, including:
+          - Multi-platform builds (--platform flag)
+          - Advanced caching strategies
+          - Build-time secrets and SSH forwarding
+          - Remote builder support
+
+          This issue will track the build progress. Close it once the release is published.
+          EOF
+
+          gh issue create \
+            --title "Building Docker Buildx ${LATEST} for RISC-V64" \
+            --body-file issue-body.md \
+            --label "build-in-progress,buildx-release"
+
+          echo "Build triggered successfully!"
