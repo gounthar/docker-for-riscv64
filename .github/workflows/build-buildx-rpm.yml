@@ -1,0 +1,173 @@
+name: Build Buildx RPM Package
+
+on:
+  workflow_run:
+    workflows: ["Weekly Docker Buildx RISC-V64 Build"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Buildx release tag to build package from'
+        required: true
+        default: 'buildx-v0.19.2-riscv64'
+
+permissions:
+  contents: write
+
+jobs:
+  build-buildx-rpm:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check if new release exists
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Skip check for manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - proceeding with build"
+            echo "has-new-release=true" >> $GITHUB_OUTPUT
+            echo "release-tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Find the latest Buildx release
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                        grep -E '^buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                        head -1 | \
+                        awk '{print $1}')
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No Buildx release found - skipping package build"
+            echo "has-new-release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if release already has .rpm packages
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          if echo "$ASSETS" | grep -q 'docker-buildx-plugin.*\.rpm$'; then
+            echo "Release $RELEASE_TAG already has RPM packages - skipping build"
+            echo "has-new-release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $RELEASE_TAG needs RPM packages - proceeding with build"
+            echo "has-new-release=true" >> $GITHUB_OUTPUT
+            echo "release-tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install build dependencies
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          if [ -f /etc/fedora-release ]; then
+            sudo dnf install -y rpm-build rpmdevtools rpmlint
+          elif [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y rpm rpmlint
+          fi
+
+      - name: Set up RPM build tree
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+      - name: Clean previous RPM builds
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          # Remove any existing RPM files to prevent uploading old versions
+          rm -f ~/rpmbuild/RPMS/riscv64/docker-buildx-plugin-*.rpm
+          echo "Cleaned previous docker-buildx-plugin RPM files"
+
+      - name: Download buildx binary
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+          echo "Building package for release: $RELEASE_TAG"
+
+          # Clean and download buildx binary to SOURCES
+          cd ~/rpmbuild/SOURCES
+          rm -f docker-buildx
+          gh release download $RELEASE_TAG -p docker-buildx --repo gounthar/docker-for-riscv64
+
+          # Validate binary was downloaded
+          if [ ! -f docker-buildx ]; then
+            echo "Error: Failed to download docker-buildx binary from release $RELEASE_TAG"
+            exit 1
+          fi
+
+          chmod +x docker-buildx
+          ls -lh
+
+      - name: Copy spec file
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          cp rpm-buildx/docker-buildx-plugin.spec ~/rpmbuild/SPECS/
+
+      - name: Update package version
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
+        run: |
+          # Extract version from tag (buildx-v0.19.2-riscv64 -> 0.19.2)
+          VERSION=$(echo $RELEASE_TAG | sed 's/^buildx-v//; s/-riscv64$//')
+          echo "Package version: $VERSION"
+
+          # Update spec file
+          sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/docker-buildx-plugin.spec
+
+      - name: Build RPM package
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          cd ~/rpmbuild/SPECS
+          rpmbuild -bb docker-buildx-plugin.spec
+
+          echo ""
+          echo "RPM packages built:"
+          ls -lh ~/rpmbuild/RPMS/riscv64/docker-buildx-plugin-*.rpm
+
+      - name: Run rpmlint checks
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          rpmlint ~/rpmbuild/RPMS/riscv64/docker-buildx-plugin-*.rpm || true
+
+      - name: Upload RPM to release
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+
+          echo "Uploading RPM packages to release $RELEASE_TAG"
+          echo ""
+
+          # Upload all RPM files
+          for rpm in ~/rpmbuild/RPMS/riscv64/docker-buildx-plugin-*.rpm; do
+            echo "Uploading $(basename $rpm)..."
+            for i in {1..3}; do
+              gh release upload "$RELEASE_TAG" "$rpm" --clobber && break
+              echo "Retry $i..."
+              sleep 3
+            done
+          done
+
+          echo ""
+          echo "✅ Docker Buildx RPM packages uploaded successfully!"
+          echo ""
+          echo "Packages built:"
+          ls -lh ~/rpmbuild/RPMS/riscv64/docker-buildx-plugin-*.rpm
+          echo ""
+          echo "Install with:"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/docker-buildx-plugin-*.rpm"
+          echo "  sudo dnf install -y ./docker-buildx-plugin-*.rpm"
+          echo "  docker buildx version"
