@@ -39,10 +39,10 @@ jobs:
           fi
 
           # Find the latest Buildx release
+          # gh release list outputs: Title<TAB>Status<TAB>Tag<TAB>Date
+          # We need to match the tag (column 3), not the title
           RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                        grep -E '^buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                        head -1 | \
-                        awk '{print $1}')
+                        awk -F'\t' '$3 ~ /^buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64$/ {print $3; exit}')
 
           if [ -z "$RELEASE_TAG" ]; then
             echo "No Buildx release found - skipping package build"
