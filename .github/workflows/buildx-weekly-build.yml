@@ -1,0 +1,198 @@
+name: Weekly Docker Buildx RISC-V64 Build
+
+on:
+  schedule:
+    # Run every Sunday at 05:00 UTC (after CLI build)
+    - cron: '0 5 * * 0'
+  workflow_dispatch:
+    inputs:
+      buildx_ref:
+        description: 'Buildx ref to build (branch/tag/commit)'
+        required: false
+        default: 'master'
+
+permissions:
+  contents: write
+
+jobs:
+  build-buildx:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Clone buildx repository
+        run: |
+          set -euo pipefail
+          BUILDX_REF="${{ github.event.inputs.buildx_ref || 'master' }}"
+
+          # Clone if not exists
+          if [ ! -d "buildx" ]; then
+            git clone https://github.com/docker/buildx.git
+          fi
+
+          cd buildx
+          git fetch origin --tags
+          git checkout "$BUILDX_REF"
+
+          # Pull only if it's a branch (not a tag)
+          if git show-ref --verify --quiet refs/remotes/origin/"$BUILDX_REF"; then
+            git pull origin "$BUILDX_REF"
+          fi
+
+      - name: Build docker-buildx binary
+        run: |
+          set -euo pipefail
+          cd buildx
+
+          # Set version from git tag
+          VERSION=$(git describe --tags --always)
+          echo "Building buildx version: $VERSION"
+
+          # Build with explicit GOOS/GOARCH
+          export GOOS=linux GOARCH=riscv64 CGO_ENABLED=0
+          make binaries
+
+          # Verify binary exists
+          ls -lh bin/build/buildx
+
+      - name: Extract binary
+        run: |
+          DATE=$(date +%Y%m%d)
+          mkdir -p release-buildx-$DATE
+
+          # Copy binary and rename to docker-buildx
+          cp buildx/bin/build/buildx release-buildx-$DATE/docker-buildx
+          chmod +x release-buildx-$DATE/docker-buildx
+
+          # Get version
+          ./release-buildx-$DATE/docker-buildx version > release-buildx-$DATE/VERSION.txt 2>&1 || echo "Version command not available"
+
+          ls -lh release-buildx-$DATE/
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Ensure gh is installed
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y gh || true
+          fi
+
+          DATE=$(date +%Y%m%d)
+          BUILDX_REF="${{ github.event.inputs.buildx_ref || 'master' }}"
+
+          # Determine release version
+          cd buildx
+          BUILDX_VERSION=$(git describe --tags --always)
+          cd ..
+
+          # Check if this is a version tag (vX.Y.Z or vX.Y.Z-rcN)
+          if [[ "$BUILDX_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+            # Official release: v0.19.2 -> buildx-v0.19.2-riscv64
+            RELEASE_VERSION="buildx-${BUILDX_REF}-riscv64"
+            RELEASE_TITLE="Docker Buildx ${BUILDX_REF} for RISC-V64"
+            VERSION_INFO="**Buildx Version:** ${BUILDX_REF}"
+          else
+            # Development build: master -> buildx-v20251018-dev
+            RELEASE_VERSION="buildx-v${DATE}-dev"
+            RELEASE_TITLE="Docker Buildx RISC-V64 Development Build ${DATE}"
+            VERSION_INFO="**Buildx Branch:** ${BUILDX_REF}
+          **Buildx Commit:** $(cd buildx && git rev-parse --short HEAD)"
+          fi
+
+          cat > release-notes.md << EOF
+          Automated build of Docker Buildx plugin for RISC-V64
+
+          ${VERSION_INFO}
+          **Build Date:** $(date -u +%Y-%m-%d)
+          **Architecture:** riscv64
+
+          **What is Docker Buildx?**
+
+          Docker Buildx is a Docker CLI plugin that extends the docker build command with the full BuildKit features. It provides:
+
+          - Multi-platform builds (docker buildx build --platform linux/riscv64,linux/amd64)
+          - Advanced caching strategies
+          - Build-time secrets and SSH forwarding
+          - Remote builder support
+          - OCI exporter support
+
+          **Installation:**
+
+          \`\`\`bash
+          # Manual installation
+          mkdir -p ~/.docker/cli-plugins/
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/docker-buildx
+          mv docker-buildx ~/.docker/cli-plugins/
+          chmod +x ~/.docker/cli-plugins/docker-buildx
+
+          # Verify installation
+          docker buildx version
+          \`\`\`
+
+          **Package Installation:**
+
+          Debian/Ubuntu packages will be available soon.
+
+          **Usage:**
+
+          \`\`\`bash
+          # Create and use a new builder
+          docker buildx create --name mybuilder --use
+
+          # Build for multiple platforms
+          docker buildx build --platform linux/riscv64,linux/amd64 -t myimage:latest .
+
+          # Build with cache
+          docker buildx build --cache-from type=registry,ref=myimage:cache .
+          \`\`\`
+
+          **Documentation:**
+          - https://docs.docker.com/buildx/working-with-buildx/
+          - https://github.com/docker/buildx
+          EOF
+
+          # Check if release already exists
+          if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
+            echo "Release $RELEASE_VERSION already exists, uploading assets..."
+            gh release upload "$RELEASE_VERSION" \
+              release-buildx-$DATE/docker-buildx \
+              release-buildx-$DATE/VERSION.txt \
+              --clobber
+          else
+            echo "Creating new release $RELEASE_VERSION..."
+            gh release create "$RELEASE_VERSION" \
+              --title "$RELEASE_TITLE" \
+              --notes-file release-notes.md \
+              release-buildx-$DATE/docker-buildx \
+              release-buildx-$DATE/VERSION.txt
+          fi
+
+          echo "Release created: $RELEASE_VERSION"
+
+      - name: Trigger package builds
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          DATE=$(date +%Y%m%d)
+          BUILDX_REF="${{ github.event.inputs.buildx_ref || 'master' }}"
+
+          # Determine release tag (must match what was created above)
+          if [[ "$BUILDX_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+            RELEASE_TAG="buildx-${BUILDX_REF}-riscv64"
+          else
+            RELEASE_TAG="buildx-v${DATE}-dev"
+          fi
+
+          echo "Triggering package builds for $RELEASE_TAG..."
+
+          # Trigger Debian package build
+          gh workflow run build-buildx-package.yml \
+            -f release_tag="$RELEASE_TAG" || echo "Failed to trigger Debian package build (workflow may not exist yet)"
+
+          # Trigger RPM package build
+          gh workflow run build-buildx-rpm.yml \
+            -f release_tag="$RELEASE_TAG" || echo "Failed to trigger RPM package build (workflow may not exist yet)"
