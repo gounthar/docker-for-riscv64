@@ -10,7 +10,7 @@ on:
       release_tag:
         description: 'Release tag containing the .deb package (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, or buildx-v*-riscv64)'
         required: true
-        default: 'v28.5.1-riscv64'
+        default: 'v28.5.2-riscv64'
 
 jobs:
   update-repo:
@@ -89,6 +89,13 @@ jobs:
                             jq -r '.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                             head -1)
           echo "Latest Compose release: $COMPOSE_RELEASE"
+
+          # Find latest Buildx release
+          BUILDX_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+                           --limit 50 --json tagName | \
+                           jq -r '.[] | select(.tagName | test("^buildx-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           head -1)
+          echo "Latest Buildx release: $BUILDX_RELEASE"
           echo ""
 
           # Download Engine packages (docker.io, containerd, runc)
@@ -116,10 +123,17 @@ jobs:
               --repo gounthar/docker-for-riscv64 --clobber || true
           fi
 
+          # Download Buildx package
+          if [ -n "$BUILDX_RELEASE" ]; then
+            echo "Downloading Buildx package from $BUILDX_RELEASE..."
+            gh release download "$BUILDX_RELEASE" -p 'docker-buildx-plugin_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+          fi
+
           echo ""
           echo "Cleaning up: keeping only the latest version of each package..."
           # For each package prefix, keep only the newest file (by timestamp)
-          for pattern in docker.io docker-cli docker-compose-plugin containerd runc; do
+          for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc; do
             # Get all matching files sorted by modification time (newest first)
             # Keep the first (newest), delete the rest
             ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v
