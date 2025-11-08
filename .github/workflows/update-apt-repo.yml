@@ -286,7 +286,10 @@ jobs:
                   echo "✅ Rebased successfully, retrying push..."
                 else
                   echo "⚠️  Rebase conflict detected. Resolving by accepting remote changes and re-adding package..."
-                  git rebase --abort
+                  # Only abort if rebase is actually in progress
+                  if git status | grep -q "rebase in progress"; then
+                    git rebase --abort
+                  fi
 
                   # Reset to remote state
                   git reset --hard origin/apt-repo
