@@ -291,8 +291,8 @@ jobs:
                   echo "✅ Rebased successfully, retrying push..."
                 else
                   echo "⚠️  Rebase conflict detected. Resolving by accepting remote changes and re-adding packages..."
-                  # Only abort if rebase is actually in progress
-                  if git status | grep -q "rebase in progress"; then
+                  # Only abort if rebase is actually in progress (check filesystem state)
+                  if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
                     git rebase --abort
                   fi
 
@@ -314,8 +314,13 @@ jobs:
                     exit 1
                   fi
 
-                  # Re-import GPG key (may have been cleared by reset)
-                  echo "$GPG_PRIVATE_KEY" | gpg --batch --import 2>/dev/null || true
+                  # Re-import GPG key if needed (idempotent check)
+                  if ! gpg --list-secret-keys 56188341425B007407229B48FB1963FC3575A39D &>/dev/null; then
+                    echo "Re-importing GPG signing key..."
+                    echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+                  else
+                    echo "GPG key already present, skipping re-import"
+                  fi
 
                   # Regenerate repository metadata
                   echo "Regenerating repository metadata..."
@@ -334,7 +339,7 @@ jobs:
                   cd ../../..
 
                   # Commit again if there are changes
-                  if ! git diff --quiet rpm/ 2>/dev/null; then
+                  if ! git diff --quiet rpm/; then
                     git add rpm/
                     git commit -m "feat: add RPM packages from $RELEASE_TAG to repository" \
                                -m "Automated update from GitHub Actions (retry $RETRY_COUNT)." \
