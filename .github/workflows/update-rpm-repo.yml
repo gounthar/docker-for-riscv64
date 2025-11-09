@@ -18,10 +18,10 @@ jobs:
     if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
 
     steps:
-      - name: Checkout apt-repo branch
+      - name: Checkout rpm-repo branch
         uses: actions/checkout@v5
         with:
-          ref: apt-repo
+          ref: rpm-repo
           fetch-depth: 0
 
       - name: Install dependencies
@@ -253,7 +253,10 @@ jobs:
 
           git add rpm/
           git commit -m "feat: add RPM packages from $RELEASE_TAG to repository" || echo "No changes to commit"
-          git push origin apt-repo
+
+          # Pull and rebase to avoid conflicts with concurrent updates
+          git pull --rebase origin rpm-repo || true
+          git push origin rpm-repo
 
       - name: Summary
         run: |
