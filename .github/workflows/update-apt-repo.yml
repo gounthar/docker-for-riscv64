@@ -286,8 +286,8 @@ jobs:
                   echo "✅ Rebased successfully, retrying push..."
                 else
                   echo "⚠️  Rebase conflict detected. Resolving by accepting remote changes and re-adding package..."
-                  # Only abort if rebase is actually in progress
-                  if git status | grep -q "rebase in progress"; then
+                  # Only abort if rebase is actually in progress (check filesystem state)
+                  if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
                     git rebase --abort
                   fi
 
@@ -313,7 +313,7 @@ jobs:
                   done
 
                   # Commit again if there are changes
-                  if ! git diff --quiet dists pool 2>/dev/null; then
+                  if ! git diff --quiet dists pool; then
                     git add dists pool
                     git commit -m "Add $PACKAGE_NAME $VERSION from release $RELEASE_TAG" \
                                -m "Automated update from GitHub Actions (retry $RETRY_COUNT)." \
