@@ -247,16 +247,117 @@ jobs:
           echo "Created RPM repository README"
 
       - name: Commit and push changes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
+          set -euo pipefail
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add rpm/
-          git commit -m "feat: add RPM packages from $RELEASE_TAG to repository" || echo "No changes to commit"
+          COMMIT_MSG="feat: add RPM packages from $RELEASE_TAG to repository
 
-          # Pull and rebase to avoid conflicts with concurrent updates
-          git pull --rebase origin rpm-repo || true
-          git push origin rpm-repo
+          Automated update from GitHub Actions.
+
+          Release: $RELEASE_TAG
+          Workflow: ${{ github.workflow }}
+          Run: ${{ github.run_id }}"
+
+          git commit -m "$COMMIT_MSG"
+
+          # Push with retry logic for concurrent workflow handling
+          MAX_RETRIES=5
+          RETRY_COUNT=0
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if git push origin rpm-repo; then
+              echo "✅ Successfully pushed changes"
+              break
+            else
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+              if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+                echo "⚠️  Push failed (attempt $RETRY_COUNT/$MAX_RETRIES). Pulling and retrying..."
+
+                # Fetch latest changes with error handling
+                if ! git fetch origin rpm-repo; then
+                  echo "❌ Failed to fetch from remote. This may indicate network or authentication issues."
+                  echo "Skipping remaining retries and failing the workflow."
+                  exit 1
+                fi
+
+                # Try to rebase our changes on top of remote
+                if git rebase origin/rpm-repo; then
+                  echo "✅ Rebased successfully, retrying push..."
+                else
+                  echo "⚠️  Rebase conflict detected. Resolving by accepting remote changes and re-adding packages..."
+                  # Only abort if rebase is actually in progress
+                  if git status | grep -q "rebase in progress"; then
+                    git rebase --abort
+                  fi
+
+                  # Reset to remote state
+                  git reset --hard origin/rpm-repo
+
+                  # Re-download and re-add packages
+                  cd rpm/fedora/riscv64
+
+                  echo "Re-downloading RPM packages from $RELEASE_TAG..."
+                  gh release download $RELEASE_TAG \
+                    --pattern '*.riscv64.rpm' \
+                    --repo gounthar/docker-for-riscv64 \
+                    --clobber
+
+                  # Validate packages were downloaded
+                  if ! ls *.rpm 1> /dev/null 2>&1; then
+                    echo "❌ Error: No RPM packages found in release $RELEASE_TAG"
+                    exit 1
+                  fi
+
+                  # Re-import GPG key (may have been cleared by reset)
+                  echo "$GPG_PRIVATE_KEY" | gpg --batch --import 2>/dev/null || true
+
+                  # Regenerate repository metadata
+                  echo "Regenerating repository metadata..."
+                  createrepo_c .
+
+                  # Re-sign repository metadata
+                  echo "Re-signing repository metadata..."
+                  gpg --batch --yes --detach-sign --armor repodata/repomd.xml
+
+                  # Validate signature was created
+                  if [ ! -f repodata/repomd.xml.asc ]; then
+                    echo "❌ Error: Failed to create signature for repomd.xml"
+                    exit 1
+                  fi
+
+                  cd ../../..
+
+                  # Commit again if there are changes
+                  if ! git diff --quiet rpm/ 2>/dev/null; then
+                    git add rpm/
+                    git commit -m "feat: add RPM packages from $RELEASE_TAG to repository" \
+                               -m "Automated update from GitHub Actions (retry $RETRY_COUNT)." \
+                               -m "Release: $RELEASE_TAG" \
+                               -m "Workflow: ${{ github.workflow }}" \
+                               -m "Run: ${{ github.run_id }}"
+                  else
+                    echo "📝 Packages already added by concurrent workflow"
+                    exit 0
+                  fi
+                fi
+
+                # Wait a bit before retrying (random delay to avoid thundering herd)
+                sleep $((RANDOM % 10 + 5))
+              else
+                echo "❌ Failed to push after $MAX_RETRIES attempts"
+                exit 1
+              fi
+            fi
+          done
+
+          echo ""
+          echo "✅ Changes committed and pushed successfully"
 
       - name: Summary
         run: |
