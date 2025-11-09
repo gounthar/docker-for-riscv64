@@ -12,6 +12,9 @@ on:
         required: true
         default: 'v28.5.1-riscv64'
 
+env:
+  GPG_KEY_ID: '56188341425B007407229B48FB1963FC3575A39D'
+
 jobs:
   update-repo:
     runs-on: ubuntu-latest
@@ -315,11 +318,11 @@ jobs:
                   fi
 
                   # Re-import GPG key if needed (idempotent check)
-                  if ! gpg --list-secret-keys 56188341425B007407229B48FB1963FC3575A39D &>/dev/null; then
-                    echo "Re-importing GPG signing key..."
+                  if ! gpg --list-secret-keys ${{ env.GPG_KEY_ID }} &>/dev/null; then
+                    echo "Re-importing GPG signing key (${{ env.GPG_KEY_ID }})..."
                     echo "$GPG_PRIVATE_KEY" | gpg --batch --import
                   else
-                    echo "GPG key already present, skipping re-import"
+                    echo "GPG key ${{ env.GPG_KEY_ID }} already present, skipping re-import"
                   fi
 
                   # Regenerate repository metadata
