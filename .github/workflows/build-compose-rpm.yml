@@ -83,6 +83,8 @@ jobs:
 
       - name: Update package version
         if: steps.release.outputs.has-new-release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           # Extract version from tag (compose-v2.40.1-riscv64 -> 2.40.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^compose-v//; s/-riscv64$//')
@@ -181,6 +183,7 @@ jobs:
         if: steps.release.outputs.has-new-release == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           for rpm in ~/rpmbuild/RPMS/riscv64/docker-compose-plugin-*.rpm; do
             echo "Uploading $(basename $rpm)..."
