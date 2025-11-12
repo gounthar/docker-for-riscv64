@@ -173,12 +173,14 @@ jobs:
           MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
 
           # Determine release version
-          # If moby_ref is a version tag (vX.Y.Z), use it; otherwise use date-based
-          if [[ "$MOBY_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-            # Official release: v27.5.1 -> v27.5.1-riscv64
-            RELEASE_VERSION="${MOBY_REF}-riscv64"
-            RELEASE_TITLE="Docker ${MOBY_REF} for RISC-V64"
-            VERSION_INFO="**Docker Version:** ${MOBY_REF}"
+          # If moby_ref is a version tag (vX.Y.Z or docker-vX.Y.Z), use it; otherwise use date-based
+          if [[ "$MOBY_REF" =~ ^(docker-)?v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Official release: v27.5.1 -> v27.5.1-riscv64 or docker-v29.0.0 -> v29.0.0-riscv64
+            # Strip 'docker-' prefix if present
+            VERSION_TAG="${MOBY_REF#docker-}"
+            RELEASE_VERSION="${VERSION_TAG}-riscv64"
+            RELEASE_TITLE="Docker ${VERSION_TAG} for RISC-V64"
+            VERSION_INFO="**Docker Version:** ${VERSION_TAG}"
           else
             # Development build: master -> v20251018-dev
             RELEASE_VERSION="v${DATE}-dev"

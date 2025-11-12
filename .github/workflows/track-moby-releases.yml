@@ -21,15 +21,18 @@ jobs:
           LATEST=$(gh api repos/moby/moby/releases/latest --jq '.tag_name')
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
+          # Strip 'docker-' prefix if present for our release tag
+          VERSION_TAG="${LATEST#docker-}"
+
           # Check if we've already built this (using -riscv64 suffix)
-          if gh release view "${LATEST}-riscv64" >/dev/null 2>&1; then
+          if gh release view "${VERSION_TAG}-riscv64" >/dev/null 2>&1; then
             echo "already_built=true" >> $GITHUB_OUTPUT
           else
             echo "already_built=false" >> $GITHUB_OUTPUT
           fi
 
           echo "Latest Moby release: $LATEST"
-          echo "Checking for: ${LATEST}-riscv64"
+          echo "Checking for: ${VERSION_TAG}-riscv64"
         env:
           GH_TOKEN: ${{ github.token }}
       
@@ -46,6 +49,9 @@ jobs:
           # Trigger the build workflow
           gh workflow run docker-weekly-build.yml -f moby_ref=$LATEST
 
+          # Strip 'docker-' prefix for our release tag
+          VERSION_TAG="${LATEST#docker-}"
+
           # Create tracking issue
           cat > issue-body.md << EOF
           New Moby release detected: **$LATEST**
@@ -61,7 +67,7 @@ jobs:
           gh run watch
           \`\`\`
 
-          **Expected release:** ${LATEST}-riscv64
+          **Expected release:** ${VERSION_TAG}-riscv64
 
           **Upstream release notes:** https://github.com/moby/moby/releases/tag/$LATEST
 
