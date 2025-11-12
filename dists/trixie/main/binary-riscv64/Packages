@@ -55,10 +55,10 @@ Description: Docker CLI plugin for extended build capabilities
  the RISC-V 64-bit architecture.
 
 Package: docker-cli
-Version: 28.5.2-riscv64-1
+Version: 29.0.0-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 39761
+Installed-Size: 37839
 Recommends: docker.io
 Conflicts: docker (<< 1.5~), docker.io (<< 18.09)
 Breaks: docker (<< 1.5~), docker.io (<< 18.09)
@@ -67,11 +67,11 @@ Provides: docker
 Homepage: https://github.com/docker/cli
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker-cli/docker-cli_28.5.2-riscv64-1_riscv64.deb
-Size: 15978952
-SHA256: 940ab4ed562ca55936d03d39a7baf63292db352cff1aeb5662f888c540679022
-SHA1: 370a521ffd9249604d3d8006087f315ea043d24b
-MD5sum: 18f9765df5ba52c77040d396bd8b50c7
+Filename: pool/main/d/docker-cli/docker-cli_29.0.0-riscv64-1_riscv64.deb
+Size: 13801056
+SHA256: a63110a564188f64095e24453c336b26694f6cddd08ec88b6498342c39d40e79
+SHA1: 2c8e2f54e840e94835938db874384d45f1ed25db
+MD5sum: 394cbe2909bac09f4d25ce9cb595512d
 Description: Docker command-line interface (CLI) for RISC-V64
  The Docker CLI is the command-line interface for Docker, allowing users
  to interact with Docker containers and images from the terminal. It provides
@@ -106,24 +106,23 @@ Description: Docker Compose v2 plugin for RISC-V64
  This package provides pre-built binaries for RISC-V64 architecture.
 
 Package: docker.io
-Version: 28.5.2-1
+Version: 28.5.1-2
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
-Installed-Size: 76921
-Pre-Depends: init-system-helpers (>= 1.54~)
-Depends: adduser, containerd (>= 1.7.28), runc (>= 1.3.0), iptables, systemd, tini
-Recommends: ca-certificates, git, xz-utils, docker-cli
+Installed-Size: 66508
+Depends: containerd (>= 1.7.28), runc (>= 1.3.0), iptables, systemd
+Recommends: ca-certificates, git, xz-utils, tini, docker-cli
 Suggests: cgroupfs-mount | cgroup-lite
-Conflicts: docker-ce, docker-engine
+Conflicts: docker, docker-ce, docker-engine
 Provides: docker-engine
 Homepage: https://github.com/moby/moby
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/docker.io_28.5.2-1_riscv64.deb
-Size: 19191216
-SHA256: 0ae197d88139af8b5784e3c3c6bf60b73176b9ccd81023c3f584e4dbf898b80e
-SHA1: 5abce763d783ecc361321868c805d2cb40dbcb3d
-MD5sum: b85d08807635b273aa10e97921fba242
+Filename: pool/main/d/docker.io/docker.io_28.5.1-2_riscv64.deb
+Size: 15651668
+SHA256: d2d06a222f6e4731e62c7e636478cd35a6aa52bc736bfe1a91d2f724910aeaaf
+SHA1: 2c9f341beb53a12ff42bb2448a8bff18808804a8
+MD5sum: aa3aca2dc73ebc0c7ba314100258e2ed
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
