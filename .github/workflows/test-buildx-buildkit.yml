@@ -1,0 +1,104 @@
+name: Test Docker Buildx for BuildKit Dependencies
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-buildx:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Download docker-buildx
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          cd /tmp
+          rm -f docker-buildx
+
+          echo "Downloading docker-buildx v0.29.1..."
+          gh release download buildx-v0.29.1-riscv64 -p docker-buildx --repo gounthar/docker-for-riscv64
+          chmod +x docker-buildx
+
+          echo "=== Binary info ==="
+          file docker-buildx
+          echo
+
+          echo "=== Size ==="
+          ls -lh docker-buildx
+          echo
+
+      - name: Check version
+        run: |
+          cd /tmp
+          echo "=== Version info ==="
+          ./docker-buildx version 2>&1 || echo "Version command failed"
+          echo
+
+      - name: Check for BuildKit references
+        run: |
+          cd /tmp
+          echo "=== Checking if buildkitd is embedded or needed ==="
+          strings docker-buildx | grep -i "buildkit" | head -30 || echo "No buildkit strings found"
+          echo
+
+          echo "=== Check for buildkitd mentions ==="
+          strings docker-buildx | grep -i "buildkitd" | head -10 || echo "No buildkitd strings found"
+          echo
+
+      - name: Check dependencies
+        run: |
+          cd /tmp
+          echo "=== Check dynamic dependencies ==="
+          ldd docker-buildx 2>&1 || echo "Statically linked"
+          echo
+
+      - name: Check help output
+        run: |
+          cd /tmp
+          echo "=== Buildx help (checking for BuildKit mentions) ==="
+          ./docker-buildx --help 2>&1 | grep -i buildkit || echo "No buildkit mentions in help"
+          echo
+
+          echo "=== Available commands ==="
+          ./docker-buildx --help 2>&1 | grep -E '^\s+[a-z]+' | head -20
+          echo
+
+      - name: Try to list builders
+        continue-on-error: true
+        run: |
+          cd /tmp
+          echo "=== Attempting to list builders ==="
+          ./docker-buildx ls 2>&1 || echo "Failed to list builders (expected if docker not configured)"
+          echo
+
+      - name: Check if buildkitd is needed
+        run: |
+          cd /tmp
+          echo "=== Summary ==="
+          echo "docker-buildx is the CLI plugin that manages BuildKit builders."
+          echo "It can work with:"
+          echo "  1. Docker daemon's built-in BuildKit (docker buildx --builder=default)"
+          echo "  2. Standalone buildkitd instances (requires separate buildkitd binary)"
+          echo "  3. Remote BuildKit instances"
+          echo
+          echo "To check if we need standalone buildkitd, we should:"
+          echo "  1. Check if Docker daemon has BuildKit built-in"
+          echo "  2. Test if buildx can use docker's BuildKit"
+          echo
+
+          # Check if dockerd supports BuildKit
+          if command -v dockerd >/dev/null 2>&1; then
+            echo "dockerd is available"
+            dockerd --version
+          else
+            echo "dockerd not found in PATH"
+          fi
+          echo
+
+          # Clean up
+          rm -f docker-buildx
