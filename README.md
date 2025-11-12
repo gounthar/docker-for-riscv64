@@ -11,12 +11,14 @@ This project provides pre-built Docker Engine, CLI, and Compose binaries for RIS
 - Docker Engine (dockerd, containerd, runc)
 - Docker CLI (docker command-line interface)
 - Docker Compose v2 plugin
+- Docker Buildx - multi-platform builds
+- Docker Scout - security scanning and vulnerability analysis
 - Tini - tiny init for containers
 - Debian APT repository for easy installation
 - RPM repository for Fedora/RHEL/Rocky/AlmaLinux
 - Automated `.deb` and `.rpm` package creation
 - Automated weekly builds
-- Based on official Moby, CLI, Compose, and Tini releases
+- Based on official Moby, CLI, Compose, Buildx, Scout, and Tini releases
 - Built and tested on Debian Trixie / Armbian Trixie and Fedora RISC-V64
 - Minimal patches for RISC-V compatibility
 
@@ -345,6 +347,82 @@ docker compose logs
 docker compose down
 ```
 
+### Docker Scout Installation
+
+Docker Scout is a CLI plugin for security scanning and vulnerability analysis:
+
+#### Option 1: APT Repository (Recommended)
+
+```bash
+# Add GPG key and repository (if not already added)
+wget -qO- https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/docker-riscv64.gpg | \
+  sudo tee /usr/share/keyrings/docker-riscv64.gpg > /dev/null
+
+echo "deb [arch=riscv64 signed-by=/usr/share/keyrings/docker-riscv64.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \
+  sudo tee /etc/apt/sources.list.d/docker-riscv64.list
+
+# Install scout plugin
+sudo apt-get update
+sudo apt-get install docker-scout-plugin
+
+# Verify
+docker scout version
+```
+
+#### Option 2: Direct .deb Package
+
+```bash
+# Get latest scout release
+SCOUT_VERSION="scout-v1.6.0-riscv64"
+
+# Download package
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${SCOUT_VERSION}/docker-scout-plugin_*.deb"
+
+# Install
+sudo dpkg -i docker-scout-plugin_*.deb
+sudo apt-get install -f  # Fix any dependencies
+```
+
+#### Option 3: Manual Binary Installation
+
+```bash
+# Download binary
+SCOUT_VERSION="scout-v1.6.0-riscv64"
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${SCOUT_VERSION}/docker-scout"
+
+# Install as Docker CLI plugin
+sudo mkdir -p /usr/libexec/docker/cli-plugins
+sudo mv docker-scout /usr/libexec/docker/cli-plugins/
+sudo chmod +x /usr/libexec/docker/cli-plugins/docker-scout
+
+# Verify
+docker scout version
+```
+
+### Using Docker Scout
+
+```bash
+# Scan a local image for vulnerabilities
+docker scout cves myimage:latest
+
+# Get quick security overview
+docker scout quickview myimage:latest
+
+# Get base image recommendations
+docker scout recommendations myimage:latest
+
+# Compare two images
+docker scout compare myimage:v1 myimage:v2
+
+# Generate Software Bill of Materials (SBOM)
+docker scout sbom myimage:latest
+
+# View detailed CVE information
+docker scout cves myimage:latest --format markdown
+```
+
+**Note:** Docker Scout requires network access to query vulnerability databases.
+
 ## Advanced Version Detection
 
 For automation or to always use the latest versions, you can dynamically detect the latest release tags using the GitHub CLI or API:
@@ -505,8 +583,10 @@ docker --version
 - **Docker Engine releases**: `vX.Y.Z-riscv64` (e.g., `v27.5.1-riscv64`)
 - **Docker CLI releases**: `cli-vX.Y.Z-riscv64` (e.g., `cli-v28.5.1-riscv64`)
 - **Docker Compose releases**: `compose-vX.Y.Z-riscv64` (e.g., `compose-v2.40.1-riscv64`)
+- **Docker Buildx releases**: `buildx-vX.Y.Z-riscv64` (e.g., `buildx-v0.29.1-riscv64`)
+- **Docker Scout releases**: `scout-vX.Y.Z-riscv64` (e.g., `scout-v1.6.0-riscv64`)
 - **Tini releases**: `tini-vX.Y.Z-riscv64` (e.g., `tini-v0.19.0-riscv64`)
-- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, `compose-vYYYYMMDD-dev`, or `tini-vYYYYMMDD-dev`
+- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, `compose-vYYYYMMDD-dev`, `buildx-vYYYYMMDD-dev`, `scout-vYYYYMMDD-dev`, or `tini-vYYYYMMDD-dev`
 
 ### Automated Builds
 
@@ -522,6 +602,15 @@ docker --version
 
 **Docker Compose:**
 - Weekly builds: Every Sunday at 03:00 UTC (latest Compose main)
+- Manual trigger support for specific versions
+
+**Docker Buildx:**
+- Weekly builds: Every Sunday at 05:00 UTC (latest Buildx master)
+- Manual trigger support for specific versions
+
+**Docker Scout:**
+- Weekly builds: Every Sunday at 06:00 UTC (latest Scout main)
+- Release tracking: Daily at 09:00 UTC
 - Manual trigger support for specific versions
 
 **Tini:**
@@ -549,6 +638,20 @@ docker --version
 - **docker-compose** (~10MB) - Compose v2 binary
 - Installed to: `/usr/libexec/docker/cli-plugins/`
 - Symlink: `/usr/bin/docker-compose` (backward compat)
+
+**Docker Buildx releases** include:
+- **docker-buildx-plugin_*.deb** (~60MB) - Debian package
+- **docker-buildx-plugin-*.rpm** (~60MB) - RPM package
+- **docker-buildx** (~50MB) - Buildx plugin binary
+- Installed to: `/usr/libexec/docker/cli-plugins/`
+- Provides `docker buildx` commands for multi-platform builds
+
+**Docker Scout releases** include:
+- **docker-scout-plugin_*.deb** (~25MB) - Debian package
+- **docker-scout-plugin-*.rpm** (~25MB) - RPM package
+- **docker-scout** (~20MB) - Scout plugin binary
+- Installed to: `/usr/libexec/docker/cli-plugins/`
+- Provides `docker scout` commands for security scanning
 
 **Tini releases** include:
 - **tini-*.rpm** (~50KB) - RPM package for main binary
