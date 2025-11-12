@@ -38,7 +38,7 @@ jobs:
 
           # Get the latest CLI release
           LATEST_RELEASE=$(gh release list --repo ${{ github.repository }} --limit 10 | \
-            grep -E '^\s*cli-v' | head -1 | awk '{print $1}' || echo "")
+            grep -E 'cli-v' | head -1 | awk '{print $(NF-1)}' || echo "")
 
           echo "Latest CLI release: $LATEST_RELEASE"
 
@@ -91,16 +91,16 @@ jobs:
             if [ -z "$RELEASE_TAG" ]; then
               echo "No release tag provided, auto-detecting latest CLI release..."
               RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                            grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                            grep -E 'cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                             head -1 | \
-                            awk '{print $1}')
+                            awk '{print $(NF-1)}')
             fi
           else
             # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -E 'cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
-                          awk '{print $1}')
+                          awk '{print $(NF-1)}')
           fi
 
           # Validate RELEASE_TAG is not empty
@@ -135,16 +135,16 @@ jobs:
             if [ -z "$RELEASE_TAG" ]; then
               echo "No release tag provided, auto-detecting latest CLI release..."
               RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                            grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                            grep -E 'cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                             head -1 | \
-                            awk '{print $1}')
+                            awk '{print $(NF-1)}')
             fi
           else
             # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -E 'cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
-                          awk '{print $1}')
+                          awk '{print $(NF-1)}')
           fi
           VERSION="$(echo "$RELEASE_TAG" | sed 's/^cli-v//; s/-riscv64$//')"
           echo "Package version: $VERSION"
@@ -210,16 +210,16 @@ jobs:
             if [ -z "$RELEASE_TAG" ]; then
               echo "No release tag provided, auto-detecting latest CLI release..."
               RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                            grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                            grep -E 'cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                             head -1 | \
-                            awk '{print $1}')
+                            awk '{print $(NF-1)}')
             fi
           else
             # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -E 'cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
-                          awk '{print $1}')
+                          awk '{print $(NF-1)}')
           fi
 
           # Validate RELEASE_TAG is not empty

@@ -82,9 +82,9 @@ jobs:
           else
             # Find the latest buildx release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -E 'buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
-                          awk '{print $1}')
+                          awk '{print $(NF-1)}')
           fi
           echo "Building package for release: $RELEASE_TAG"
 
@@ -108,9 +108,9 @@ jobs:
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -E 'buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
-                          awk '{print $1}')
+                          awk '{print $(NF-1)}')
           fi
           VERSION="$(echo "$RELEASE_TAG" | sed 's/^buildx-v//; s/-riscv64$//')"
           echo "Package version: $VERSION"
@@ -172,9 +172,9 @@ jobs:
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          grep -E 'buildx-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
-                          awk '{print $1}')
+                          awk '{print $(NF-1)}')
           fi
 
           echo "Uploading packages to release $RELEASE_TAG"
