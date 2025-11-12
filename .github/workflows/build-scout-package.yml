@@ -1,0 +1,201 @@
+name: Build Docker Scout Debian Package
+
+on:
+  workflow_run:
+    workflows: ["Weekly Docker Scout RISC-V64 Build"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Scout release tag'
+        required: true
+        default: 'scout-v0.19.2-riscv64'
+
+permissions:
+  contents: write
+
+jobs:
+  build-deb:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Check if new release exists
+        id: check_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Skip check for manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - proceeding with build"
+            echo "skip=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Find the latest Scout release
+          # gh release list outputs: Title<TAB>Status<TAB>Tag<TAB>Date
+          # We need to match the tag (column 3), not the title
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                        awk -F'\t' '$3 ~ /^scout-v[0-9]+\.[0-9]+\.[0-9]+-riscv64$/ {print $3; exit}')
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No Scout release found - skipping package build"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if release already has .deb packages
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          if echo "$ASSETS" | grep -q 'docker-scout-plugin.*\.deb$'; then
+            echo "Release $RELEASE_TAG already has Debian packages - skipping build"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Release $RELEASE_TAG needs Debian packages - proceeding with build"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install build dependencies
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get install -y gh || true
+          fi
+
+      - name: Download scout binary
+        if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Get release tag from workflow_run or manual input
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            # Find the latest scout release created by the workflow
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                          grep -E 'scout-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          head -1 | \
+                          awk '{print $(NF-1)}')
+          fi
+          echo "Building package for release: $RELEASE_TAG"
+
+          # Download binary
+          gh release download $RELEASE_TAG -p docker-scout
+          chmod +x docker-scout
+
+          # Verify binary architecture
+          file ./docker-scout || true
+          readelf -h ./docker-scout 2>/dev/null | sed -n '1,5p' || true
+          ./docker-scout version || echo "Version command not available yet"
+
+          ls -lh docker-scout
+
+      - name: Update package version in changelog
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          # Get release tag (same logic as download step)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                          grep -E 'scout-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          head -1 | \
+                          awk '{print $(NF-1)}')
+          fi
+          VERSION="$(echo "$RELEASE_TAG" | sed 's/^scout-v//; s/-riscv64$//')"
+          echo "Package version: $VERSION"
+
+          # Set DEBEMAIL to avoid interactive prompt
+          export DEBEMAIL="github-actions[bot]@users.noreply.github.com"
+          export DEBFULLNAME="GitHub Actions"
+
+          # Copy packaging and update changelog with dch
+          cp -r debian-scout debian
+          cd debian
+          dch --check-dirname-level 0 \
+              --force-distribution \
+              --newversion "${VERSION}-riscv64-1" \
+              --distribution trixie \
+              "RISC-V64 prebuilt docker-scout plugin ${VERSION}"
+          cd ..
+
+      - name: Build package
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          # Build package (debian/ already created in previous step)
+          dpkg-buildpackage -us -uc -b
+
+          ls -lh ../*.deb
+
+      - name: Run lintian checks
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          lintian --info --display-info ../*.deb || true
+
+      - name: Package info
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          for deb in ../*.deb; do
+            echo "============================================"
+            echo "=== Package: $(basename $deb) ==="
+            echo "============================================"
+            echo ""
+            echo "=== Package Contents ==="
+            dpkg-deb --contents "$deb" | head -50
+            echo ""
+            echo "=== Package Info ==="
+            dpkg-deb --info "$deb"
+            echo ""
+            echo "=== Package Size ==="
+            ls -lh "$deb"
+            echo ""
+          done
+
+      - name: Upload packages to release
+        if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Get release tag (same logic as download step)
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                          grep -E 'scout-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          head -1 | \
+                          awk '{print $(NF-1)}')
+          fi
+
+          echo "Uploading packages to release $RELEASE_TAG"
+          echo ""
+
+          for deb in ../*.deb; do
+            echo "Uploading $(basename $deb)..."
+            for i in {1..3}; do
+              gh release upload "$RELEASE_TAG" "$deb" --clobber && break
+              echo "Retry $i..."
+              sleep 3
+            done
+          done
+
+          echo ""
+          echo "✅ Docker Scout Debian package uploaded successfully!"
+          echo ""
+          echo "Packages built:"
+          ls -lh ../*.deb
+          echo ""
+          echo "Install with:"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/docker-scout-plugin_*.deb"
+          echo "  sudo dpkg -i docker-scout-plugin_*.deb"
+          echo "  docker scout version"

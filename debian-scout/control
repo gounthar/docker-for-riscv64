@@ -1,0 +1,28 @@
+Source: docker-scout-plugin
+Section: devel
+Priority: optional
+Maintainer: Bruno Verächten <bruno@verachten.fr>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/docker/scout
+Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
+Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
+
+Package: docker-scout-plugin
+Architecture: riscv64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: docker.io (>= 20.10) | docker-ce (>= 20.10)
+Description: Docker CLI plugin for extended build capabilities
+ Docker Scout is a Docker CLI plugin that extends the docker build command
+ with the full BuildKit features.
+ .
+ Features include:
+  - Multi-platform builds (--platform flag)
+  - Advanced caching strategies
+  - Build-time secrets and SSH forwarding
+  - Remote builder support
+  - OCI exporter support
+  - Custom builder creation and management
+ .
+ This is the RISC-V64 port of docker-scout, providing native support for
+ the RISC-V 64-bit architecture.

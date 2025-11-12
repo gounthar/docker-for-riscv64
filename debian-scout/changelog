@@ -1,0 +1,7 @@
+docker-scout-plugin (0.19.2-riscv64-1) trixie; urgency=medium
+
+  * Initial RISC-V64 build of Docker Scout plugin
+  * Built from upstream docker/scout repository
+  * Native compilation on RISC-V64 hardware
+
+ -- Bruno Verächten <bruno@verachten.fr>  Thu, 07 Nov 2024 08:00:00 +0000
