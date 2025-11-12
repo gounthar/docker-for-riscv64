@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'CLI release tag'
-        required: true
-        default: 'cli-v28.5.1-riscv64'
+        description: 'CLI release tag (leave empty to auto-detect latest)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -87,6 +87,14 @@ jobs:
           # Get release tag from workflow_run or manual input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+            # If empty/not provided, auto-detect latest
+            if [ -z "$RELEASE_TAG" ]; then
+              echo "No release tag provided, auto-detecting latest CLI release..."
+              RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                            grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                            head -1 | \
+                            awk '{print $1}')
+            fi
           else
             # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
@@ -94,6 +102,13 @@ jobs:
                           head -1 | \
                           awk '{print $1}')
           fi
+
+          # Validate RELEASE_TAG is not empty
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: Could not determine CLI release tag"
+            exit 1
+          fi
+
           echo "Building package for release: $RELEASE_TAG"
 
           # Download binary
@@ -109,11 +124,21 @@ jobs:
 
       - name: Update package version in changelog
         if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           # Get release tag from workflow_run or manual input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+            # If empty/not provided, auto-detect latest
+            if [ -z "$RELEASE_TAG" ]; then
+              echo "No release tag provided, auto-detecting latest CLI release..."
+              RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                            grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                            head -1 | \
+                            awk '{print $1}')
+            fi
           else
             # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
@@ -181,12 +206,26 @@ jobs:
           # Get release tag from workflow_run or manual input
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+            # If empty/not provided, auto-detect latest
+            if [ -z "$RELEASE_TAG" ]; then
+              echo "No release tag provided, auto-detecting latest CLI release..."
+              RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                            grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                            head -1 | \
+                            awk '{print $1}')
+            fi
           else
             # Find the latest CLI release created by the workflow
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
                           grep -E '^cli-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
                           head -1 | \
                           awk '{print $1}')
+          fi
+
+          # Validate RELEASE_TAG is not empty
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: Could not determine CLI release tag"
+            exit 1
           fi
 
           echo "Uploading packages to release $RELEASE_TAG"
