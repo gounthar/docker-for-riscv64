@@ -2,7 +2,7 @@ name: Build Debian Package
 
 on:
   workflow_run:
-    workflows: ["Weekly Docker RISC-V64 Build", "Track Moby Releases"]
+    workflows: ["Build Docker RISC-V64", "Track Moby Releases"]
     types: [completed]
     branches: [main]
   workflow_dispatch:

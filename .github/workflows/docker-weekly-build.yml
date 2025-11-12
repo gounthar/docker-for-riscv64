@@ -1,8 +1,8 @@
-name: Weekly Docker RISC-V64 Build
+name: Build Docker RISC-V64
 
 on:
   schedule:
-    # Run every Sunday at 02:00 UTC
+    # Run every Sunday at 02:00 UTC (weekly builds from master)
     - cron: '0 2 * * 0'
   workflow_dispatch:
     inputs:

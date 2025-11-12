@@ -58,7 +58,7 @@ jobs:
 
           **Status:** Build automatically triggered
 
-          The docker-weekly-build workflow has been started automatically.
+          The Build Docker RISC-V64 workflow has been started automatically.
           Expected completion time: ~35-40 minutes
 
           **Monitor build progress:**
