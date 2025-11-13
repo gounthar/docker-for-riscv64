@@ -14,7 +14,9 @@ on:
 jobs:
   build-docker:
     runs-on: [self-hosted, riscv64]
-    
+    env:
+      VERSION_REGEX: '^(docker-)?v[0-9]+\.[0-9]+\.[0-9]+.*$'
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -38,15 +40,15 @@ jobs:
           cd moby
           git fetch origin --tags
           MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
-          git checkout $MOBY_REF
+          git checkout "$MOBY_REF"
           # Pull only if it's a branch (not a tag)
-          if git show-ref --verify --quiet refs/remotes/origin/$MOBY_REF; then
-            git pull origin $MOBY_REF
+          if git show-ref --verify --quiet "refs/remotes/origin/$MOBY_REF"; then
+            git pull origin "$MOBY_REF"
           fi
 
           # Determine version for Docker build
           # If checked out to a version tag (vX.Y.Z or docker-vX.Y.Z), extract clean version
-          if [[ "$MOBY_REF" =~ ^(docker-)?v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+          if [[ "$MOBY_REF" =~ ${{ env.VERSION_REGEX }} ]]; then
             # Official release tag: docker-v29.0.0 -> 29.0.0
             VERSION="${MOBY_REF#docker-}"
             VERSION="${VERSION#v}"
@@ -194,7 +196,7 @@ jobs:
           VERSION="${{ steps.moby_update.outputs.version }}"
 
           # Determine release version and title based on moby_ref
-          if [[ "$MOBY_REF" =~ ^(docker-)?v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+          if [[ "$MOBY_REF" =~ ${{ env.VERSION_REGEX }} ]]; then
             # Official release: docker-v29.0.0 -> v29.0.0-riscv64
             VERSION_TAG="${MOBY_REF#docker-}"
             RELEASE_VERSION="${VERSION_TAG}-riscv64"
