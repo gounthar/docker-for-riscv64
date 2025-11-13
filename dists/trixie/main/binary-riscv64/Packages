@@ -120,10 +120,10 @@ Homepage: https://github.com/moby/moby
 Priority: optional
 Section: admin
 Filename: pool/main/d/docker.io/docker.io_29.0.0-1_riscv64.deb
-Size: 17236700
-SHA256: cc6388c4f696a73b5fc96891b60e2ba4540c8b387ac96b274ce099fb4a5dbd40
-SHA1: fb7d8209e7c6a6e5441559f7f977dce8979e006e
-MD5sum: 53dcb68d8b701865954d77d0edbf3c48
+Size: 17236852
+SHA256: b3e230806d92ac9c3ada1e182b7097b82916baa202a00de5c317c9ea052c6ce8
+SHA1: fc5f6f32e13f2f8db79a0f21cf200f94b442e8ad
+MD5sum: 42847b6fe235f1c6d9ea130a46608f27
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
