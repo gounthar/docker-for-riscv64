@@ -48,7 +48,8 @@ jobs:
 
           # Determine version for Docker build
           # If checked out to a version tag (vX.Y.Z or docker-vX.Y.Z), extract clean version
-          if [[ "$MOBY_REF" =~ ${{ env.VERSION_REGEX }} ]]; then
+          VERSION_REGEX='${{ env.VERSION_REGEX }}'
+          if [[ "$MOBY_REF" =~ $VERSION_REGEX ]]; then
             # Official release tag: docker-v29.0.0 -> 29.0.0
             VERSION="${MOBY_REF#docker-}"
             VERSION="${VERSION#v}"
@@ -196,7 +197,8 @@ jobs:
           VERSION="${{ steps.moby_update.outputs.version }}"
 
           # Determine release version and title based on moby_ref
-          if [[ "$MOBY_REF" =~ ${{ env.VERSION_REGEX }} ]]; then
+          VERSION_REGEX='${{ env.VERSION_REGEX }}'
+          if [[ "$MOBY_REF" =~ $VERSION_REGEX ]]; then
             # Official release: docker-v29.0.0 -> v29.0.0-riscv64
             VERSION_TAG="${MOBY_REF#docker-}"
             RELEASE_VERSION="${VERSION_TAG}-riscv64"
