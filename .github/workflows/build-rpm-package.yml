@@ -100,14 +100,14 @@ jobs:
       - name: Build RPM packages in Fedora container
         if: steps.release.outputs.has-new-release == 'true'
         run: |
-          # Use Fedora container for proper RPM build environment
+          # Use Fedora RISC-V container for proper RPM build environment
           # This avoids Debian-specific issues with systemd-rpm-macros
           docker run --rm \
             -v ~/rpmbuild:/root/rpmbuild:Z \
             -v $PWD/rpm-docker:/rpm-docker:ro \
             -v $PWD/rpm-containerd:/rpm-containerd:ro \
             -v $PWD/rpm-runc:/rpm-runc:ro \
-            fedora:latest \
+            fedorariscv/base:latest \
             bash -c '
               set -euo pipefail
 
@@ -141,10 +141,10 @@ jobs:
       - name: Run rpmlint checks
         if: steps.release.outputs.has-new-release == 'true'
         run: |
-          # Run rpmlint inside Fedora container
+          # Run rpmlint inside Fedora RISC-V container
           docker run --rm \
             -v ~/rpmbuild:/root/rpmbuild:ro \
-            fedora:latest \
+            fedorariscv/base:latest \
             bash -c 'dnf install -y rpmlint && rpmlint /root/rpmbuild/RPMS/riscv64/*.rpm' || true
 
       - name: Package info
