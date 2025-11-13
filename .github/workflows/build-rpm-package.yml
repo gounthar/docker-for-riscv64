@@ -49,6 +49,36 @@ jobs:
         run: |
           rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
+      - name: Create systemd RPM macros for Debian
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          # On Debian, systemd-rpm-macros package doesn't exist
+          # Create the macros manually
+          if [ -f /etc/debian_version ]; then
+            sudo mkdir -p /usr/lib/rpm/macros.d
+            sudo tee /usr/lib/rpm/macros.d/macros.systemd > /dev/null <<'EOF'
+# Systemd RPM macros for Debian
+%systemd_post() \
+if [ $1 -eq 1 ] && [ -x "/usr/bin/systemctl" ]; then \
+  systemctl --no-reload preset %{?*} || : \
+fi \
+%{nil}
+
+%systemd_preun() \
+if [ $1 -eq 0 ] && [ -x "/usr/bin/systemctl" ]; then \
+  systemctl --no-reload disable --now %{?*} || : \
+fi \
+%{nil}
+
+%systemd_postun_with_restart() \
+if [ $1 -ge 1 ] && [ -x "/usr/bin/systemctl" ]; then \
+  systemctl try-restart %{?*} || : \
+fi \
+%{nil}
+EOF
+            echo "Created systemd RPM macros for Debian"
+          fi
+
       - name: Clean previous RPM builds
         if: steps.release.outputs.has-new-release == 'true'
         run: |
