@@ -1,5 +1,9 @@
 name: Build RPM Package
 
+# This workflow builds RPM packages using a Fedora container
+# to ensure proper RPM build environment with native systemd-rpm-macros support.
+# Running rpmbuild on Debian requires extensive workarounds that are fragile.
+
 'on':
   workflow_run:
     workflows: ["Build Docker RISC-V64", "Track Moby Releases"]
@@ -30,54 +34,10 @@ jobs:
           asset-pattern: 'moby-engine.*\.rpm$'
           check-existing-assets: ${{ github.event_name != 'workflow_dispatch' }}
 
-      - name: Install build dependencies
-        if: steps.release.outputs.has-new-release == 'true'
-        run: |
-          # Check if running on Fedora or Debian
-          if [ -f /etc/fedora-release ]; then
-            sudo dnf install -y rpm-build rpmdevtools rpmlint createrepo_c systemd-rpm-macros
-          elif [ -f /etc/debian_version ]; then
-            sudo apt-get update
-            sudo apt-get install -y rpm rpmlint createrepo-c systemd
-          else
-            echo "Unsupported distribution"
-            exit 1
-          fi
-
       - name: Set up RPM build tree
         if: steps.release.outputs.has-new-release == 'true'
         run: |
-          rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-
-      - name: Create systemd RPM macros for Debian
-        if: steps.release.outputs.has-new-release == 'true'
-        run: |
-          # On Debian, systemd-rpm-macros package doesn't exist
-          # Create the macros manually
-          if [ -f /etc/debian_version ]; then
-            sudo mkdir -p /usr/lib/rpm/macros.d
-            sudo bash -c 'cat > /usr/lib/rpm/macros.d/macros.systemd' <<'MACROS_EOF'
-          # Systemd RPM macros for Debian
-          %systemd_post() \
-          if [ $1 -eq 1 ] && [ -x "/usr/bin/systemctl" ]; then \
-            systemctl --no-reload preset %{?*} || : \
-          fi \
-          %{nil}
-
-          %systemd_preun() \
-          if [ $1 -eq 0 ] && [ -x "/usr/bin/systemctl" ]; then \
-            systemctl --no-reload disable --now %{?*} || : \
-          fi \
-          %{nil}
-
-          %systemd_postun_with_restart() \
-          if [ $1 -ge 1 ] && [ -x "/usr/bin/systemctl" ]; then \
-            systemctl try-restart %{?*} || : \
-          fi \
-          %{nil}
-          MACROS_EOF
-            echo "Created systemd RPM macros for Debian"
-          fi
+          mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
       - name: Clean previous RPM builds
         if: steps.release.outputs.has-new-release == 'true'
@@ -137,30 +97,55 @@ jobs:
           # Update moby-engine version
           sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/moby-engine.spec
 
-      - name: Build RPM packages
+      - name: Build RPM packages in Fedora container
         if: steps.release.outputs.has-new-release == 'true'
         run: |
-          # Build each package (on native riscv64, no --target needed)
-          cd ~/rpmbuild/SPECS
+          # Use Fedora container for proper RPM build environment
+          # This avoids Debian-specific issues with systemd-rpm-macros
+          docker run --rm \
+            -v ~/rpmbuild:/root/rpmbuild:Z \
+            -v $PWD/rpm-docker:/rpm-docker:ro \
+            -v $PWD/rpm-containerd:/rpm-containerd:ro \
+            -v $PWD/rpm-runc:/rpm-runc:ro \
+            fedora:latest \
+            bash -c '
+              set -euo pipefail
 
-          echo "Building runc..."
-          rpmbuild -bb runc.spec
+              # Install build dependencies
+              echo "Installing RPM build dependencies..."
+              dnf install -y rpm-build rpmdevtools rpmlint systemd-rpm-macros
 
-          echo "Building containerd..."
-          rpmbuild -bb containerd.spec
+              # Build packages
+              cd /root/rpmbuild/SPECS
 
-          echo "Building moby-engine..."
-          rpmbuild -bb moby-engine.spec
+              echo "Building runc..."
+              rpmbuild -bb runc.spec
 
-          # List built packages
+              echo "Building containerd..."
+              rpmbuild -bb containerd.spec
+
+              echo "Building moby-engine..."
+              rpmbuild -bb moby-engine.spec
+
+              # List built packages
+              echo ""
+              echo "Built RPM packages:"
+              ls -lh /root/rpmbuild/RPMS/riscv64/
+            '
+
+          # Show results on host
           echo ""
-          echo "Built RPM packages:"
+          echo "RPM packages built successfully:"
           ls -lh ~/rpmbuild/RPMS/riscv64/
 
       - name: Run rpmlint checks
         if: steps.release.outputs.has-new-release == 'true'
         run: |
-          rpmlint ~/rpmbuild/RPMS/riscv64/*.rpm || true
+          # Run rpmlint inside Fedora container
+          docker run --rm \
+            -v ~/rpmbuild:/root/rpmbuild:ro \
+            fedora:latest \
+            bash -c 'dnf install -y rpmlint && rpmlint /root/rpmbuild/RPMS/riscv64/*.rpm' || true
 
       - name: Package info
         if: steps.release.outputs.has-new-release == 'true'
