@@ -26,19 +26,19 @@ Description: Container runtime for RISC-V64 architecture
  Built on BananaPi F3 running Armbian Trixie.
 
 Package: docker-buildx-plugin
-Version: 0.29.1-riscv64-1
+Version: 0.30.0-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verächten <bruno@verachten.fr>
-Installed-Size: 63474
+Installed-Size: 66197
 Recommends: docker.io (>= 20.10) | docker-ce (>= 20.10)
 Homepage: https://github.com/docker/buildx
 Priority: optional
 Section: devel
-Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.29.1-riscv64-1_riscv64.deb
-Size: 13598380
-SHA256: 7664ce804303b496f2ef95c0cd1d247dcfa251898814ba2a4aee354fffb599f5
-SHA1: d1a9db0bff56706dea517c013746d76b9841a407
-MD5sum: 671abc0b00d896f2d71269b7f62c0d3e
+Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.30.0-riscv64-1_riscv64.deb
+Size: 13956540
+SHA256: ceb76a709dd61d168ae5448a865673c8f6e33b81cf7e38e0005d7cef548a697f
+SHA1: cc3eaee1829b984bd70cd03ef712dd4787661b9f
+MD5sum: 3f1ad699bcfc48d24a8586560e2ce115
 Description: Docker CLI plugin for extended build capabilities
  Docker Buildx is a Docker CLI plugin that extends the docker build command
  with the full BuildKit features.
@@ -120,10 +120,10 @@ Homepage: https://github.com/moby/moby
 Priority: optional
 Section: admin
 Filename: pool/main/d/docker.io/docker.io_29.0.0-1_riscv64.deb
-Size: 17237316
-SHA256: ddfcbd14523cf2588f8c9dc52436550b2f96447bf3233883130771404dc272bc
-SHA1: 14377a209fe93ed269ea9a365465938afae7f846
-MD5sum: a1e9fb88d85315abebabe273f9833f90
+Size: 17236700
+SHA256: cc6388c4f696a73b5fc96891b60e2ba4540c8b387ac96b274ce099fb4a5dbd40
+SHA1: fb7d8209e7c6a6e5441559f7f977dce8979e006e
+MD5sum: 53dcb68d8b701865954d77d0edbf3c48
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
