@@ -14,7 +14,9 @@ on:
 jobs:
   build-docker:
     runs-on: [self-hosted, riscv64]
-    
+    env:
+      VERSION_REGEX: '^(docker-)?v[0-9]+\.[0-9]+\.[0-9]+.*$'
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -33,13 +35,30 @@ jobs:
             ${{ runner.os }}-go-
 
       - name: Update moby submodule
+        id: moby_update
         run: |
           cd moby
           git fetch origin --tags
-          git checkout ${{ github.event.inputs.moby_ref || 'master' }}
+          MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
+          git checkout "$MOBY_REF"
           # Pull only if it's a branch (not a tag)
-          if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.inputs.moby_ref || 'master' }}; then
-            git pull origin ${{ github.event.inputs.moby_ref || 'master' }}
+          if git show-ref --verify --quiet "refs/remotes/origin/$MOBY_REF"; then
+            git pull origin "$MOBY_REF"
+          fi
+
+          # Determine version for Docker build
+          # If checked out to a version tag (vX.Y.Z or docker-vX.Y.Z), extract clean version
+          if [[ "$MOBY_REF" =~ ${{ env.VERSION_REGEX }} ]]; then
+            # Official release tag: docker-v29.0.0 -> 29.0.0
+            VERSION="${MOBY_REF#docker-}"
+            VERSION="${VERSION#v}"
+            echo "Building official release version: $VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          else
+            # Development build: use git describe
+            VERSION=$(git describe --tags --always --dirty)
+            echo "Building development version: $VERSION"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
       
       - name: Apply RISC-V patches
@@ -96,9 +115,12 @@ jobs:
       - name: Build Docker binaries
         run: |
           cd moby
+          VERSION="${{ steps.moby_update.outputs.version }}"
+          echo "Building Docker with VERSION=$VERSION"
           docker build \
             --build-arg BASE_DEBIAN_DISTRO=trixie \
             --build-arg GO_VERSION=1.25.3 \
+            --build-arg VERSION="$VERSION" \
             --target=binary \
             -f Dockerfile \
             -t docker-riscv64:binary-$(date +%Y%m%d) \
@@ -171,22 +193,23 @@ jobs:
           DATE=$(date +%Y%m%d)
           MOBY_COMMIT=$(cd moby && git rev-parse --short HEAD)
           MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
+          VERSION="${{ steps.moby_update.outputs.version }}"
 
-          # Determine release version
-          # If moby_ref is a version tag (vX.Y.Z or docker-vX.Y.Z), use it; otherwise use date-based
-          if [[ "$MOBY_REF" =~ ^(docker-)?v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-            # Official release: v27.5.1 -> v27.5.1-riscv64 or docker-v29.0.0 -> v29.0.0-riscv64
-            # Strip 'docker-' prefix if present
+          # Determine release version and title based on moby_ref
+          if [[ "$MOBY_REF" =~ ${{ env.VERSION_REGEX }} ]]; then
+            # Official release: docker-v29.0.0 -> v29.0.0-riscv64
             VERSION_TAG="${MOBY_REF#docker-}"
             RELEASE_VERSION="${VERSION_TAG}-riscv64"
             RELEASE_TITLE="Docker ${VERSION_TAG} for RISC-V64"
-            VERSION_INFO="**Docker Version:** ${VERSION_TAG}"
+            VERSION_INFO="**Docker Version:** ${VERSION_TAG}
+**Built Version:** ${VERSION}"
           else
             # Development build: master -> v20251018-dev
             RELEASE_VERSION="v${DATE}-dev"
             RELEASE_TITLE="Docker RISC-V64 Development Build ${DATE}"
             VERSION_INFO="**Moby Branch:** ${MOBY_REF}
-          **Moby Commit:** ${MOBY_COMMIT}"
+**Moby Commit:** ${MOBY_COMMIT}
+**Built Version:** ${VERSION}"
           fi
 
           cat > release-notes.md << EOF
