@@ -203,15 +203,12 @@ jobs:
             VERSION_TAG="${MOBY_REF#docker-}"
             RELEASE_VERSION="${VERSION_TAG}-riscv64"
             RELEASE_TITLE="Docker ${VERSION_TAG} for RISC-V64"
-            VERSION_INFO="**Docker Version:** ${VERSION_TAG}
-**Built Version:** ${VERSION}"
+            VERSION_INFO=$'**Docker Version:** '"${VERSION_TAG}"$'\n**Built Version:** '"${VERSION}"
           else
             # Development build: master -> v20251018-dev
             RELEASE_VERSION="v${DATE}-dev"
             RELEASE_TITLE="Docker RISC-V64 Development Build ${DATE}"
-            VERSION_INFO="**Moby Branch:** ${MOBY_REF}
-**Moby Commit:** ${MOBY_COMMIT}
-**Built Version:** ${VERSION}"
+            VERSION_INFO=$'**Moby Branch:** '"${MOBY_REF}"$'\n**Moby Commit:** '"${MOBY_COMMIT}"$'\n**Built Version:** '"${VERSION}"
           fi
 
           cat > release-notes.md << EOF
