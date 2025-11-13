@@ -56,26 +56,26 @@ jobs:
           # Create the macros manually
           if [ -f /etc/debian_version ]; then
             sudo mkdir -p /usr/lib/rpm/macros.d
-            sudo tee /usr/lib/rpm/macros.d/macros.systemd > /dev/null <<'EOF'
-# Systemd RPM macros for Debian
-%systemd_post() \
-if [ $1 -eq 1 ] && [ -x "/usr/bin/systemctl" ]; then \
-  systemctl --no-reload preset %{?*} || : \
-fi \
-%{nil}
+            sudo bash -c 'cat > /usr/lib/rpm/macros.d/macros.systemd' <<'MACROS_EOF'
+          # Systemd RPM macros for Debian
+          %systemd_post() \
+          if [ $1 -eq 1 ] && [ -x "/usr/bin/systemctl" ]; then \
+            systemctl --no-reload preset %{?*} || : \
+          fi \
+          %{nil}
 
-%systemd_preun() \
-if [ $1 -eq 0 ] && [ -x "/usr/bin/systemctl" ]; then \
-  systemctl --no-reload disable --now %{?*} || : \
-fi \
-%{nil}
+          %systemd_preun() \
+          if [ $1 -eq 0 ] && [ -x "/usr/bin/systemctl" ]; then \
+            systemctl --no-reload disable --now %{?*} || : \
+          fi \
+          %{nil}
 
-%systemd_postun_with_restart() \
-if [ $1 -ge 1 ] && [ -x "/usr/bin/systemctl" ]; then \
-  systemctl try-restart %{?*} || : \
-fi \
-%{nil}
-EOF
+          %systemd_postun_with_restart() \
+          if [ $1 -ge 1 ] && [ -x "/usr/bin/systemctl" ]; then \
+            systemctl try-restart %{?*} || : \
+          fi \
+          %{nil}
+          MACROS_EOF
             echo "Created systemd RPM macros for Debian"
           fi
 
