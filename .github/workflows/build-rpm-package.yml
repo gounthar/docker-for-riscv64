@@ -138,6 +138,14 @@ jobs:
           echo "RPM packages built successfully:"
           ls -lh ~/rpmbuild/RPMS/riscv64/
 
+      - name: Fix RPM file ownership
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          # RPMs were created by root inside container, fix ownership for host user
+          sudo chown -R $(id -u):$(id -g) ~/rpmbuild/RPMS/
+          echo "Fixed ownership of RPM files"
+          ls -lh ~/rpmbuild/RPMS/riscv64/
+
       - name: Run rpmlint checks
         if: steps.release.outputs.has-new-release == 'true'
         run: |
