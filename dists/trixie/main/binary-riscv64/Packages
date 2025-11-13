@@ -35,10 +35,10 @@ Homepage: https://github.com/docker/buildx
 Priority: optional
 Section: devel
 Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.30.0-riscv64-1_riscv64.deb
-Size: 13956540
-SHA256: ceb76a709dd61d168ae5448a865673c8f6e33b81cf7e38e0005d7cef548a697f
-SHA1: cc3eaee1829b984bd70cd03ef712dd4787661b9f
-MD5sum: 3f1ad699bcfc48d24a8586560e2ce115
+Size: 13957008
+SHA256: d9ee3c81d66596384cd5754932b4b769c32664539b6c61333e5fd02a9cc3cf4d
+SHA1: bed05309850d3762b6c10a45a580a7d8671966d6
+MD5sum: 0f066aced93763ec3160c334eef039ce
 Description: Docker CLI plugin for extended build capabilities
  Docker Buildx is a Docker CLI plugin that extends the docker build command
  with the full BuildKit features.
