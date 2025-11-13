@@ -35,10 +35,10 @@ jobs:
         run: |
           # Check if running on Fedora or Debian
           if [ -f /etc/fedora-release ]; then
-            sudo dnf install -y rpm-build rpmdevtools rpmlint createrepo_c
+            sudo dnf install -y rpm-build rpmdevtools rpmlint createrepo_c systemd-rpm-macros
           elif [ -f /etc/debian_version ]; then
             sudo apt-get update
-            sudo apt-get install -y rpm rpmlint createrepo-c
+            sudo apt-get install -y rpm rpmlint createrepo-c systemd
           else
             echo "Unsupported distribution"
             exit 1
