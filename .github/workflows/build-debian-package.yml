@@ -30,15 +30,14 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             echo "Manual dispatch - proceeding with build"
             echo "has_new_release=true" >> $GITHUB_OUTPUT
+            echo "release_tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
             exit 0
           fi
 
           # Find the latest docker release
-          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                        grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                        grep -v '^compose-' | grep -v '^cli-' | \
-                        head -1 | \
-                        awk '{print $1}')
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 --json tagName,createdAt | \
+                        jq -r '.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                        head -1)
 
           if [ -z "$RELEASE_TAG" ]; then
             echo "No Docker release found - skipping package build"
@@ -54,6 +53,7 @@ jobs:
           else
             echo "Release $RELEASE_TAG needs Debian packages - proceeding with build"
             echo "has_new_release=true" >> $GITHUB_OUTPUT
+            echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           fi
 
       - name: Install build dependencies
@@ -67,17 +67,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Get release tag from workflow_run or manual input
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
-          else
-            # Find the latest docker release created by the workflow
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          grep -v '^compose-' | grep -v '^cli-' | \
-                          head -1 | \
-                          awk '{print $1}')
-          fi
+          # Use release tag from check_release step
+          RELEASE_TAG="${{ steps.check_release.outputs.release_tag }}"
 
           echo "Building package for release: $RELEASE_TAG"
 
@@ -99,16 +90,8 @@ jobs:
       - name: Update package version in changelog
         if: steps.check_release.outputs.has_new_release == 'true'
         run: |
-          # Get release tag (same logic as download step)
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
-          else
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          grep -v '^compose-' | grep -v '^cli-' | \
-                          head -1 | \
-                          awk '{print $1}')
-          fi
+          # Use release tag from check_release step
+          RELEASE_TAG="${{ steps.check_release.outputs.release_tag }}"
           # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
 
@@ -174,16 +157,8 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Get release tag (same logic as download step)
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
-          else
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          grep -v '^compose-' | grep -v '^cli-' | \
-                          head -1 | \
-                          awk '{print $1}')
-          fi
+          # Use release tag from check_release step
+          RELEASE_TAG="${{ steps.check_release.outputs.release_tag }}"
 
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
