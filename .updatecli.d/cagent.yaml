@@ -40,7 +40,10 @@ conditions:
       command: |
         CAGENT_VERSION="{{ source `cagentRelease` }}"
         # Check if we already have this version built
-        gh release view "cagent-v${CAGENT_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq '.assets[].name' | grep -q "^cagent-linux-riscv64$" && exit 0
+        if gh release view "cagent-v${CAGENT_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq -e '.assets[] | select(.name=="cagent-linux-riscv64")' >/dev/null 2>&1; then
+          echo "Release asset for v${CAGENT_VERSION} already exists. No update needed."
+          exit 1
+        fi
         # If not built yet, check if upstream release exists
         gh release view "v${CAGENT_VERSION}" --repo docker/cagent >/dev/null 2>&1
       environments:
@@ -81,9 +84,13 @@ targets:
         cd ..
         git add cagent
       changedif:
-        kind: file
+        kind: shell
         spec:
-          file: ".gitmodules"
+          command: |
+            LATEST_TAG="v{{ source `cagentRelease` }}"
+            CURRENT_COMMIT=$(git ls-files --stage cagent | awk '{print $2}')
+            TARGET_COMMIT=$(git ls-remote https://github.com/docker/cagent.git "refs/tags/${LATEST_TAG}" | cut -f1)
+            [ "$CURRENT_COMMIT" != "$TARGET_COMMIT" ]
     scmid: default
 
 actions:
