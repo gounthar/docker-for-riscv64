@@ -51,9 +51,9 @@ jobs:
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
             # Find the latest release with RPM packages using JSON output
-            # Look for any release (docker, compose, cli, or tini) that has .rpm files
+            # Look for any release (docker, compose, cli, tini, buildx, or cagent) that has .rpm files
             for tag in $(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                         jq -r '.[] | select(.tagName | test("^(v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64|compose-v|cli-v|tini-v)")) | .tagName'); do
+                         jq -r '.[] | select(.tagName | test("^(v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64|compose-v|cli-v|tini-v|buildx-v|cagent-v)")) | .tagName'); do
               ASSETS=$(gh release view "$tag" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
               if echo "$ASSETS" | grep -q '\.rpm$'; then
                 RELEASE_TAG="$tag"

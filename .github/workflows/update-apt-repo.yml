@@ -96,6 +96,13 @@ jobs:
                            jq -r '.[] | select(.tagName | test("^buildx-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                            head -1)
           echo "Latest Buildx release: $BUILDX_RELEASE"
+
+          # Find latest cagent release
+          CAGENT_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+                           --limit 50 --json tagName | \
+                           jq -r '.[] | select(.tagName | test("^cagent-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           head -1)
+          echo "Latest cagent release: $CAGENT_RELEASE"
           echo ""
 
           # Download Engine packages (docker.io, containerd, runc)
@@ -130,10 +137,17 @@ jobs:
               --repo gounthar/docker-for-riscv64 --clobber || true
           fi
 
+          # Download cagent package
+          if [ -n "$CAGENT_RELEASE" ]; then
+            echo "Downloading cagent package from $CAGENT_RELEASE..."
+            gh release download "$CAGENT_RELEASE" -p 'cagent_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+          fi
+
           echo ""
           echo "Cleaning up: keeping only the latest version of each package..."
           # For each package prefix, keep only the newest file (by timestamp)
-          for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc; do
+          for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc cagent; do
             # Get all matching files sorted by modification time (newest first)
             # Keep the first (newest), delete the rest
             ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v
