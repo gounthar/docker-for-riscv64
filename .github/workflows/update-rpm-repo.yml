@@ -2,7 +2,7 @@ name: Update RPM Repository
 
 on:
   workflow_run:
-    workflows: ["Build RPM Package", "Build Compose RPM Package", "Build CLI RPM Package", "Build Tini RPM Package"]
+    workflows: ["Build RPM Package", "Build Compose RPM Package", "Build CLI RPM Package", "Build Tini RPM Package", "Build Buildx RPM Package", "Build cagent RPM Package"]
     types: [completed]
     branches: [main]
   workflow_dispatch:

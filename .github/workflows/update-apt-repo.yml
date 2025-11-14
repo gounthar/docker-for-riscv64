@@ -2,13 +2,13 @@ name: Update APT Repository
 
 on:
   workflow_run:
-    workflows: ["Build Debian Package", "Build Docker Compose Debian Package", "Build Docker CLI Debian Package", "Build Docker Buildx Debian Package"]
+    workflows: ["Build Debian Package", "Build Docker Compose Debian Package", "Build Docker CLI Debian Package", "Build Docker Buildx Debian Package", "Build cagent Debian Package"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag containing the .deb package (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, or buildx-v*-riscv64)'
+        description: 'Release tag containing the .deb package (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, buildx-v*-riscv64, or cagent-v*-riscv64)'
         required: true
         default: 'v28.5.2-riscv64'
 
