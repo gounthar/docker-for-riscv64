@@ -1,0 +1,167 @@
+name: Weekly cagent RISC-V64 Build
+
+on:
+  schedule:
+    # Run every Sunday at 06:00 UTC (after buildx build)
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      cagent_ref:
+        description: 'cagent ref to build (branch/tag/commit)'
+        required: false
+        default: 'main'
+
+permissions:
+  contents: write
+
+jobs:
+  build-cagent:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Update cagent submodule
+        run: |
+          cd cagent
+          git fetch origin --tags
+          git checkout ${{ github.event.inputs.cagent_ref || 'main' }}
+          # Pull only if it's a branch (not a tag)
+          if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.inputs.cagent_ref || 'main' }}; then
+            git pull origin ${{ github.event.inputs.cagent_ref || 'main' }}
+          fi
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build cagent binary
+        run: |
+          set -euo pipefail
+          cd cagent
+
+          # Set version from git tag
+          GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || echo "dev")
+          GIT_COMMIT=$(git rev-parse HEAD)
+          echo "Building cagent version: $GIT_TAG"
+          echo "Commit: $GIT_COMMIT"
+
+          # Build with version info
+          GOOS=linux GOARCH=riscv64 CGO_ENABLED=0 go build \
+            -ldflags "-X 'github.com/docker/cagent/pkg/version.Version=${GIT_TAG}' -X 'github.com/docker/cagent/pkg/version.Commit=${GIT_COMMIT}'" \
+            -o cagent-linux-riscv64 \
+            ./main.go
+
+          # Verify binary exists
+          ls -lh cagent-linux-riscv64
+          file cagent-linux-riscv64
+
+      - name: Extract binary
+        run: |
+          DATE=$(date +%Y%m%d)
+          mkdir -p release-cagent-$DATE
+
+          # Copy binary
+          cp cagent/cagent-linux-riscv64 release-cagent-$DATE/
+          chmod +x release-cagent-$DATE/cagent-linux-riscv64
+
+          # Get version
+          ./release-cagent-$DATE/cagent-linux-riscv64 version > release-cagent-$DATE/VERSION.txt 2>&1 || echo "Version command not available"
+
+          ls -lh release-cagent-$DATE/
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Ensure gh is installed
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y gh || true
+          fi
+
+          DATE=$(date +%Y%m%d)
+          CAGENT_REF="${{ github.event.inputs.cagent_ref || 'main' }}"
+
+          # Get version from submodule
+          cd cagent
+          CAGENT_VERSION=$(git describe --tags --exact-match 2>/dev/null || git describe --tags --always)
+          cd ..
+
+          # Determine release version (handle both v1.9.13 and 1.9.13 formats)
+          if [[ "$CAGENT_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Official release: v1.9.13 or 1.9.13 -> cagent-v1.9.13-riscv64
+            CLEAN_REF="${CAGENT_REF#v}"
+            RELEASE_VERSION="cagent-v${CLEAN_REF}-riscv64"
+            RELEASE_TITLE="cagent v${CLEAN_REF} for RISC-V64"
+            VERSION_INFO="**cagent Version:** v${CLEAN_REF}"
+          else
+            # Development build
+            RELEASE_VERSION="cagent-v${DATE}-dev"
+            RELEASE_TITLE="cagent RISC-V64 Development Build ${DATE}"
+            VERSION_INFO="**cagent Branch:** ${CAGENT_REF}
+            **cagent Version:** ${CAGENT_VERSION}"
+          fi
+
+          cat > release-notes.md << EOF
+          Automated build of cagent for RISC-V64
+
+          ${VERSION_INFO}
+          **Build Date:** $(date -u +%Y-%m-%d)
+          **Architecture:** riscv64
+
+          **About cagent:**
+          cagent is a powerful, easy to use, customizable multi-agent runtime that
+          orchestrates AI agents with specialized capabilities and tools.
+
+          Key features:
+          - Multi-agent architecture for domain-specific specialists
+          - MCP (Model Context Protocol) integration for external tools
+          - Smart task delegation between agents
+          - YAML-based declarative configuration
+          - Support for multiple AI providers (OpenAI, Anthropic, Gemini, xAI, Mistral)
+
+          **Installation:**
+          \`\`\`bash
+          # Download binary
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/cagent-linux-riscv64
+          chmod +x cagent-linux-riscv64
+
+          # Install to system
+          sudo mv cagent-linux-riscv64 /usr/bin/cagent
+          # Or install to local bin
+          mv cagent-linux-riscv64 ~/.local/bin/cagent
+
+          # Verify
+          cagent version
+          \`\`\`
+
+          **Build Command:**
+          \`\`\`bash
+          cd cagent
+          GOOS=linux GOARCH=riscv64 CGO_ENABLED=0 go build \\
+            -ldflags "-X 'github.com/docker/cagent/pkg/version.Version=${CAGENT_VERSION}'" \\
+            -o cagent-linux-riscv64 ./main.go
+          \`\`\`
+
+          Automated build on RISC-V64 hardware
+          EOF
+
+          # For development builds, delete existing release if it exists
+          if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
+            echo "Checking for existing development release..."
+            if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+              echo "Deleting existing release ${RELEASE_VERSION}..."
+              gh release delete "${RELEASE_VERSION}" --yes
+            fi
+          fi
+
+          gh release create "${RELEASE_VERSION}" \
+            --title "${RELEASE_TITLE}" \
+            --notes-file release-notes.md \
+            release-cagent-$DATE/*

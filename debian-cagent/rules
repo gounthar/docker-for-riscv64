@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Binary is pre-built, skip build
+
+override_dh_auto_install:
+	# Binary will be installed via cagent.install file
+
+override_dh_strip:
+	# Skip stripping Go binaries
+
+override_dh_shlibdeps:
+	# Skip shlib dependency detection for Go binaries

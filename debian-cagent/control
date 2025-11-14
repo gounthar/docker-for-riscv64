@@ -1,0 +1,24 @@
+Source: cagent
+Section: devel
+Priority: optional
+Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://github.com/docker/cagent
+Rules-Requires-Root: no
+
+Package: cagent
+Architecture: riscv64
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
+ cagent is a powerful, easy to use, customizable multi-agent runtime that
+ orchestrates AI agents with specialized capabilities and tools.
+ .
+ Key features:
+  - Multi-agent architecture for domain-specific specialists
+  - MCP (Model Context Protocol) integration for external tools
+  - Smart task delegation between agents
+  - YAML-based declarative configuration
+  - Support for multiple AI providers (OpenAI, Anthropic, Gemini, xAI, Mistral)
+ .
+ This package provides pre-built binaries for RISC-V64 architecture.
