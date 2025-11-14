@@ -2,11 +2,10 @@ Name:           cagent
 Version:        1.9.13
 Release:        1%{?dist}
 Summary:        Multi-agent AI runtime by Docker Engineering for RISC-V64
-License:        ASL 2.0
+License:        Apache-2.0
 URL:            https://github.com/docker/cagent
 Source0:        cagent-linux-riscv64
 Group:          Development/Tools
-Packager:       Bruno Verachten <gounthar@gmail.com>
 
 BuildArch:      riscv64
 
