@@ -7,10 +7,15 @@ override_dh_auto_build:
 	# Binary is pre-built, skip build
 
 override_dh_auto_install:
-	# Binary will be installed via cagent.install file
+	# Install binary with correct name
+	install -d debian/cagent/usr/bin
+	install -m 0755 bin/cagent-linux-riscv64 debian/cagent/usr/bin/cagent
 
 override_dh_strip:
 	# Skip stripping Go binaries
 
 override_dh_shlibdeps:
 	# Skip shlib dependency detection for Go binaries
+
+override_dh_dwz:
+	# Skip dwz compression for Go binaries (compressed debug sections not supported)

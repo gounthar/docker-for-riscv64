@@ -5,8 +5,16 @@ Summary:        Multi-agent AI runtime by Docker Engineering for RISC-V64
 License:        Apache-2.0
 URL:            https://github.com/docker/cagent
 Source0:        cagent-linux-riscv64
+Group:          Development/Tools
 
 BuildArch:      riscv64
+
+# rpmlint filters for Go binary expectations
+%global __brp_strip %{nil}
+%global __brp_strip_static_archive %{nil}
+%global __brp_strip_comment_note %{nil}
+%global _enable_debug_packages 0
+%global debug_package %{nil}
 
 %description
 cagent is a powerful, easy to use, customizable multi-agent runtime that
