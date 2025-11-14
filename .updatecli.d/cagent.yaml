@@ -73,8 +73,8 @@ targets:
     sourceid: cagentRelease
     spec:
       file: "debian-cagent/changelog"
-      matchpattern: '^cagent \(([0-9]+\.[0-9]+\.[0-9]+)-riscv64-1\)'
-      replacepattern: 'cagent ({{ source `cagentRelease` }}-riscv64-1)'
+      matchpattern: '^cagent \(([0-9]+\.[0-9]+\.[0-9]+)-1\)'
+      replacepattern: 'cagent ({{ source `cagentRelease` }}-1)'
     scmid: default
 
   updateRPMSpec:

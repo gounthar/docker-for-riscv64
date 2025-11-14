@@ -145,6 +145,13 @@ jobs:
           set -euo pipefail
           RELEASE_TAG="${{ steps.get_release_tag.outputs.release_tag }}"
           VERSION="$(echo "$RELEASE_TAG" | sed 's/^cagent-v//; s/-riscv64$//')"
+
+          # Validate VERSION matches semantic versioning pattern
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Derived VERSION '$VERSION' does not match expected pattern"
+            exit 1
+          fi
+
           echo "Package version: $VERSION"
 
           # Set DEBEMAIL to avoid interactive prompt
