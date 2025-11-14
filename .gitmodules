@@ -10,3 +10,6 @@
 [submodule "cli"]
 	path = cli
 	url = https://github.com/docker/cli.git
+[submodule "cagent"]
+	path = cagent
+	url = https://github.com/docker/cagent.git

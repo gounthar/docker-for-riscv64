@@ -1,0 +1,233 @@
+name: Build cagent Debian Package
+
+on:
+  workflow_run:
+    workflows: ["Weekly cagent RISC-V64 Build"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'cagent release tag (leave empty to auto-detect latest)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-deb:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Check if release is official (not dev build)
+        id: check_release
+        run: |
+          set -euo pipefail
+
+          # Skip check for manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - proceeding with build"
+            echo "skip=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Get the latest cagent release
+          LATEST_RELEASE=$(gh release list --repo ${{ github.repository }} --limit 10 | \
+            grep -E 'cagent-v' | head -1 | awk '{print $(NF-1)}' || echo "")
+
+          echo "Latest cagent release: $LATEST_RELEASE"
+
+          if [ -z "$LATEST_RELEASE" ]; then
+            echo "No cagent release found - skipping package build"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if it's an official release (cagent-vX.Y.Z-riscv64) or dev build (cagent-vYYYYMMDD-dev)
+          if [[ "$LATEST_RELEASE" =~ ^cagent-v[0-9]{8}-dev$ ]]; then
+            echo "Development build detected: $LATEST_RELEASE"
+            echo "Skipping package build for dev releases"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Check if release already has .deb packages
+          ASSETS=$(gh release view "$LATEST_RELEASE" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          if echo "$ASSETS" | grep -q 'cagent.*\.deb$'; then
+            echo "Release $LATEST_RELEASE already has Debian packages - skipping build"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Release $LATEST_RELEASE needs Debian packages - proceeding with build"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Determine release tag
+        if: steps.check_release.outputs.skip != 'true'
+        id: get_release_tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Get release tag from workflow_run or manual input
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+            # If empty/not provided, auto-detect latest
+            if [ -z "$RELEASE_TAG" ]; then
+              echo "No release tag provided, auto-detecting latest cagent release..."
+              RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                            grep -E 'cagent-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                            head -1 | \
+                            awk '{print $(NF-1)}')
+            fi
+          else
+            # Find the latest cagent release created by the workflow
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
+                          grep -E 'cagent-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+                          head -1 | \
+                          awk '{print $(NF-1)}')
+          fi
+
+          # Validate RELEASE_TAG is not empty
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: Could not determine cagent release tag"
+            exit 1
+          fi
+
+          echo "Release tag: $RELEASE_TAG"
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Install build dependencies
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get install -y gh || true
+          fi
+
+      - name: Download cagent binary
+        if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ steps.get_release_tag.outputs.release_tag }}"
+          echo "Building package for release: $RELEASE_TAG"
+
+          # Download binary
+          gh release download $RELEASE_TAG -p cagent-linux-riscv64
+          chmod +x cagent-linux-riscv64
+
+          # Verify binary architecture
+          file ./cagent-linux-riscv64 || true
+          readelf -h ./cagent-linux-riscv64 2>/dev/null | sed -n '1,5p' || true
+          ./cagent-linux-riscv64 version || echo "Version command not available yet"
+
+          # Create bin directory and move binary there for packaging
+          mkdir -p bin
+          mv cagent-linux-riscv64 bin/
+
+          ls -lh bin/cagent-linux-riscv64
+
+      - name: Update package version in changelog
+        if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ steps.get_release_tag.outputs.release_tag }}"
+          VERSION="$(echo "$RELEASE_TAG" | sed 's/^cagent-v//; s/-riscv64$//')"
+
+          # Validate VERSION matches semantic versioning pattern
+          if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: Derived VERSION '$VERSION' does not match expected pattern"
+            exit 1
+          fi
+
+          echo "Package version: $VERSION"
+
+          # Set DEBEMAIL to avoid interactive prompt
+          export DEBEMAIL="github-actions[bot]@users.noreply.github.com"
+          export DEBFULLNAME="GitHub Actions"
+
+          # Copy packaging and update changelog with dch
+          cp -r debian-cagent debian
+          cd debian
+          dch --newversion "${VERSION}-1" \
+              --distribution trixie \
+              --force-distribution \
+              --check-dirname-level 0 \
+              "RISC-V64 prebuilt cagent ${VERSION}"
+          cd ..
+
+      - name: Build package
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          # Build package (debian/ already created in previous step)
+          # Use -d to skip build dependency checks (we're packaging prebuilt binaries)
+          # Use -a riscv64 to specify target architecture
+          dpkg-buildpackage -us -uc -b -d -a riscv64
+
+          ls -lh ../*.deb
+
+      - name: Run lintian checks
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          lintian --info --display-info ../*.deb || true
+
+      - name: Package info
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          for deb in ../*.deb; do
+            echo "============================================"
+            echo "=== Package: $(basename $deb) ==="
+            echo "============================================"
+            echo ""
+            echo "=== Package Contents ==="
+            dpkg-deb --contents "$deb" | head -50
+            echo ""
+            echo "=== Package Info ==="
+            dpkg-deb --info "$deb"
+            echo ""
+            echo "=== Package Size ==="
+            ls -lh "$deb"
+            echo ""
+          done
+
+      - name: Upload packages to release
+        if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ steps.get_release_tag.outputs.release_tag }}"
+          echo "Uploading packages to release $RELEASE_TAG"
+          echo ""
+
+          for deb in ../*.deb; do
+            echo "Uploading $(basename $deb)..."
+            for i in {1..3}; do
+              gh release upload "$RELEASE_TAG" "$deb" --clobber && break
+              echo "Retry $i..."
+              sleep 3
+            done
+          done
+
+          echo ""
+          echo "✅ cagent Debian package uploaded successfully!"
+          echo ""
+          echo "Packages built:"
+          ls -lh ../*.deb
+          echo ""
+          echo "Install with:"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/cagent_*.deb"
+          echo "  sudo dpkg -i cagent_*.deb"
+          echo "  cagent version"

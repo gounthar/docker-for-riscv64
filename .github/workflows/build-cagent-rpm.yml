@@ -1,0 +1,214 @@
+name: Build cagent RPM Package
+
+on:
+  workflow_run:
+    workflows: ["Weekly cagent RISC-V64 Build", "Track cagent Releases"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'cagent release tag to build package from'
+        required: true
+        default: 'cagent-v1.9.13-riscv64'
+
+jobs:
+  build-cagent-rpm:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Get release tag
+        id: release
+        uses: ./.github/actions/get-release-tag
+        with:
+          release-tag-input: ${{ github.event.inputs.release_tag || '' }}
+          tag-pattern: '^cagent-v'
+          asset-pattern: 'cagent.*\.rpm$'
+          check-existing-assets: ${{ github.event_name != 'workflow_dispatch' }}
+
+      - name: Install build dependencies
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          if [ -f /etc/fedora-release ]; then
+            sudo dnf install -y rpm-build rpmdevtools rpmlint
+          elif [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y rpm rpmlint
+          fi
+
+      - name: Set up RPM build tree
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+      - name: Clean previous RPM builds
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          # Remove any existing RPM files to prevent uploading old versions
+          rm -f ~/rpmbuild/RPMS/riscv64/cagent-*.rpm
+          echo "Cleaned previous cagent RPM files"
+
+      - name: Download cagent binary
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+          echo "Building package for release: $RELEASE_TAG"
+
+          # Clean and download cagent binary to SOURCES
+          cd ~/rpmbuild/SOURCES
+          rm -f cagent-linux-riscv64
+          gh release download $RELEASE_TAG -p cagent-linux-riscv64 --repo gounthar/docker-for-riscv64
+
+          # Validate binary was downloaded
+          if [ ! -f cagent-linux-riscv64 ]; then
+            echo "Error: Failed to download cagent binary from release $RELEASE_TAG"
+            exit 1
+          fi
+
+          chmod +x cagent-linux-riscv64
+          ls -lh
+
+      - name: Copy spec file
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          cp rpm-cagent/cagent.spec ~/rpmbuild/SPECS/
+
+      - name: Update package version
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+          echo "Updating version for release: $RELEASE_TAG"
+
+          # Extract version from tag (cagent-v1.9.13-riscv64 -> 1.9.13)
+          VERSION=$(echo $RELEASE_TAG | sed 's/^cagent-v//; s/-riscv64$//')
+          echo "Package version: $VERSION"
+
+          # Validate VERSION extraction succeeded
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$RELEASE_TAG" ]; then
+            echo "Error: Failed to extract version from tag: $RELEASE_TAG"
+            exit 1
+          fi
+
+          # Update spec file
+          sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/cagent.spec
+
+      - name: Build RPM package
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          cd ~/rpmbuild/SPECS
+          # Building on native riscv64, no --target needed
+          rpmbuild -bb cagent.spec
+
+          echo ""
+          echo "Built RPM package:"
+          ls -lh ~/rpmbuild/RPMS/riscv64/
+
+      - name: Run rpmlint checks
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          rpmlint ~/rpmbuild/RPMS/riscv64/cagent-*.rpm || true
+
+      - name: Package info
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          for rpm in ~/rpmbuild/RPMS/riscv64/cagent-*.rpm; do
+            echo "============================================"
+            echo "=== Package: $(basename $rpm) ==="
+            echo "============================================"
+            echo ""
+            echo "=== Package Info ==="
+            rpm -qip "$rpm"
+            echo ""
+            echo "=== Package Contents ==="
+            rpm -qlp "$rpm"
+            echo ""
+            echo "=== Package Size ==="
+            ls -lh "$rpm"
+            echo ""
+          done
+
+      - name: Import GPG signing key
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          echo "Importing GPG key for package signing..."
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+          # Verify key imported
+          echo ""
+          echo "GPG keys available:"
+          gpg --list-secret-keys
+          echo ""
+          echo "GPG key imported successfully"
+
+      - name: Sign RPM packages
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          set -euo pipefail
+          echo "Signing RPM packages..."
+
+          # Install rpm-sign if needed
+          if ! command -v rpmsign >/dev/null 2>&1; then
+            if [ -f /etc/fedora-release ]; then
+              sudo dnf install -y rpm-sign
+            elif [ -f /etc/debian_version ]; then
+              sudo apt-get update && sudo apt-get install -y rpm
+            fi
+          fi
+
+          # Get GPG key ID
+          GPG_KEY_ID=$(gpg --list-secret-keys --keyid-format LONG --with-colons | awk -F: '/^sec:/ {print $5; exit}')
+          echo "Using GPG key ID: $GPG_KEY_ID"
+
+          # Sign each RPM package
+          for rpm in ~/rpmbuild/RPMS/riscv64/cagent-*.rpm; do
+            echo "Signing $(basename $rpm)..."
+            setsid rpmsign --addsign --define "_gpg_name $GPG_KEY_ID" "$rpm" || { echo "Error: Failed to sign $rpm"; exit 1; }
+          done
+
+          echo ""
+          echo "✅ All packages signed successfully"
+          echo ""
+
+          # Verify signatures
+          echo "Verifying signatures:"
+          for rpm in ~/rpmbuild/RPMS/riscv64/cagent-*.rpm; do
+            echo "Checking $(basename $rpm)..."
+            rpm -qip "$rpm" | grep -i signature || echo "Warning: No signature found"
+          done
+
+      - name: Upload package to release
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+
+          for rpm in ~/rpmbuild/RPMS/riscv64/cagent-*.rpm; do
+            echo "Uploading $(basename $rpm)..."
+            for i in {1..3}; do
+              gh release upload "$RELEASE_TAG" "$rpm" --clobber --repo gounthar/docker-for-riscv64 && break
+              echo "Retry $i..."
+              sleep 3
+            done
+          done
+
+          echo ""
+          echo "✅ cagent RPM package uploaded successfully!"
+          echo ""
+          echo "Install with:"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/cagent-*.rpm"
+          echo "  sudo dnf install -y ./cagent-*.rpm"
+          echo "  cagent version"

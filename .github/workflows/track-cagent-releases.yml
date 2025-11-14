@@ -1,0 +1,107 @@
+name: Track cagent Releases
+
+on:
+  schedule:
+    # Check for new releases daily at 08:00 UTC
+    - cron: '0 8 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: track-cagent-releases
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Check for new cagent release
+        id: check
+        run: |
+          set -euo pipefail
+
+          # Get latest release from docker/cagent repository
+          LATEST=$(gh api repos/docker/cagent/releases/latest --jq '.tag_name' 2>&1) || {
+            echo "Error: Failed to fetch latest release from docker/cagent"
+            exit 1
+          }
+
+          if [ -z "$LATEST" ]; then
+            echo "Error: Empty release tag received"
+            exit 1
+          fi
+
+          echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
+
+          # Check if we've already built this (using cagent-v*-riscv64 format)
+          # cagent tags are like v1.9.13, we create cagent-v1.9.13-riscv64
+          CLEAN_VERSION="${LATEST#v}"
+          OUR_TAG="cagent-v${CLEAN_VERSION}-riscv64"
+
+          if gh release view "${OUR_TAG}" >/dev/null 2>&1; then
+            echo "already_built=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_built=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Latest cagent release: $LATEST"
+          echo "Checking for: ${OUR_TAG}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger automatic build for new release
+        if: steps.check.outputs.already_built == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+
+          echo "New cagent release detected: $LATEST"
+          echo "Triggering automatic build..."
+
+          # Trigger the build workflow with the version tag
+          gh workflow run cagent-weekly-build.yml -f cagent_ref=$LATEST
+
+          # Create tracking issue
+          CLEAN_VERSION="${LATEST#v}"
+          cat > issue-body.md << EOF
+          New cagent release detected: **$LATEST**
+
+          **Status:** Build automatically triggered
+
+          The cagent-weekly-build workflow has been started automatically.
+          Expected completion time: ~5-10 minutes
+
+          **About cagent:**
+          Multi-agent AI runtime by Docker Engineering
+
+          **Monitor build progress:**
+          \`\`\`bash
+          gh run list --workflow=cagent-weekly-build.yml --limit 1
+          gh run watch
+          \`\`\`
+
+          **Expected release:** cagent-v${CLEAN_VERSION}-riscv64
+
+          **Upstream release notes:** https://github.com/docker/cagent/releases/tag/$LATEST
+
+          This issue will track the build progress. Close it once the release is published.
+          EOF
+
+          # Check if labels exist, create if they don't
+          gh label create "build-in-progress" --description "Build is currently in progress" --color "FFA500" 2>/dev/null || true
+          gh label create "cagent-release" --description "cagent release tracking" --color "1E90FF" 2>/dev/null || true
+
+          gh issue create \
+            --title "Building cagent ${LATEST} for RISC-V64" \
+            --body-file issue-body.md \
+            --label "build-in-progress,cagent-release"
+
+          echo "Build triggered successfully!"
