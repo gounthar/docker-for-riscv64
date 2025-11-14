@@ -1,4 +1,4 @@
-cagent (1.9.13-riscv64-1) trixie; urgency=medium
+cagent (1.9.13-1) trixie; urgency=medium
 
   * Initial RISC-V64 build of cagent v1.9.13
   * Pre-built binary for RISC-V64 architecture

@@ -27,6 +27,13 @@ check_dependencies() {
 build_cagent() {
     echo "Building cagent for RISC-V64..."
 
+    if [ ! -d "cagent" ]; then
+        echo "Error: cagent directory not found"
+        echo "Please initialize the submodule with:"
+        echo "  git submodule update --init --recursive"
+        exit 1
+    fi
+
     cd cagent
 
     # Get version info

@@ -38,14 +38,29 @@ conditions:
     disablesourceinput: true
     spec:
       command: |
+        set -euo pipefail
         CAGENT_VERSION="{{ source `cagentRelease` }}"
+
+        # Validate gh is available
+        if ! command -v gh >/dev/null 2>&1; then
+          echo "Error: gh CLI not found"
+          exit 1
+        fi
+
         # Check if we already have this version built
         if gh release view "cagent-v${CAGENT_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq -e '.assets[] | select(.name=="cagent-linux-riscv64")' >/dev/null 2>&1; then
           echo "Release asset for v${CAGENT_VERSION} already exists. No update needed."
           exit 1
         fi
+
         # If not built yet, check if upstream release exists
-        gh release view "v${CAGENT_VERSION}" --repo docker/cagent >/dev/null 2>&1
+        if ! gh release view "v${CAGENT_VERSION}" --repo docker/cagent >/dev/null 2>&1; then
+          echo "Upstream release v${CAGENT_VERSION} not found"
+          exit 1
+        fi
+
+        echo "Condition met: upstream release exists and not yet built"
+        exit 0
       environments:
         - name: PATH
         - name: GITHUB_TOKEN

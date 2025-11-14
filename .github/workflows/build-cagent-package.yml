@@ -68,18 +68,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Install build dependencies
+      - name: Determine release tag
         if: steps.check_release.outputs.skip != 'true'
-        run: |
-          set -euo pipefail
-          sudo apt-get update
-          sudo apt-get install -y build-essential debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
-          if ! command -v gh >/dev/null 2>&1; then
-            sudo apt-get install -y gh || true
-          fi
-
-      - name: Download cagent binary
-        if: steps.check_release.outputs.skip != 'true'
+        id: get_release_tag
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -109,6 +100,26 @@ jobs:
             exit 1
           fi
 
+          echo "Release tag: $RELEASE_TAG"
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Install build dependencies
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get install -y gh || true
+          fi
+
+      - name: Download cagent binary
+        if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ steps.get_release_tag.outputs.release_tag }}"
           echo "Building package for release: $RELEASE_TAG"
 
           # Download binary
@@ -132,24 +143,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Get release tag from workflow_run or manual input
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
-            # If empty/not provided, auto-detect latest
-            if [ -z "$RELEASE_TAG" ]; then
-              echo "No release tag provided, auto-detecting latest cagent release..."
-              RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                            grep -E 'cagent-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                            head -1 | \
-                            awk '{print $(NF-1)}')
-            fi
-          else
-            # Find the latest cagent release created by the workflow
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E 'cagent-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          head -1 | \
-                          awk '{print $(NF-1)}')
-          fi
+          RELEASE_TAG="${{ steps.get_release_tag.outputs.release_tag }}"
           VERSION="$(echo "$RELEASE_TAG" | sed 's/^cagent-v//; s/-riscv64$//')"
           echo "Package version: $VERSION"
 
@@ -160,7 +154,7 @@ jobs:
           # Copy packaging and update changelog with dch
           cp -r debian-cagent debian
           cd debian
-          dch --newversion "${VERSION}-riscv64-1" \
+          dch --newversion "${VERSION}-1" \
               --distribution trixie \
               --force-distribution \
               --check-dirname-level 0 \
@@ -207,31 +201,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Get release tag from workflow_run or manual input
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
-            # If empty/not provided, auto-detect latest
-            if [ -z "$RELEASE_TAG" ]; then
-              echo "No release tag provided, auto-detecting latest cagent release..."
-              RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                            grep -E 'cagent-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                            head -1 | \
-                            awk '{print $(NF-1)}')
-            fi
-          else
-            # Find the latest cagent release created by the workflow
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E 'cagent-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          head -1 | \
-                          awk '{print $(NF-1)}')
-          fi
-
-          # Validate RELEASE_TAG is not empty
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "Error: Could not determine cagent release tag"
-            exit 1
-          fi
-
+          RELEASE_TAG="${{ steps.get_release_tag.outputs.release_tag }}"
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
 

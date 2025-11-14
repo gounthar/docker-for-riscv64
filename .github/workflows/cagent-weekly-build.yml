@@ -30,9 +30,11 @@ jobs:
           cd cagent
           git fetch origin --tags
           git checkout ${{ github.event.inputs.cagent_ref || 'main' }}
-          # Pull only if it's a branch (not a tag)
-          if git show-ref --verify --quiet refs/remotes/origin/${{ github.event.inputs.cagent_ref || 'main' }}; then
+          # Pull only if it's a branch (not a tag or commit)
+          if git symbolic-ref -q HEAD >/dev/null; then
             git pull origin ${{ github.event.inputs.cagent_ref || 'main' }}
+          else
+            echo "Checked out tag or commit, skipping pull"
           fi
 
       - name: Set up Go

@@ -14,6 +14,9 @@ permissions:
 jobs:
   check-release:
     runs-on: ubuntu-latest
+    concurrency:
+      group: track-cagent-releases
+      cancel-in-progress: false
 
     steps:
       - name: Checkout repository
@@ -22,8 +25,18 @@ jobs:
       - name: Check for new cagent release
         id: check
         run: |
+          set -euo pipefail
+
           # Get latest release from docker/cagent repository
-          LATEST=$(gh api repos/docker/cagent/releases/latest --jq '.tag_name')
+          LATEST=$(gh api repos/docker/cagent/releases/latest --jq '.tag_name' 2>&1) || {
+            echo "Error: Failed to fetch latest release from docker/cagent"
+            exit 1
+          }
+
+          if [ -z "$LATEST" ]; then
+            echo "Error: Empty release tag received"
+            exit 1
+          fi
 
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
