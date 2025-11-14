@@ -2,13 +2,20 @@ name: Update APT Repository
 
 on:
   workflow_run:
-    workflows: ["Build Debian Package", "Build Docker Compose Debian Package", "Build Docker CLI Debian Package", "Build Docker Buildx Debian Package"]
+    workflows:
+      - "Build Debian Package"
+      - "Build Docker Compose Debian Package"
+      - "Build Docker CLI Debian Package"
+      - "Build Docker Buildx Debian Package"
+      - "Build cagent Debian Package"
     types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag containing the .deb package (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, or buildx-v*-riscv64)'
+        description: |
+          Release tag containing the .deb package
+          (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, buildx-v*-riscv64, or cagent-v*-riscv64)
         required: true
         default: 'v28.5.2-riscv64'
 
@@ -38,11 +45,11 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
-            # Find the latest -riscv64 release (docker, compose, or cli) using JSON output
+            # Find the latest -riscv64 release using JSON output
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 \
                           --limit 50 --json tagName | \
                           jq -r '.[] | select(.tagName |
-                            test("^(compose-|cli-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) |
+                            test("^(compose-|cli-|buildx-|cagent-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) |
                             .tagName' | \
                           head -1)
           fi
@@ -54,6 +61,12 @@ jobs:
           elif [[ "$RELEASE_TAG" =~ ^cli- ]]; then
             PACKAGE_TYPE="cli"
             echo "package_type=cli" >> $GITHUB_OUTPUT
+          elif [[ "$RELEASE_TAG" =~ ^buildx- ]]; then
+            PACKAGE_TYPE="buildx"
+            echo "package_type=buildx" >> $GITHUB_OUTPUT
+          elif [[ "$RELEASE_TAG" =~ ^cagent- ]]; then
+            PACKAGE_TYPE="cagent"
+            echo "package_type=cagent" >> $GITHUB_OUTPUT
           else
             PACKAGE_TYPE="docker"
             echo "package_type=docker" >> $GITHUB_OUTPUT
@@ -72,30 +85,44 @@ jobs:
           echo ""
 
           # Find latest Engine release (docker.io, containerd, runc)
-          DOCKER_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                           jq -r '.[] | select(.tagName | test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+          DOCKER_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+                           --limit 50 --json tagName | \
+                           jq -r '.[] | select(.tagName |
+                             test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                            head -1)
           echo "Latest Engine release: $DOCKER_RELEASE"
 
           # Find latest CLI release
-          CLI_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                        jq -r '.[] | select(.tagName | test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+          CLI_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+                        --limit 50 --json tagName | \
+                        jq -r '.[] | select(.tagName |
+                          test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                         head -1)
           echo "Latest CLI release: $CLI_RELEASE"
 
           # Find latest Compose release
           COMPOSE_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
                             --limit 50 --json tagName | \
-                            jq -r '.[] | select(.tagName | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                            jq -r '.[] | select(.tagName |
+                              test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                             head -1)
           echo "Latest Compose release: $COMPOSE_RELEASE"
 
           # Find latest Buildx release
           BUILDX_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
                            --limit 50 --json tagName | \
-                           jq -r '.[] | select(.tagName | test("^buildx-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           jq -r '.[] | select(.tagName |
+                             test("^buildx-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                            head -1)
           echo "Latest Buildx release: $BUILDX_RELEASE"
+
+          # Find latest cagent release
+          CAGENT_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+                           --limit 50 --json tagName | \
+                           jq -r '.[] | select(.tagName |
+                             test("^cagent-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           head -1)
+          echo "Latest cagent release: $CAGENT_RELEASE"
           echo ""
 
           # Download Engine packages (docker.io, containerd, runc)
@@ -130,10 +157,17 @@ jobs:
               --repo gounthar/docker-for-riscv64 --clobber || true
           fi
 
+          # Download cagent package
+          if [ -n "$CAGENT_RELEASE" ]; then
+            echo "Downloading cagent package from $CAGENT_RELEASE..."
+            gh release download "$CAGENT_RELEASE" -p 'cagent_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+          fi
+
           echo ""
           echo "Cleaning up: keeping only the latest version of each package..."
           # For each package prefix, keep only the newest file (by timestamp)
-          for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc; do
+          for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc cagent; do
             # Get all matching files sorted by modification time (newest first)
             # Keep the first (newest), delete the rest
             ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v
@@ -231,6 +265,14 @@ jobs:
             VERSION=$(echo $RELEASE_TAG | sed 's/^cli-v//; s/-riscv64$//')
             PACKAGE_NAME="docker-cli"
             INSTALL_CMD="docker-cli"
+          elif [ "$PACKAGE_TYPE" = "buildx" ]; then
+            VERSION=$(echo $RELEASE_TAG | sed 's/^buildx-v//; s/-riscv64$//')
+            PACKAGE_NAME="docker-buildx-plugin"
+            INSTALL_CMD="docker-buildx-plugin"
+          elif [ "$PACKAGE_TYPE" = "cagent" ]; then
+            VERSION=$(echo $RELEASE_TAG | sed 's/^cagent-v//; s/-riscv64$//')
+            PACKAGE_NAME="cagent"
+            INSTALL_CMD="cagent"
           else
             VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
             PACKAGE_NAME="docker.io"
@@ -244,7 +286,6 @@ jobs:
           fi
 
           git add dists pool
-
 
           # Create commit message with all package versions
           # Capture package list with error handling
