@@ -41,7 +41,7 @@ jobs:
         uses: ./.github/actions/get-release-tag
         with:
           release-tag-input: ${{ github.event.inputs.release_tag || '' }}
-          tag-pattern: '^tini-v'
+          tag-pattern: '^tini-v[0-9]+\.[0-9]+\.[0-9]+-riscv64$'
           asset-pattern: 'tini.*\.rpm$'
           check-existing-assets: ${{ github.event_name != 'workflow_dispatch' }}
 
