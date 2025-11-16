@@ -170,7 +170,7 @@ jobs:
           for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc cagent; do
             # Get all matching files sorted by modification time (newest first)
             # Keep the first (newest), delete the rest
-            ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v
+            ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v || true
           done
 
           echo ""
