@@ -1,0 +1,110 @@
+name: Cleanup Old Development Builds
+
+on:
+  schedule:
+    # Run weekly on Mondays at 03:00 UTC
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (do not actually delete)'
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Cleanup old dev releases
+        id: cleanup
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Calculate cutoff date (1 month ago)
+          CUTOFF_DATE=$(date -d '1 month ago' +%Y-%m-%d)
+          echo "Deleting dev releases older than: $CUTOFF_DATE"
+          echo "Dry run: ${{ inputs.dry_run }}"
+
+          # Initialize counters
+          DELETED_COUNT=0
+          DELETED_LIST=""
+
+          # Get all dev releases matching vYYYYMMDD-dev pattern
+          gh api repos/${{ github.repository }}/releases --paginate \
+            --jq '.[] | select(.tag_name | test("^v[0-9]{8}-dev$")) | "\(.tag_name)|\(.created_at)|\(.id)"' \
+            > /tmp/dev-releases.txt || true
+
+          if [[ ! -s /tmp/dev-releases.txt ]]; then
+            echo "No development releases found"
+            echo "deleted_count=0" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Process each dev release
+          while IFS='|' read -r TAG CREATED ID; do
+            CREATED_DATE=$(echo "$CREATED" | cut -d'T' -f1)
+
+            if [[ "$CREATED_DATE" < "$CUTOFF_DATE" ]]; then
+              if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+                echo "[DRY RUN] Would delete: $TAG (created $CREATED_DATE)"
+              else
+                echo "Deleting old release: $TAG (created $CREATED_DATE)"
+                gh release delete "$TAG" --yes --cleanup-tag
+              fi
+              DELETED_COUNT=$((DELETED_COUNT + 1))
+              DELETED_LIST="${DELETED_LIST}- ${TAG} (created ${CREATED_DATE})\n"
+            else
+              echo "Keeping recent release: $TAG (created $CREATED_DATE)"
+            fi
+          done < /tmp/dev-releases.txt
+
+          echo "Cleanup complete! Processed $DELETED_COUNT releases"
+          echo "deleted_count=$DELETED_COUNT" >> $GITHUB_OUTPUT
+
+          # Save deleted list for report
+          if [[ -n "$DELETED_LIST" ]]; then
+            echo -e "$DELETED_LIST" > /tmp/deleted-list.txt
+            echo "deleted_list<<EOF" >> $GITHUB_OUTPUT
+            cat /tmp/deleted-list.txt >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create cleanup report issue
+        if: steps.cleanup.outputs.deleted_count > 0 && inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > cleanup-report.md << 'EOFR'
+          ## Automated Cleanup Report
+
+          **Date:** $(date -u +%Y-%m-%d)
+          **Deleted releases:** ${{ steps.cleanup.outputs.deleted_count }}
+
+          ### Deleted Releases
+          ${{ steps.cleanup.outputs.deleted_list }}
+
+          All releases were older than 1 month and had the development build format (`vYYYYMMDD-dev`).
+          EOFR
+
+          gh issue create \
+            --title "Cleanup Report: Deleted ${{ steps.cleanup.outputs.deleted_count }} old dev releases" \
+            --body-file cleanup-report.md \
+            --label "maintenance,automated"
+
+      - name: Summary
+        run: |
+          echo "## Cleanup Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ inputs.dry_run }}" == "true" ]]; then
+            echo "**Mode:** Dry run (no releases deleted)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Mode:** Live run" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "**Releases processed:** ${{ steps.cleanup.outputs.deleted_count }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [[ -n "${{ steps.cleanup.outputs.deleted_list }}" ]]; then
+            echo "### Releases" >> $GITHUB_STEP_SUMMARY
+            echo "${{ steps.cleanup.outputs.deleted_list }}" >> $GITHUB_STEP_SUMMARY
+          fi
