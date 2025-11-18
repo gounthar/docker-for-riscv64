@@ -132,7 +132,7 @@ Description: Docker Compose v2 plugin for RISC-V64
  This package provides pre-built binaries for RISC-V64 architecture.
 
 Package: docker.io
-Version: 29.0.1-1
+Version: 29.0.2-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
 Installed-Size: 80222
@@ -145,11 +145,11 @@ Provides: docker-engine
 Homepage: https://github.com/moby/moby
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/docker.io_29.0.1-1_riscv64.deb
-Size: 17232756
-SHA256: 332e02a0ff56e3602a3cd305c198d03e312fff6f945cf5a930e162c212618311
-SHA1: 612e9253fc849abebac7158cca833f46f637b5b3
-MD5sum: c9635ff07e866c4a5c459569886e1a7c
+Filename: pool/main/d/docker.io/docker.io_29.0.2-1_riscv64.deb
+Size: 17234348
+SHA256: 1970646fc8519f595ac0e7d6046099ddb95b29b72892945e1982d3efa24f4f28
+SHA1: 75e49683b2b4f4f8aa53ad622c23d62811665313
+MD5sum: ade960d29ce1d694b6c9a6b1915490b7
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
