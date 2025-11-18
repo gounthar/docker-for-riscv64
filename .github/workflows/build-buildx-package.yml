@@ -2,7 +2,7 @@ name: Build Docker Buildx Debian Package
 
 on:
   workflow_run:
-    workflows: ["Weekly Docker Buildx RISC-V64 Build"]
+    workflows: ["Weekly Docker Buildx RISC-V64 Build", "Track Docker Buildx Releases"]
     types: [completed]
     branches: [main]
   workflow_dispatch:

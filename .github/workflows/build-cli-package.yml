@@ -2,7 +2,7 @@ name: Build Docker CLI Debian Package
 
 on:
   workflow_run:
-    workflows: ["Weekly Docker CLI RISC-V64 Build"]
+    workflows: ["Weekly Docker CLI RISC-V64 Build", "Track Docker CLI Releases"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
