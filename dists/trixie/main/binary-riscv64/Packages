@@ -1,16 +1,16 @@
 Package: cagent
-Version: 1.9.13-1
+Version: 1.9.14-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 73954
+Installed-Size: 74676
 Homepage: https://github.com/docker/cagent
 Priority: optional
 Section: devel
-Filename: pool/main/c/cagent/cagent_1.9.13-1_riscv64.deb
-Size: 26630200
-SHA256: 7a52995011cd31749804536bee3bef06bf0e26d1459a2a38e1368e0d3c857e82
-SHA1: f09ae31368d9f54115a5249f00b98e1a2b56d017
-MD5sum: 9341de33add5bc47f4db38fd4a3cf23a
+Filename: pool/main/c/cagent/cagent_1.9.14-1_riscv64.deb
+Size: 26973348
+SHA256: 0f484c5e0378a7c79bc50633f7a0adc63dc4ba570384d4a9af60d849728ec1ca
+SHA1: 4bf721138369e5a1ffbe8453b369cde89b031182
+MD5sum: 5a3ee78c2801834891002fdb771803ad
 Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
  cagent is a powerful, easy to use, customizable multi-agent runtime that
  orchestrates AI agents with specialized capabilities and tools.
@@ -51,37 +51,8 @@ Description: Container runtime for RISC-V64 architecture
  .
  Built on BananaPi F3 running Armbian Trixie.
 
-Package: docker-buildx-plugin
-Version: 0.30.0-riscv64-1
-Architecture: riscv64
-Maintainer: Bruno Verächten <bruno@verachten.fr>
-Installed-Size: 66197
-Recommends: docker.io (>= 20.10) | docker-ce (>= 20.10)
-Homepage: https://github.com/docker/buildx
-Priority: optional
-Section: devel
-Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.30.0-riscv64-1_riscv64.deb
-Size: 13957008
-SHA256: d9ee3c81d66596384cd5754932b4b769c32664539b6c61333e5fd02a9cc3cf4d
-SHA1: bed05309850d3762b6c10a45a580a7d8671966d6
-MD5sum: 0f066aced93763ec3160c334eef039ce
-Description: Docker CLI plugin for extended build capabilities
- Docker Buildx is a Docker CLI plugin that extends the docker build command
- with the full BuildKit features.
- .
- Features include:
-  - Multi-platform builds (--platform flag)
-  - Advanced caching strategies
-  - Build-time secrets and SSH forwarding
-  - Remote builder support
-  - OCI exporter support
-  - Custom builder creation and management
- .
- This is the RISC-V64 port of docker-buildx, providing native support for
- the RISC-V 64-bit architecture.
-
 Package: docker-cli
-Version: 29.0.1-riscv64-1
+Version: 29.0.2-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
 Installed-Size: 37844
@@ -93,11 +64,11 @@ Provides: docker
 Homepage: https://github.com/docker/cli
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker-cli/docker-cli_29.0.1-riscv64-1_riscv64.deb
-Size: 13804812
-SHA256: 116f4128149f962aac5b429a25c20705165d5adb151f1f15ee6d9af234ee4f6e
-SHA1: 6e2ab16eca39e1b99e4d5e7ced94ed0e3455fa63
-MD5sum: 43716dd3a64eee6a5428f30728871a49
+Filename: pool/main/d/docker-cli/docker-cli_29.0.2-riscv64-1_riscv64.deb
+Size: 13800384
+SHA256: 08d59c7d37fd218231ad7701ce548207baa32793a46c5afc87af839b0049e6cd
+SHA1: 512cc60d4d1052e813cb3fa836f7504ed444bb3d
+MD5sum: f288087662fdd8cb9d7044f31c380c72
 Description: Docker command-line interface (CLI) for RISC-V64
  The Docker CLI is the command-line interface for Docker, allowing users
  to interact with Docker containers and images from the terminal. It provides
