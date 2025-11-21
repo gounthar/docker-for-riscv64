@@ -1,19 +1,19 @@
 Origin: docker-riscv64
 Label: Docker RISC-V64
 Codename: trixie
-Date: Fri, 21 Nov 2025 08:35:41 UTC
+Date: Fri, 21 Nov 2025 09:33:03 UTC
 Architectures: riscv64
 Components: main
 Description: Docker Engine for RISC-V64
 MD5Sum:
- e12a66e90abe49743750cb40217f8ae0 7304 main/binary-riscv64/Packages
- b2531b025ef142837b21259e81b5a50f 2835 main/binary-riscv64/Packages.gz
+ f2658b60cd160b38b23a2bfd645cb557 7304 main/binary-riscv64/Packages
+ 697525890acc6b95fc69c906d52cec96 2834 main/binary-riscv64/Packages.gz
  9852bd9d838105f01fcafc21fda5984e 124 main/binary-riscv64/Release
 SHA1:
- fceb7d9bf7fddcbed0183fec96a4240e52493095 7304 main/binary-riscv64/Packages
- ef3b90af2c1288829b0d67cba5ef6672701c5c79 2835 main/binary-riscv64/Packages.gz
+ e1da12484600e82e5c292dfc17f6b0ffb966fc54 7304 main/binary-riscv64/Packages
+ 0fe8580a4ff4f5445b73a90156194c9bf5d1980a 2834 main/binary-riscv64/Packages.gz
  b7225961fc1f44f74040069f34eb67abeaa4ffd5 124 main/binary-riscv64/Release
 SHA256:
- c151e115121f0ea68a594cadb4a2682ee7b47494b37d20d036213a24abaf917c 7304 main/binary-riscv64/Packages
- bba2ef5aeba2f0cd96462c0be60b31930fdb2bf3fd4f150ba378cccae989cc42 2835 main/binary-riscv64/Packages.gz
+ 46646c287d2d3662394147bb1a3798518998966a233618653ab0788b651c466c 7304 main/binary-riscv64/Packages
+ d1f1170661d0216ba85e55d41e1d4f207f7ffcdcbc77219f9b51b6171e241a66 2834 main/binary-riscv64/Packages.gz
  58b302992d272775817ccba4454a67bde99cf7de79067618e4f23708835558c0 124 main/binary-riscv64/Release
