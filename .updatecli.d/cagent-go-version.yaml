@@ -2,10 +2,20 @@
 name: "Track cagent Go version requirement"
 
 scms:
+  default:
+    kind: github
+    spec:
+      user: "{{ .github.user }}"
+      email: "{{ .github.email }}"
+      owner: "gounthar"
+      repository: "docker-for-riscv64"
+      token: "{{ requiredEnv .github.token }}"
+      username: "{{ .github.username }}"
+      branch: "main"
   cagent-upstream:
     kind: "github"
     spec:
-      user: "docker"
+      owner: "docker"
       repository: "cagent"
       branch: "main"
 
@@ -16,23 +26,24 @@ sources:
     scmid: "cagent-upstream"
     spec:
       file: "go.mod"
-      matchpattern: '^go\s+(\d+\.\d+\.\d+)$'
+      matchpattern: '^go\s+(\d+\.\d+(?:\.\d+)?)$'
 
 conditions:
   check-go-version-format:
     name: "Validate Go version format"
     kind: "shell"
     spec:
-      command: 'echo "{{ source "cagent-go-version" }}" | grep -E "^[0-9]+\.[0-9]+\.[0-9]+$"'
+      command: 'echo "{{ source "cagent-go-version" }}" | grep -E "^[0-9]+\.[0-9]+(\.[0-9]+)?$"'
 
 targets:
   update-cagent-workflow:
     name: "Update Go version in cagent weekly build workflow"
     kind: "yaml"
     sourceid: "cagent-go-version"
+    scmid: "default"
     spec:
       file: ".github/workflows/cagent-weekly-build.yml"
-      key: "jobs.build-cagent.steps[1].with.go-version"
+      key: "jobs.build-cagent.steps[2].with.go-version"
 
 actions:
   default:

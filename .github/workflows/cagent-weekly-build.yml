@@ -39,6 +39,8 @@ jobs:
           fi
 
       - name: Set up Go
+        # WARNING: This step is referenced by UpdateCLI at index [2] in .updatecli.d/cagent-go-version.yaml
+        # Do not reorder steps without updating the UpdateCLI configuration
         uses: actions/setup-go@v6
         with:
           go-version: '1.25.4'
