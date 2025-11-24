@@ -38,6 +38,9 @@ jobs:
             echo "Checked out tag or commit, skipping pull"
           fi
 
+      # WARNING: UpdateCLI automation targets this step at index [2].
+      # Do not reorder steps before "Set up Go" or automation will break.
+      # See .updatecli.d/cagent-go-version.yaml
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
