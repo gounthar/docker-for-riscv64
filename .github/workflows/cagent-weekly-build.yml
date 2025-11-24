@@ -28,7 +28,8 @@ jobs:
       - name: Update cagent submodule
         run: |
           cd cagent
-          git fetch origin --tags
+          # Force update tags to avoid conflicts with existing local tags
+          git fetch origin --tags --force
           git checkout ${{ github.event.inputs.cagent_ref || 'main' }}
           # Pull only if it's a branch (not a tag or commit)
           if git symbolic-ref -q HEAD >/dev/null; then
