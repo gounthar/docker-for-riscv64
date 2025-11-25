@@ -4,35 +4,35 @@ Hash: SHA512
 Origin: docker-riscv64
 Label: Docker RISC-V64
 Codename: trixie
-Date: Tue, 25 Nov 2025 07:26:37 UTC
+Date: Tue, 25 Nov 2025 08:45:10 UTC
 Architectures: riscv64
 Components: main
 Description: Docker Engine for RISC-V64
 MD5Sum:
- 8f98c64f5e61b2f76f0a1a8625271360 6327 main/binary-riscv64/Packages
- 1a00538571f8e415d55c9eb031c22f24 2569 main/binary-riscv64/Packages.gz
+ d057adbeb277f176be63c338a492b088 6327 main/binary-riscv64/Packages
+ a3c9412ef484912d9500a06b5930f6df 2572 main/binary-riscv64/Packages.gz
  9852bd9d838105f01fcafc21fda5984e 124 main/binary-riscv64/Release
 SHA1:
- e2514d5f77654a58f4430229536c2aa034b660ec 6327 main/binary-riscv64/Packages
- 3956b1e1f4a97fc8c49be74a60d5dc17b18a79d5 2569 main/binary-riscv64/Packages.gz
+ aa6caecbb58c7ef02f0a0638177b08fa42b42d96 6327 main/binary-riscv64/Packages
+ 46dd5f9c4a9d0426882c141b1db2a2b1181c398c 2572 main/binary-riscv64/Packages.gz
  b7225961fc1f44f74040069f34eb67abeaa4ffd5 124 main/binary-riscv64/Release
 SHA256:
- caef1672b04bb767679a9abec93b22285d306e9d8f98a8580859153b5062b073 6327 main/binary-riscv64/Packages
- 3d48a1726b1308819b54fbc96cb88e49329162281d637839508f69448afa2a39 2569 main/binary-riscv64/Packages.gz
+ 235302a8d44f0d3c80f5a130e0ac683ef6d80ad3a677b35e1b47e8c7ace4fe7b 6327 main/binary-riscv64/Packages
+ b50cf35f17fd06be59d163ae000811a29055f529a68aee519b423d646829312b 2572 main/binary-riscv64/Packages.gz
  58b302992d272775817ccba4454a67bde99cf7de79067618e4f23708835558c0 124 main/binary-riscv64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEVhiDQUJbAHQHIptI+xlj/DV1o50FAmklWi0ACgkQ+xlj/DV1
-o526UBAAqd7HzSavnE9DrIcLGYfVENEJ3ausp/5MXGsX/9fh7mJcJUQuc5zSByna
-kbXr1oPYp59CBEguPx+T3LcHcheOd61q10ssraNU31nvE2ATgpYN7y88j39DzzqA
-Kd9oEWS9NgJluU/W+jzfVSoqnhJt0Jr9sp+vN+XBLDgftKDvS2SslPkPQpyk22Rt
-+jWzW++NeoG2rwTK3P+dC9PTpmYFF4VvQpzvWeKQAG3sR2/ANzVDBdeWUaGsKJ8Q
-JpMjSyEtIX9OKDGDE69eddDsQQbVWs++yj2HwhhrdVBhf/nSVFOelwY0zU13i0d4
-OQukYumjh4I+C1dZgAV8mCqJyHNLZzMczcusnqIy+q1KAzBPjVw0/Xw3Vdn+33Ct
-cw6ls5eJMKMCsA4jTr9W9VeVWCE5iTNV9pVH/PnuSQ+UGimNhyoS/fBBVZuDLYrK
-R4aL1NPtntRhW8nl/lfZRr4e1X4t7tFzBQwhRE+8cJFBAA6UvqtjSw472JPb0ldu
-FGGt/737aacDx654Ga5neMrExRoMAyYJPxdSmd9A4jU3hY2LF6Z2Zq/76xitgRmd
-ZBGjuqj8mBxNp/dLtJb2njVN6xt8l/N+HOatqDO+RAHJf7lslcoR37/eIIwUZ6rp
-cYC+qQjLFs5t6+04C99qHg4LlBs5pFMwM7N+aLvmvFbhdIRtDG8=
-=4uWP
+iQIzBAEBCgAdFiEEVhiDQUJbAHQHIptI+xlj/DV1o50FAmklbJYACgkQ+xlj/DV1
+o52tGw/+O5F/9DPJpnN2NErGErthno3H6I37vsN70OEEkYALzpgX+v8AABbmiwaJ
+nHBAPrRtZh1CQvZtPAnu0J7JCVFSD6xygJ6VZhj9CT+8YJ7OpMk87SFQxYP7BDqq
+MGkWeGafrUf3IiA7jEd7oKdiMsAngH+YhksTzOv/EP5TtdiYD7xN2wxv9LYMgy0i
+hjAV+UOnU57dZYutjuj4naoxz8OffnLmvS8GQkqVUovOKjCqAVvAmDvjlnQT6GKW
+rYDHirU0R/TeFerAYHyCbFmGUOlGiTWWYl3myKtLOFR0woCJHjNLKRUsHByNQLo7
+ula+SSzV2NyjOQzgJ1bOFVgmw0GL2kwBo3Nb6H2EB5WOICShyFSby2a4MWiv9VtM
+R6ZOlgWaQTeOWR0Z17h/kUz0GvuO8uWN/u64roB13SEUmSMb5gx0PxpdGVVEYoPj
+9iTqrX0Ah3EQIGEzDDZS7TSqSJ+/XXh8+eGD3doNF20PIrQfUOOGD6c49nzX/sFx
+0+EDjugXa4/8qsg6/UQn0naKQ9nB30GtRFLrttCzq5h1/Ubf7FqHoYZFEwIEqsEQ
+4XH+XCiyIZvQ/JGryHvC9V7uvBkRNFyEOZ42+GfzA+rhYZgDy7DFA6iD6ivEpC7R
+u1kR4CPmd2lSwCPyD+ujQQQ0/7hSh6ZwdmcG21eezZY4m48WYfc=
+=onws
 -----END PGP SIGNATURE-----
