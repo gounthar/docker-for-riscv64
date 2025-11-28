@@ -46,6 +46,11 @@ jobs:
         with:
           go-version: '1.25.4'
 
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential
+
       - name: Build cagent binary
         run: |
           set -euo pipefail
@@ -57,8 +62,8 @@ jobs:
           echo "Building cagent version: $GIT_TAG"
           echo "Commit: $GIT_COMMIT"
 
-          # Build with version info
-          GOOS=linux GOARCH=riscv64 CGO_ENABLED=0 go build \
+          # Build with version info (CGO enabled for tree-sitter dependency)
+          GOOS=linux GOARCH=riscv64 CGO_ENABLED=1 go build \
             -ldflags "-X 'github.com/docker/cagent/pkg/version.Version=${GIT_TAG}' -X 'github.com/docker/cagent/pkg/version.Commit=${GIT_COMMIT}'" \
             -o cagent-linux-riscv64 \
             ./main.go
@@ -149,8 +154,9 @@ jobs:
 
           **Build Command:**
           \`\`\`bash
+          # Requires build-essential (gcc, g++, make) for CGO dependencies
           cd cagent
-          GOOS=linux GOARCH=riscv64 CGO_ENABLED=0 go build \\
+          GOOS=linux GOARCH=riscv64 CGO_ENABLED=1 go build \\
             -ldflags "-X 'github.com/docker/cagent/pkg/version.Version=${CAGENT_VERSION}'" \\
             -o cagent-linux-riscv64 ./main.go
           \`\`\`
