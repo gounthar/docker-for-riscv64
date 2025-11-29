@@ -1,16 +1,16 @@
 Package: cagent
-Version: 1.9.27-1
+Version: 1.9.30-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 75671
+Installed-Size: 75136
 Homepage: https://github.com/docker/cagent
 Priority: optional
 Section: devel
-Filename: pool/main/c/cagent/cagent_1.9.27-1_riscv64.deb
-Size: 27304600
-SHA256: 3cf7e2339d8ffb32da14492049810e08dd1574f69dfc03fed8e821e718b72ac4
-SHA1: 36d68a2c57851a2ca5c7cf365eaf8d30d0b6b1cb
-MD5sum: 58561c29af9be895da7ae9561e1d65e5
+Filename: pool/main/c/cagent/cagent_1.9.30-1_riscv64.deb
+Size: 26151040
+SHA256: 185961ecb448e7896b5e787f58238a2d28c24abc827e3c1ca603e149e045ccbd
+SHA1: 76cfe0f81c0deb92f04f1c4efd67f3369ec44017
+MD5sum: 0c3dcefe9091ea2638b0e489b891bc5b
 Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
  cagent is a powerful, easy to use, customizable multi-agent runtime that
  orchestrates AI agents with specialized capabilities and tools.
@@ -106,7 +106,7 @@ Description: Docker command-line interface (CLI) for RISC-V64
  This package provides pre-built binaries for RISC-V64 architecture.
 
 Package: docker.io
-Version: 29.1.0-1
+Version: 29.1.1-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
 Installed-Size: 83321
@@ -119,11 +119,11 @@ Provides: docker-engine
 Homepage: https://github.com/moby/moby
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/docker.io_29.1.0-1_riscv64.deb
-Size: 17822648
-SHA256: 128ecee50c284553f7fbd0286e0835d18069aea4861d9310323a50b49570be5e
-SHA1: 183526b34e7a2fe1ef7b18a1b593c284acfab5cb
-MD5sum: 54cc17f1cfc0b1d6b3ce592dd70823b1
+Filename: pool/main/d/docker.io/docker.io_29.1.1-1_riscv64.deb
+Size: 17812604
+SHA256: 6179524e01a59e8a086251b6d620c5927a448968f88f8bfbb03b8e2c91e865e3
+SHA1: 59cf5bd5f7ff2396589d76671fd28fcdf09dc9bc
+MD5sum: cbf908b60c300a4e691a8f55ce5eb538
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
