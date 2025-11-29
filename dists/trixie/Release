@@ -1,7 +1,7 @@
 Origin: docker-riscv64
 Label: Docker RISC-V64
 Codename: trixie
-Date: Sat, 29 Nov 2025 07:25:07 UTC
+Date: Sat, 29 Nov 2025 08:32:57 UTC
 Architectures: riscv64
 Components: main
 Description: Docker Engine for RISC-V64
