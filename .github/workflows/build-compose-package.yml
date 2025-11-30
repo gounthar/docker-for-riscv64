@@ -39,10 +39,8 @@ jobs:
           fi
 
           # Find the latest Compose release
-          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                        grep -E 'compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                        head -1 | \
-                        awk '{print $(NF-1)}')
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 100 | \
+                        awk -F'\t' '$3 ~ /^compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64$/ {print $3; exit}')
 
           if [ -z "$RELEASE_TAG" ]; then
             echo "No Compose release found - skipping package build"
@@ -81,10 +79,8 @@ jobs:
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
             # Find the latest compose release created by the workflow
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          head -1 | \
-                          awk '{print $1}')
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 100 | \
+                          awk -F'\t' '$3 ~ /^compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64$/ {print $3; exit}')
           fi
           echo "Building package for release: $RELEASE_TAG"
 
@@ -107,10 +103,8 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          head -1 | \
-                          awk '{print $1}')
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 100 | \
+                          awk -F'\t' '$3 ~ /^compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64$/ {print $3; exit}')
           fi
           VERSION="$(echo "$RELEASE_TAG" | sed 's/^compose-v//; s/-riscv64$//')"
           echo "Package version: $VERSION"
@@ -171,10 +165,8 @@ jobs:
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 10 | \
-                          grep -E '^compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
-                          head -1 | \
-                          awk '{print $1}')
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 100 | \
+                          awk -F'\t' '$3 ~ /^compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64$/ {print $3; exit}')
           fi
 
           echo "Uploading packages to release $RELEASE_TAG"
