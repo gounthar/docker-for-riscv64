@@ -27,6 +27,33 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
+      - name: Verify git repository
+        id: verify
+        run: |
+          if [ ! -d ~/github-act-runner-test ]; then
+            echo "❌ Error: ~/github-act-runner-test directory not found"
+            echo "Please set up the runner according to RUNNER-SETUP.md"
+            exit 1
+          fi
+
+          cd ~/github-act-runner-test
+          if ! git rev-parse --git-dir > /dev/null 2>&1; then
+            echo "❌ Error: ~/github-act-runner-test is not a git repository"
+            echo ""
+            echo "This directory should be a clone of github-act-runner."
+            echo "Please set up according to RUNNER-SETUP.md:"
+            echo ""
+            echo "  cd ~"
+            echo "  mv github-act-runner-test github-act-runner-test.backup"
+            echo "  git clone https://github.com/ChristopherHX/github-act-runner.git github-act-runner-test"
+            echo "  cd github-act-runner-test"
+            echo "  go build -v -o github-act-runner ."
+            echo "  sudo systemctl restart github-runner"
+            echo ""
+            exit 1
+          fi
+          echo "✅ Git repository verified"
+
       - name: Check current version
         id: current
         run: |
