@@ -28,25 +28,24 @@ jobs:
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
       - name: Verify git repository
-        id: verify
         run: |
-          if [ ! -d ~/github-act-runner-test ]; then
-            echo "❌ Error: ~/github-act-runner-test directory not found"
+          if [ ! -d "$HOME/github-act-runner-test" ]; then
+            echo "❌ Error: $HOME/github-act-runner-test directory not found"
             echo "Please set up the runner according to RUNNER-SETUP.md"
             exit 1
           fi
 
-          cd ~/github-act-runner-test
+          cd "$HOME/github-act-runner-test"
           if ! git rev-parse --git-dir > /dev/null 2>&1; then
-            echo "❌ Error: ~/github-act-runner-test is not a git repository"
+            echo "❌ Error: $HOME/github-act-runner-test is not a git repository"
             echo ""
             echo "This directory should be a clone of github-act-runner."
             echo "Please set up according to RUNNER-SETUP.md:"
             echo ""
             echo "  cd ~"
-            echo "  mv github-act-runner-test github-act-runner-test.backup"
-            echo "  git clone https://github.com/ChristopherHX/github-act-runner.git github-act-runner-test"
-            echo "  cd github-act-runner-test"
+            echo "  mv \$HOME/github-act-runner-test \$HOME/github-act-runner-test.backup"
+            echo "  git clone https://github.com/ChristopherHX/github-act-runner.git \$HOME/github-act-runner-test"
+            echo "  cd \$HOME/github-act-runner-test"
             echo "  go build -v -o github-act-runner ."
             echo "  sudo systemctl restart github-runner"
             echo ""
@@ -58,7 +57,7 @@ jobs:
         id: current
         run: |
           # Check version from git tag (more reliable than binary --version)
-          cd ~/github-act-runner-test
+          cd "$HOME/github-act-runner-test"
           CURRENT=$(git describe --tags --exact-match 2>/dev/null || echo "unknown")
           cd - > /dev/null
 
@@ -77,18 +76,18 @@ jobs:
         if: steps.current.outputs.already_updated == 'false'
         run: |
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          BACKUP_DIR=~/github-act-runner-backups
+          BACKUP_DIR="$HOME/github-act-runner-backups"
           mkdir -p "$BACKUP_DIR"
 
-          if [ -f ~/github-act-runner-test/github-act-runner ]; then
-            cp ~/github-act-runner-test/github-act-runner "$BACKUP_DIR/github-act-runner.$TIMESTAMP"
+          if [ -f "$HOME/github-act-runner-test/github-act-runner" ]; then
+            cp "$HOME/github-act-runner-test/github-act-runner" "$BACKUP_DIR/github-act-runner.$TIMESTAMP"
             echo "✅ Backup created: $BACKUP_DIR/github-act-runner.$TIMESTAMP"
           fi
 
       - name: Pull latest runner code
         if: steps.current.outputs.already_updated == 'false'
         run: |
-          cd ~/github-act-runner-test
+          cd "$HOME/github-act-runner-test"
 
           # Save current commit for rollback
           CURRENT_COMMIT=$(git rev-parse HEAD)
@@ -107,7 +106,7 @@ jobs:
         if: steps.current.outputs.already_updated == 'false'
         id: build
         run: |
-          cd ~/github-act-runner-test
+          cd "$HOME/github-act-runner-test"
 
           echo "🔨 Building github-act-runner $VERSION..."
           if go build -v -o github-act-runner . 2>&1 | tee build.log; then
@@ -122,7 +121,7 @@ jobs:
       - name: Verify new binary
         if: steps.current.outputs.already_updated == 'false' && steps.build.outputs.build_success == 'true'
         run: |
-          cd ~/github-act-runner-test
+          cd "$HOME/github-act-runner-test"
 
           # Test the new binary
           if ./github-act-runner --version; then
@@ -171,7 +170,7 @@ jobs:
           echo "📊 Summary:"
           echo "  - Previous version: ${{ steps.current.outputs.current_version }}"
           echo "  - New version: $NEW_VERSION"
-          echo "  - Backup location: ~/github-act-runner-backups/github-act-runner.$(date +%Y%m%d_*)"
+          echo "  - Backup location: $HOME/github-act-runner-backups/github-act-runner.$(date +%Y%m%d_*)"
           echo "  - Restart scheduled: 60 seconds"
           echo ""
           echo "⚠️ The runner service will restart automatically"
@@ -180,16 +179,16 @@ jobs:
       - name: Rollback on failure
         if: failure() && steps.current.outputs.already_updated == 'false'
         run: |
-          cd ~/github-act-runner-test
+          cd "$HOME/github-act-runner-test"
 
           if [ -n "$CURRENT_COMMIT" ]; then
             echo "🔄 Rolling back to previous commit: $CURRENT_COMMIT"
             git checkout "$CURRENT_COMMIT"
 
             # Restore from backup if available
-            LATEST_BACKUP=$(ls -t ~/github-act-runner-backups/github-act-runner.* 2>/dev/null | head -1)
+            LATEST_BACKUP=$(ls -t "$HOME/github-act-runner-backups"/github-act-runner.* 2>/dev/null | head -1)
             if [ -f "$LATEST_BACKUP" ]; then
-              cp "$LATEST_BACKUP" ~/github-act-runner-test/github-act-runner
+              cp "$LATEST_BACKUP" "$HOME/github-act-runner-test/github-act-runner"
               echo "✅ Restored from backup: $LATEST_BACKUP"
             fi
           fi
