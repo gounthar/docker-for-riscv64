@@ -27,31 +27,46 @@ jobs:
           fi
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Verify git repository
+      - name: Setup or verify git repository
         run: |
-          if [ ! -d "$HOME/github-act-runner-test" ]; then
-            echo "❌ Error: $HOME/github-act-runner-test directory not found"
-            echo "Please set up the runner according to RUNNER-SETUP.md"
-            exit 1
+          RUNNER_DIR="$HOME/github-act-runner-test"
+          REPO_URL="https://github.com/ChristopherHX/github-act-runner.git"
+
+          # Check if directory exists and is a valid git repository
+          if [ -d "$RUNNER_DIR" ]; then
+            cd "$RUNNER_DIR"
+            if git rev-parse --git-dir > /dev/null 2>&1; then
+              echo "✅ Git repository already exists and is valid"
+              exit 0
+            else
+              echo "⚠️  Directory exists but is not a git repository"
+              echo "🔄 Backing up existing directory..."
+              TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+              mv "$RUNNER_DIR" "$RUNNER_DIR.backup.$TIMESTAMP"
+              echo "✅ Backed up to: $RUNNER_DIR.backup.$TIMESTAMP"
+            fi
+          else
+            echo "📁 Runner directory does not exist"
           fi
 
-          cd "$HOME/github-act-runner-test"
-          if ! git rev-parse --git-dir > /dev/null 2>&1; then
-            echo "❌ Error: $HOME/github-act-runner-test is not a git repository"
-            echo ""
-            echo "This directory should be a clone of github-act-runner."
-            echo "Please set up according to RUNNER-SETUP.md:"
-            echo ""
-            echo "  cd ~"
-            echo "  mv \$HOME/github-act-runner-test \$HOME/github-act-runner-test.backup"
-            echo "  git clone https://github.com/ChristopherHX/github-act-runner.git \$HOME/github-act-runner-test"
-            echo "  cd \$HOME/github-act-runner-test"
-            echo "  go build -v -o github-act-runner ."
-            echo "  sudo systemctl restart github-runner"
-            echo ""
+          # Clone fresh repository
+          echo "🔄 Cloning github-act-runner repository..."
+          if git clone "$REPO_URL" "$RUNNER_DIR"; then
+            echo "✅ Repository cloned successfully"
+            cd "$RUNNER_DIR"
+
+            # Build the runner binary
+            echo "🔨 Building github-act-runner..."
+            if go build -v -o github-act-runner .; then
+              echo "✅ Runner binary built successfully"
+            else
+              echo "❌ Failed to build runner binary"
+              exit 1
+            fi
+          else
+            echo "❌ Failed to clone repository"
             exit 1
           fi
-          echo "✅ Git repository verified"
 
       - name: Check current version
         id: current
