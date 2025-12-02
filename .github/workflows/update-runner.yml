@@ -53,16 +53,6 @@ jobs:
           echo "🔄 Cloning github-act-runner repository..."
           if git clone "$REPO_URL" "$RUNNER_DIR"; then
             echo "✅ Repository cloned successfully"
-            cd "$RUNNER_DIR"
-
-            # Build the runner binary
-            echo "🔨 Building github-act-runner..."
-            if go build -v -o github-act-runner .; then
-              echo "✅ Runner binary built successfully"
-            else
-              echo "❌ Failed to build runner binary"
-              exit 1
-            fi
           else
             echo "❌ Failed to clone repository"
             exit 1
