@@ -21,7 +21,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          submodules: true
+          # Don't checkout all submodules - we only need moby
+          submodules: false
+
+      - name: Checkout moby submodule only
+        run: |
+          # Only init and update the moby submodule (skip cli, compose, cagent)
+          git submodule update --init --depth 1 moby
 
       - name: Cache Go modules and build cache
         uses: actions/cache@v4
