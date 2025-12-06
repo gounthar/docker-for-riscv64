@@ -22,11 +22,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          submodules: true
+          # Don't checkout all submodules - we only need compose
+          submodules: false
           fetch-depth: 0
 
-      - name: Update compose submodule
+      - name: Checkout compose submodule only
         run: |
+          # Only init and update the compose submodule (skip moby, cli, cagent)
+          git submodule update --init --depth 1 compose
           cd compose
           git fetch origin --tags
           git checkout ${{ github.event.inputs.compose_ref || 'main' }}

@@ -22,11 +22,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          submodules: true
+          # Don't checkout all submodules - we only need cli
+          submodules: false
           fetch-depth: 0
 
-      - name: Update cli submodule
+      - name: Checkout cli submodule only
         run: |
+          # Only init and update the cli submodule (skip moby, compose, cagent)
+          git submodule update --init --depth 1 cli
           cd cli
           git fetch origin --tags
           git checkout ${{ github.event.inputs.cli_ref || 'master' }}
