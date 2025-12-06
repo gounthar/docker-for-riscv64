@@ -1,0 +1,11 @@
+---
+# UpdateCLI values configuration for GitHub Actions
+# These values are used by all UpdateCLI manifests in this directory
+
+github:
+  user: "github-actions[bot]"
+  email: "github-actions[bot]@users.noreply.github.com"
+  username: "github-actions[bot]"
+  # Token: manifests use {{ requiredEnv .github.token }} which reads
+  # the environment variable named by this value
+  token: "UPDATECLI_GITHUB_TOKEN"

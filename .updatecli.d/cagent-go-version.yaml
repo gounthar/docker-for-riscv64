@@ -17,6 +17,7 @@ scms:
     spec:
       owner: "docker"
       repository: "cagent"
+      token: "{{ requiredEnv .github.token }}"
       branch: "main"
 
 sources:

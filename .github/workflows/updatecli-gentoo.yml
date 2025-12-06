@@ -28,8 +28,12 @@ jobs:
             && sudo apt install gh -y
           }
 
-      - name: Run UpdateCLI
+      - name: Run UpdateCLI for Gentoo packages
         uses: updatecli/updatecli-action@v2
+        with:
+          command: apply
+          config: .updatecli.d/gentoo-*.yaml
+          values: .updatecli.d/values.yaml
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
