@@ -10,7 +10,7 @@ ARG BUILDKIT_VERSION=unknown
 
 # Install runtime dependencies
 # fuse-overlayfs: Rootless overlay filesystem support
-# iptables/ip6tables: Network management for buildkit networking
+# iptables: Network management for buildkit networking (includes ip6tables in Trixie)
 # git: Git operations in builds
 # openssh-client: SSH operations for git+ssh://
 # pigz: Parallel gzip for faster compression
@@ -20,7 +20,6 @@ RUN apt-get update && \
         ca-certificates \
         fuse-overlayfs \
         iptables \
-        ip6tables \
         git \
         openssh-client \
         pigz \
