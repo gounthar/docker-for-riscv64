@@ -2,8 +2,8 @@ name: Track BuildKit Releases
 
 on:
   schedule:
-    # Check for new releases daily at 09:00 UTC (after cagent tracking)
-    - cron: '0 9 * * *'
+    # Check for new releases daily at 08:00 UTC
+    - cron: '0 8 * * *'
   workflow_dispatch:
 
 permissions:
@@ -22,12 +22,23 @@ jobs:
       - name: Check for new BuildKit release
         id: check
         run: |
-          # Get latest BuildKit release
-          LATEST=$(gh api repos/moby/buildkit/releases/latest --jq '.tag_name')
+          # Get latest stable release from moby/buildkit repository
+          # Filter for vX.Y.Z releases (exclude dockerfile/* and pre-releases)
+          LATEST=$(gh release list --repo moby/buildkit --limit 20 \
+            | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+\s' \
+            | grep -v 'Pre-release' \
+            | head -1 \
+            | awk '{print $1}')
+
+          if [ -z "$LATEST" ]; then
+            echo "Could not determine latest BuildKit release"
+            exit 1
+          fi
+
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
-          # Check if we've already built this (using buildkit-vX.Y.Z-riscv64 format)
-          # BuildKit tags are like v0.14.0, we create buildkit-v0.14.0-riscv64
+          # Check if we've already built this (using buildkit-v*-riscv64 format)
+          # BuildKit tags are like v0.26.2, we create buildkit-v0.26.2-riscv64
           OUR_TAG="buildkit-${LATEST}-riscv64"
 
           if gh release view "${OUR_TAG}" >/dev/null 2>&1; then
@@ -55,13 +66,13 @@ jobs:
           gh workflow run buildkit-weekly-build.yml -f buildkit_ref=$LATEST
 
           # Create tracking issue
-          cat > issue-body.md << EOF
+          cat > issue-body.md << ISSUE_EOF
           New BuildKit release detected: **$LATEST**
 
           **Status:** Build automatically triggered
 
           The buildkit-weekly-build workflow has been started automatically.
-          Expected completion time: ~10-15 minutes
+          Expected completion time: ~35-40 minutes
 
           **Monitor build progress:**
           \`\`\`bash
@@ -71,27 +82,15 @@ jobs:
 
           **Expected release:** buildkit-${LATEST}-riscv64
 
+          **Expected artifacts:**
+          - \`buildkitd\` - BuildKit daemon
+          - \`buildctl\` - BuildKit CLI client
+          - Container image: \`ghcr.io/gounthar/buildkit-riscv64:${LATEST}-riscv64\`
+
           **Upstream release notes:** https://github.com/moby/buildkit/releases/tag/$LATEST
 
-          **Components to be built:**
-          - buildkitd binary
-          - buildctl binary
-          - BuildKit container image (ghcr.io/gounthar/buildkit-riscv64:${LATEST}-riscv64)
-
-          **Integration:**
-          This BuildKit image will be compatible with Docker Buildx for multi-platform builds.
-
-          ## Verification Checklist
-
-          After the build completes:
-          - [ ] Release created: buildkit-${LATEST}-riscv64
-          - [ ] Binaries uploaded (buildkitd, buildctl)
-          - [ ] Container image pushed to GHCR
-          - [ ] Test with Docker Buildx: \`docker buildx create --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:${LATEST}-riscv64\`
-          - [ ] Multi-platform build test passes
-
-          This issue will track the build progress. Close it once the release is published and verified.
-          EOF
+          This issue will track the build progress. Close it once the release is published.
+          ISSUE_EOF
 
           gh issue create \
             --title "Building BuildKit ${LATEST} for RISC-V64" \
@@ -99,3 +98,10 @@ jobs:
             --label "build-in-progress,buildkit-release"
 
           echo "Build triggered successfully!"
+
+      - name: Log status when already built
+        if: steps.check.outputs.already_built == 'true'
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+          echo "BuildKit $LATEST already built as buildkit-${LATEST}-riscv64"
+          echo "No action needed."

@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+export DH_VERBOSE = 1
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	# Binary provided pre-built from upstream release
+	@echo "Using pre-built binaries"
+
+override_dh_auto_test:
+	# Skip tests - binaries already tested upstream
+	@echo "Skipping tests for pre-built binaries"
+
+override_dh_shlibdeps:
+	# Skip shared library dependencies check - statically linked
+	@echo "Skipping shlibdeps - statically linked binaries"

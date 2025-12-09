@@ -1,0 +1,262 @@
+name: Build BuildKit Debian Package
+
+on:
+  workflow_run:
+    workflows: ["Weekly BuildKit RISC-V64 Build"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'BuildKit release tag'
+        required: true
+        default: 'buildkit-v20251209-dev'
+
+permissions:
+  contents: write
+
+jobs:
+  build-deb:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check if new release exists
+        id: check_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Skip check for manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - proceeding with build"
+            echo "skip=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Find the latest BuildKit release (matches both dev and official releases)
+          # gh release list outputs: Title<TAB>Status<TAB>Tag<TAB>Date
+          # Match buildkit-v* pattern (dev: buildkit-v20251209-dev, official: buildkit-v0.17.3-riscv64)
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+                        awk -F'\t' '$3 ~ /^buildkit-v/ {print $3; exit}')
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No BuildKit release found - skipping package build"
+            echo "skip=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Found release: $RELEASE_TAG"
+
+          # Check if release already has .deb packages
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          if echo "$ASSETS" | grep -q 'buildkit.*\.deb$'; then
+            echo "Release $RELEASE_TAG already has Debian packages - skipping build"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "Release $RELEASE_TAG needs Debian packages - proceeding with build"
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install build dependencies
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y build-essential debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
+          # gh CLI is required - install if missing and verify availability
+          if ! command -v gh >/dev/null 2>&1; then
+            echo "gh CLI not found, attempting to install..."
+            if ! sudo apt-get install -y gh; then
+              echo "Error: gh CLI is required but installation failed"
+              exit 1
+            fi
+          fi
+          # Verify gh is actually available
+          if ! command -v gh >/dev/null 2>&1; then
+            echo "Error: gh CLI is not available after installation attempt"
+            exit 1
+          fi
+          echo "gh CLI version: $(gh --version | head -1)"
+
+      - name: Download BuildKit binaries
+        if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Get release tag from workflow_run or manual input
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          else
+            # Find the latest buildkit release created by the workflow
+            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+                          awk -F'\t' '$3 ~ /^buildkit-v/ {print $3; exit}')
+          fi
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: Could not determine release tag"
+            exit 1
+          fi
+
+          echo "Building package for release: $RELEASE_TAG"
+          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+
+          # Download binaries with explicit repo parameter
+          gh release download "$RELEASE_TAG" -p buildkitd -p buildctl --repo gounthar/docker-for-riscv64
+
+          # Validate binaries were downloaded
+          if [ ! -f buildkitd ] || [ ! -f buildctl ]; then
+            echo "Error: Failed to download BuildKit binaries from release $RELEASE_TAG"
+            exit 1
+          fi
+
+          chmod +x buildkitd buildctl
+
+          # Verify binary architecture (RISC-V64)
+          echo "=== Verifying buildkitd ==="
+          file ./buildkitd
+          if ! file ./buildkitd | grep -qi "riscv"; then
+            echo "Warning: buildkitd may not be a RISC-V64 binary"
+          fi
+          ./buildkitd --version || echo "Version check skipped (may require runtime dependencies)"
+
+          echo "=== Verifying buildctl ==="
+          file ./buildctl
+          if ! file ./buildctl | grep -qi "riscv"; then
+            echo "Warning: buildctl may not be a RISC-V64 binary"
+          fi
+          ./buildctl --version || echo "Version check skipped (may require runtime dependencies)"
+
+          # Verify statically linked (for proper packaging)
+          echo ""
+          echo "=== Checking linking ==="
+          if ldd ./buildkitd 2>&1 | grep -q "not a dynamic executable"; then
+            echo "buildkitd: statically linked"
+          else
+            echo "buildkitd: dynamically linked (checking dependencies)"
+            ldd ./buildkitd || true
+          fi
+          if ldd ./buildctl 2>&1 | grep -q "not a dynamic executable"; then
+            echo "buildctl: statically linked"
+          else
+            echo "buildctl: dynamically linked (checking dependencies)"
+            ldd ./buildctl || true
+          fi
+
+          ls -lh buildkitd buildctl
+
+      - name: Update package version in changelog
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ env.RELEASE_TAG }}"
+
+          # Extract version using shared script
+          VERSION=$(bash .github/scripts/extract-buildkit-version.sh "$RELEASE_TAG")
+
+          echo "Package version: $VERSION"
+
+          # Set DEBEMAIL to avoid interactive prompt
+          export DEBEMAIL="github-actions[bot]@users.noreply.github.com"
+          export DEBFULLNAME="GitHub Actions"
+
+          # Copy packaging and update changelog with dch
+          cp -r debian-buildkit debian
+          cd debian
+          dch --check-dirname-level 0 \
+              --force-distribution \
+              --newversion "${VERSION}-riscv64-1" \
+              --distribution trixie \
+              "RISC-V64 prebuilt BuildKit ${VERSION}"
+          cd ..
+
+      - name: Build package
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          set -euo pipefail
+          # Build package (debian/ already created in previous step)
+          dpkg-buildpackage -us -uc -b
+
+          # Verify package was created
+          if ! ls ../*.deb 1>/dev/null 2>&1; then
+            echo "Error: No .deb packages were created"
+            exit 1
+          fi
+
+          ls -lh ../*.deb
+
+      - name: Run lintian checks
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          lintian --info --display-info ../*.deb || true
+
+      - name: Package info
+        if: steps.check_release.outputs.skip != 'true'
+        run: |
+          for deb in ../*.deb; do
+            echo "============================================"
+            echo "=== Package: $(basename $deb) ==="
+            echo "============================================"
+            echo ""
+            echo "=== Package Contents ==="
+            dpkg-deb --contents "$deb" | head -50
+            echo ""
+            echo "=== Package Info ==="
+            dpkg-deb --info "$deb"
+            echo ""
+            echo "=== Package Size ==="
+            ls -lh "$deb"
+            echo ""
+          done
+
+      - name: Upload packages to release
+        if: steps.check_release.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ env.RELEASE_TAG }}"
+
+          echo "Uploading packages to release $RELEASE_TAG"
+          echo ""
+
+          UPLOAD_FAILED=0
+          for deb in ../*.deb; do
+            echo "Uploading $(basename "$deb")..."
+            UPLOAD_SUCCESS=0
+            for i in {1..3}; do
+              if gh release upload "$RELEASE_TAG" "$deb" --clobber --repo gounthar/docker-for-riscv64; then
+                echo "Successfully uploaded $(basename "$deb")"
+                UPLOAD_SUCCESS=1
+                break
+              fi
+              echo "Retry $i/3..."
+              sleep 3
+            done
+            if [ "$UPLOAD_SUCCESS" -eq 0 ]; then
+              echo "Error: Failed to upload $(basename "$deb") after 3 attempts"
+              UPLOAD_FAILED=1
+            fi
+          done
+
+          if [ "$UPLOAD_FAILED" -eq 1 ]; then
+            echo "Error: One or more uploads failed"
+            exit 1
+          fi
+
+          echo ""
+          echo "BuildKit Debian package uploaded successfully!"
+          echo ""
+          echo "Packages built:"
+          ls -lh ../*.deb
+          echo ""
+          echo "Install with:"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/buildkit_*.deb"
+          echo "  sudo dpkg -i buildkit_*.deb"
+          echo "  buildkitd --version"
+          echo "  buildctl --version"

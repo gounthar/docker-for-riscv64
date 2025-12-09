@@ -7,6 +7,7 @@ on:
       - "Build Docker Compose Debian Package"
       - "Build Docker CLI Debian Package"
       - "Build Docker Buildx Debian Package"
+      - "Build BuildKit Debian Package"
       - "Build cagent Debian Package"
     types: [completed]
     branches: [main]
@@ -15,7 +16,7 @@ on:
       release_tag:
         description: |
           Release tag containing the .deb package
-          (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, buildx-v*-riscv64, or cagent-v*-riscv64)
+          (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, buildx-v*-riscv64, buildkit-v*-riscv64, or cagent-v*-riscv64)
         required: true
         default: 'v28.5.2-riscv64'
 
@@ -49,7 +50,7 @@ jobs:
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 \
                           --limit 50 --json tagName | \
                           jq -r '.[] | select(.tagName |
-                            test("^(compose-|cli-|buildx-|cagent-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) |
+                            test("^(compose-|cli-|buildx-|buildkit-|cagent-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) |
                             .tagName' | \
                           head -1)
           fi
@@ -64,6 +65,9 @@ jobs:
           elif [[ "$RELEASE_TAG" =~ ^buildx- ]]; then
             PACKAGE_TYPE="buildx"
             echo "package_type=buildx" >> $GITHUB_OUTPUT
+          elif [[ "$RELEASE_TAG" =~ ^buildkit- ]]; then
+            PACKAGE_TYPE="buildkit"
+            echo "package_type=buildkit" >> $GITHUB_OUTPUT
           elif [[ "$RELEASE_TAG" =~ ^cagent- ]]; then
             PACKAGE_TYPE="cagent"
             echo "package_type=cagent" >> $GITHUB_OUTPUT
@@ -123,6 +127,14 @@ jobs:
                              test("^cagent-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
                            head -1)
           echo "Latest cagent release: $CAGENT_RELEASE"
+
+          # Find latest BuildKit release
+          BUILDKIT_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+                           --limit 50 --json tagName | \
+                           jq -r '.[] | select(.tagName |
+                             test("^buildkit-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           head -1)
+          echo "Latest BuildKit release: $BUILDKIT_RELEASE"
           echo ""
 
           # Download Engine packages (docker.io, containerd, runc)
@@ -164,10 +176,17 @@ jobs:
               --repo gounthar/docker-for-riscv64 --clobber || true
           fi
 
+          # Download BuildKit package
+          if [ -n "$BUILDKIT_RELEASE" ]; then
+            echo "Downloading BuildKit package from $BUILDKIT_RELEASE..."
+            gh release download "$BUILDKIT_RELEASE" -p 'buildkit_*.deb' \
+              --repo gounthar/docker-for-riscv64 --clobber || true
+          fi
+
           echo ""
           echo "Cleaning up: keeping only the latest version of each package..."
           # For each package prefix, keep only the newest file (by timestamp)
-          for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc cagent; do
+          for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc cagent buildkit; do
             # Get all matching files sorted by modification time (newest first)
             # Keep the first (newest), delete the rest
             ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v || true
@@ -273,6 +292,10 @@ jobs:
             VERSION=$(echo $RELEASE_TAG | sed 's/^cagent-v//; s/-riscv64$//')
             PACKAGE_NAME="cagent"
             INSTALL_CMD="cagent"
+          elif [ "$PACKAGE_TYPE" = "buildkit" ]; then
+            VERSION=$(echo $RELEASE_TAG | sed 's/^buildkit-v//; s/-riscv64$//')
+            PACKAGE_NAME="buildkit"
+            INSTALL_CMD="buildkit"
           else
             VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
             PACKAGE_NAME="docker.io"

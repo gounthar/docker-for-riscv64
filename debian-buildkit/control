@@ -1,0 +1,39 @@
+Source: buildkit
+Section: devel
+Priority: optional
+Maintainer: Bruno Verächten <bruno@verachten.fr>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Homepage: https://github.com/moby/buildkit
+Vcs-Browser: https://github.com/gounthar/docker-for-riscv64
+Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
+
+Package: buildkit
+Architecture: riscv64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Recommends: containerd (>= 1.7) | containerd.io (>= 1.7)
+Suggests: docker.io (>= 20.10) | docker-ce (>= 20.10)
+Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
+ BuildKit is a toolkit for converting source code to build artifacts in an
+ efficient, expressive, and repeatable manner. It is the next-generation
+ container image builder, designed to be the backend for Docker Buildx and
+ multi-platform builds.
+ .
+ Features include:
+  - Automatic garbage collection
+  - Extendable frontend formats
+  - Concurrent dependency resolution
+  - Efficient instruction caching
+  - Build cache import/export
+  - Nested build job invocations
+  - Distributable workers
+  - Multiple output formats
+  - Pluggable architecture
+  - Execution without root privileges
+ .
+ This package contains:
+  - buildkitd: BuildKit daemon (server)
+  - buildctl: BuildKit CLI client
+ .
+ This is the RISC-V64 port of BuildKit, providing native support for
+ the RISC-V 64-bit architecture.

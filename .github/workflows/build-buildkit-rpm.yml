@@ -1,0 +1,233 @@
+name: Build BuildKit RPM Package
+
+on:
+  workflow_run:
+    workflows: ["Weekly BuildKit RISC-V64 Build"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'BuildKit release tag to build package from'
+        required: true
+        default: 'buildkit-v20251209-dev'
+
+permissions:
+  contents: write
+
+jobs:
+  build-buildkit-rpm:
+    runs-on: [self-hosted, riscv64]
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check if new release exists
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Skip check for manual dispatch
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch - proceeding with build"
+            echo "has-new-release=true" >> $GITHUB_OUTPUT
+            echo "release-tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Find the latest BuildKit release (matches both dev and official releases)
+          # gh release list outputs: Title<TAB>Status<TAB>Tag<TAB>Date
+          RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+                        awk -F'\t' '$3 ~ /^buildkit-v/ {print $3; exit}')
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "No BuildKit release found - skipping package build"
+            echo "has-new-release=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          echo "Found release: $RELEASE_TAG"
+
+          # Check if release already has .rpm packages
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
+          if echo "$ASSETS" | grep -q 'buildkit.*\.rpm$'; then
+            echo "Release $RELEASE_TAG already has RPM packages - skipping build"
+            echo "has-new-release=false" >> $GITHUB_OUTPUT
+          else
+            echo "Release $RELEASE_TAG needs RPM packages - proceeding with build"
+            echo "has-new-release=true" >> $GITHUB_OUTPUT
+            echo "release-tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install build dependencies
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          if [ -f /etc/fedora-release ]; then
+            sudo dnf install -y rpm-build rpmdevtools rpmlint
+          elif [ -f /etc/debian_version ]; then
+            sudo apt-get update
+            sudo apt-get install -y rpm rpmlint
+          fi
+
+      - name: Set up RPM build tree
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          rpmdev-setuptree || mkdir -p ~/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+
+      - name: Clean previous RPM builds
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          # Remove any existing RPM files to prevent uploading old versions
+          rm -f ~/rpmbuild/RPMS/riscv64/buildkit-*.rpm
+          echo "Cleaned previous buildkit RPM files"
+
+      - name: Download BuildKit binaries
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: Release tag is empty"
+            exit 1
+          fi
+
+          echo "Building package for release: $RELEASE_TAG"
+
+          # Clean and download binaries to SOURCES
+          cd ~/rpmbuild/SOURCES
+          rm -f buildkitd buildctl
+          gh release download "$RELEASE_TAG" -p buildkitd -p buildctl --repo gounthar/docker-for-riscv64
+
+          # Validate binaries were downloaded
+          if [ ! -f buildkitd ] || [ ! -f buildctl ]; then
+            echo "Error: Failed to download BuildKit binaries from release $RELEASE_TAG"
+            exit 1
+          fi
+
+          chmod +x buildkitd buildctl
+
+          # Verify binary architecture (RISC-V64)
+          echo "=== Verifying buildkitd ==="
+          file ./buildkitd
+          if ! file ./buildkitd | grep -qi "riscv"; then
+            echo "Warning: buildkitd may not be a RISC-V64 binary"
+          fi
+
+          echo "=== Verifying buildctl ==="
+          file ./buildctl
+          if ! file ./buildctl | grep -qi "riscv"; then
+            echo "Warning: buildctl may not be a RISC-V64 binary"
+          fi
+
+          # Verify statically linked (for proper packaging)
+          echo ""
+          echo "=== Checking linking ==="
+          if ldd ./buildkitd 2>&1 | grep -q "not a dynamic executable"; then
+            echo "buildkitd: statically linked"
+          else
+            echo "buildkitd: dynamically linked (checking dependencies)"
+            ldd ./buildkitd || true
+          fi
+          if ldd ./buildctl 2>&1 | grep -q "not a dynamic executable"; then
+            echo "buildctl: statically linked"
+          else
+            echo "buildctl: dynamically linked (checking dependencies)"
+            ldd ./buildctl || true
+          fi
+
+          ls -lh
+
+      - name: Copy spec file
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          cp rpm-buildkit/buildkit.spec ~/rpmbuild/SPECS/
+
+      - name: Update package version
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
+        run: |
+          # Extract version using shared script
+          VERSION=$(bash .github/scripts/extract-buildkit-version.sh "$RELEASE_TAG")
+          echo "Package version: $VERSION"
+
+          # Update spec file
+          sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/buildkit.spec
+
+      - name: Build RPM package
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          set -euo pipefail
+          cd ~/rpmbuild/SPECS
+          rpmbuild -bb buildkit.spec
+
+          # Verify package was created
+          if ! ls ~/rpmbuild/RPMS/riscv64/buildkit-*.rpm 1>/dev/null 2>&1; then
+            echo "Error: No RPM packages were created"
+            exit 1
+          fi
+
+          echo ""
+          echo "RPM packages built:"
+          ls -lh ~/rpmbuild/RPMS/riscv64/buildkit-*.rpm
+
+      - name: Run rpmlint checks
+        if: steps.release.outputs.has-new-release == 'true'
+        run: |
+          rpmlint ~/rpmbuild/RPMS/riscv64/buildkit-*.rpm || true
+
+      - name: Upload RPM to release
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+
+          echo "Uploading RPM packages to release $RELEASE_TAG"
+          echo ""
+
+          # Upload all RPM files with proper error handling
+          UPLOAD_FAILED=0
+          for rpm in ~/rpmbuild/RPMS/riscv64/buildkit-*.rpm; do
+            echo "Uploading $(basename "$rpm")..."
+            UPLOAD_SUCCESS=0
+            for i in {1..3}; do
+              if gh release upload "$RELEASE_TAG" "$rpm" --clobber --repo gounthar/docker-for-riscv64; then
+                echo "Successfully uploaded $(basename "$rpm")"
+                UPLOAD_SUCCESS=1
+                break
+              fi
+              echo "Retry $i/3..."
+              sleep 3
+            done
+            if [ "$UPLOAD_SUCCESS" -eq 0 ]; then
+              echo "Error: Failed to upload $(basename "$rpm") after 3 attempts"
+              UPLOAD_FAILED=1
+            fi
+          done
+
+          if [ "$UPLOAD_FAILED" -eq 1 ]; then
+            echo "Error: One or more uploads failed"
+            exit 1
+          fi
+
+          echo ""
+          echo "BuildKit RPM packages uploaded successfully!"
+          echo ""
+          echo "Packages built:"
+          ls -lh ~/rpmbuild/RPMS/riscv64/buildkit-*.rpm
+          echo ""
+          echo "Install with:"
+          echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/buildkit-*.rpm"
+          echo "  sudo dnf install -y ./buildkit-*.rpm"
+          echo "  buildkitd --version"
+          echo "  buildctl --version"
