@@ -31,9 +31,10 @@ RUN apt-get update && \
 # Create buildkit directories
 RUN mkdir -p /var/lib/buildkit /etc/buildkit
 
-# Copy buildkit binaries (built by workflow - buildx outputs to bin/build/)
+# Copy buildkit binaries (built by workflow - buildx outputs to buildkit/bin/build/)
+# Build context is repo root to avoid buildkit's .dockerignore excluding bin/
 # Using --chmod to set executable permissions in a single layer
-COPY --chmod=0755 bin/build/buildkitd bin/build/buildctl /usr/bin/
+COPY --chmod=0755 buildkit/bin/build/buildkitd buildkit/bin/build/buildctl /usr/bin/
 
 # Verify binaries work (will fail build if binaries are broken)
 RUN buildkitd --version && buildctl --version

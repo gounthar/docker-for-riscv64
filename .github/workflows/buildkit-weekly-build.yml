@@ -109,8 +109,8 @@ jobs:
           DATE=$(date +%Y%m%d)
           BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
 
-          cd buildkit
-          BUILDKIT_VERSION=$(git describe --tags --always)
+          # Get version from buildkit subdir
+          BUILDKIT_VERSION=$(cd buildkit && git describe --tags --always)
 
           # Determine image tag based on ref type
           if [[ "$BUILDKIT_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
@@ -123,17 +123,18 @@ jobs:
 
           echo "Building container image with tag: $IMAGE_TAG"
 
-          # Build using the Dockerfile.riscv64 we created
+          # Build from repo root to avoid buildkit's .dockerignore excluding bin/
+          # The Dockerfile expects binaries at buildkit/bin/build/
           docker build \
             --build-arg BUILDKIT_VERSION="$BUILDKIT_VERSION" \
-            -f ../Dockerfile.buildkit-riscv64 \
+            -f Dockerfile.buildkit-riscv64 \
             -t buildkit:$IMAGE_TAG \
             -t buildkit:latest \
             .
 
           # Save image metadata
-          echo "$IMAGE_TAG" > ../release-buildkit-$DATE/IMAGE_TAG.txt
-          docker inspect buildkit:$IMAGE_TAG > ../release-buildkit-$DATE/IMAGE_INSPECT.json
+          echo "$IMAGE_TAG" > release-buildkit-$DATE/IMAGE_TAG.txt
+          docker inspect buildkit:$IMAGE_TAG > release-buildkit-$DATE/IMAGE_INSPECT.json
 
       - name: Test BuildKit container
         run: |
