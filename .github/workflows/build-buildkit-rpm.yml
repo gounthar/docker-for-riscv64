@@ -39,10 +39,12 @@ jobs:
             exit 0
           fi
 
-          # Find the latest BuildKit release (matches both dev and official releases)
+          # Find the latest BuildKit OFFICIAL release (skip dev/weekly builds)
           # gh release list outputs: Title<TAB>Status<TAB>Tag<TAB>Date
+          # Match official pattern: buildkit-vX.Y.Z or buildkit-vX.Y.Z-riscv64
+          # Skip dev pattern: buildkit-vYYYYMMDD-dev
           RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
-                        awk -F'\t' '$3 ~ /^buildkit-v/ {print $3; exit}')
+                        awk -F'\t' '$3 ~ /^buildkit-v[0-9]+\.[0-9]+\.[0-9]+/ {print $3; exit}')
 
           if [ -z "$RELEASE_TAG" ]; then
             echo "No BuildKit release found - skipping package build"
