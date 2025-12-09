@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'BuildKit release tag to build package from'
-        required: true
-        default: 'buildkit-v20251209-dev'
+        description: 'BuildKit release tag (leave empty to auto-detect latest official)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -31,12 +31,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Skip check for manual dispatch
+          # Handle manual dispatch with optional release tag
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual dispatch - proceeding with build"
-            echo "has-new-release=true" >> $GITHUB_OUTPUT
-            echo "release-tag=${{ github.event.inputs.release_tag }}" >> $GITHUB_OUTPUT
-            exit 0
+            INPUT_TAG="${{ github.event.inputs.release_tag }}"
+            if [ -n "$INPUT_TAG" ]; then
+              echo "Manual dispatch with specified release: $INPUT_TAG"
+              echo "has-new-release=true" >> $GITHUB_OUTPUT
+              echo "release-tag=$INPUT_TAG" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            echo "Manual dispatch - auto-detecting latest official release..."
+            # Fall through to auto-detection below
           fi
 
           # Find the latest BuildKit OFFICIAL release (skip dev/weekly builds)
