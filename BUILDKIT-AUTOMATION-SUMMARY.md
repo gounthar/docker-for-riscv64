@@ -42,10 +42,10 @@ docker pull ghcr.io/<github-username>/buildkit-riscv64:latest
 
 ### Quick Start
 
-#### 1. Add Submodule
+#### 1. Initialize Submodule (if not already done)
 ```bash
-git submodule add https://github.com/moby/buildkit.git buildkit
-git commit -m "chore: add buildkit submodule"
+# Submodule is already registered in .gitmodules
+git submodule update --init --depth 1 buildkit
 ```
 
 #### 2. Trigger Build
@@ -223,10 +223,10 @@ All automation is ready when:
 
 **Status:** 5/8 criteria met, ready for testing phase
 
-**Next Action:** Add buildkit submodule and trigger first build
+**Next Action:** Trigger first build (submodule already registered)
 
 ```bash
 cd /path/to/docker-for-riscv64
-git submodule add https://github.com/moby/buildkit.git buildkit
+# Submodule is already in .gitmodules - workflow initializes it automatically
 gh workflow run buildkit-weekly-build.yml -f buildkit_ref=master
 ```

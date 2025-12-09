@@ -22,16 +22,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # Don't checkout all submodules - we only need buildkit
+          submodules: false
+          fetch-depth: 0
 
-      - name: Clone buildkit repository
+      - name: Checkout buildkit submodule only
         run: |
           set -euo pipefail
           BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
 
-          # Clone if not exists
-          if [ ! -d "buildkit" ]; then
-            git clone https://github.com/moby/buildkit.git
-          fi
+          # Only init and update the buildkit submodule (skip moby, cli, compose, cagent)
+          git submodule update --init --depth 1 buildkit
 
           cd buildkit
           git fetch origin --tags

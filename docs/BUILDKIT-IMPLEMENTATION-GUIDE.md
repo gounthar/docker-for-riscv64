@@ -200,7 +200,7 @@ Created comprehensive documentation:
 
 ### Next Steps (Testing Phase)
 
-- [ ] Add BuildKit submodule to repository
+- [x] BuildKit submodule registered in `.gitmodules`
 - [ ] Trigger first manual build
 - [ ] Verify binaries compile successfully
 - [ ] Verify container image builds
@@ -237,8 +237,7 @@ Created comprehensive documentation:
 # Clone repository
 cd /path/to/docker-for-riscv64
 
-# Add buildkit as submodule (if not exists)
-git submodule add https://github.com/moby/buildkit.git buildkit
+# Initialize buildkit submodule (already registered in .gitmodules)
 git submodule update --init --depth 1 buildkit
 
 # Trigger workflow manually
@@ -386,18 +385,22 @@ gh issue list --label buildkit-release
 
 ## Deployment Steps
 
-### Step 1: Add BuildKit Submodule
+### Step 1: Initialize BuildKit Submodule
+
+The buildkit submodule is already registered in `.gitmodules`. Initialize it locally:
 
 ```bash
 cd /path/to/docker-for-riscv64
 
-# Add submodule
-git submodule add https://github.com/moby/buildkit.git buildkit
+# Initialize and update only the buildkit submodule
+git submodule update --init --depth 1 buildkit
 
-# Commit
-git add .gitmodules buildkit
-git commit -m "chore: add buildkit submodule for RISC-V64 support"
+# Verify submodule is initialized
+git submodule status buildkit
 ```
+
+> **Note:** The workflow automatically initializes the submodule during CI builds.
+> Local initialization is only needed for development/testing.
 
 ### Step 2: Trigger First Build
 
