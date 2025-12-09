@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'BuildKit release tag'
-        required: true
-        default: 'buildkit-v20251209-dev'
+        description: 'BuildKit release tag (leave empty to auto-detect latest official)'
+        required: false
+        default: ''
 
 permissions:
   contents: write
@@ -90,11 +90,14 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Get release tag from workflow_run or manual input
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          # Get release tag from manual input or auto-detect
+          INPUT_TAG="${{ github.event.inputs.release_tag }}"
+          if [ -n "$INPUT_TAG" ]; then
+            RELEASE_TAG="$INPUT_TAG"
+            echo "Using manually specified release: $RELEASE_TAG"
           else
             # Find the latest OFFICIAL BuildKit release (skip dev builds)
+            echo "Auto-detecting latest official BuildKit release..."
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
                           awk -F'\t' '$3 ~ /^buildkit-v[0-9]+\.[0-9]+\.[0-9]+/ {print $3; exit}')
           fi
