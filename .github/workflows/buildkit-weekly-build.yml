@@ -27,13 +27,16 @@ jobs:
           submodules: false
           fetch-depth: 0
 
-      - name: Checkout buildkit submodule only
+      - name: Clone BuildKit repository
         run: |
           set -euo pipefail
           BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
 
-          # Only init and update the buildkit submodule (skip moby, cli, compose, cagent)
-          git submodule update --init --depth 1 buildkit
+          # Clone BuildKit directly instead of using submodule
+          # This ensures proper .git directory for buildx bake (BUILDKIT_CONTEXT_KEEP_GIT_DIR=1)
+          # Submodules use gitlinks (.git file) which breaks git operations in Docker context
+          rm -rf buildkit
+          git clone https://github.com/moby/buildkit.git
 
           cd buildkit
           git fetch origin --tags
