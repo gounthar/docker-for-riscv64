@@ -16,3 +16,7 @@ override_dh_auto_test:
 override_dh_shlibdeps:
 	# Skip shared library dependencies check - statically linked
 	@echo "Skipping shlibdeps - statically linked binaries"
+
+override_dh_dwz:
+	# Skip DWARF compression - Go binaries don't have compatible debug info
+	@echo "Skipping dwz - not applicable to Go binaries"
