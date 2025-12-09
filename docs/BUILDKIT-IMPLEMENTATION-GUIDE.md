@@ -43,7 +43,7 @@ gh workflow run buildkit-weekly-build.yml -f buildkit_ref=abc123
 **Outputs:**
 - Release: `buildkit-v{VERSION}-riscv64`
 - Binaries: `buildkitd`, `buildctl`
-- Container: `ghcr.io/gounthar/buildkit-riscv64:{TAG}`
+- Container: `ghcr.io/<github-username>/buildkit-riscv64:{TAG}`
 - Metadata: `VERSION.txt`, `IMAGE_TAG.txt`, `REGISTRY.txt`
 
 #### **track-buildkit-releases.yml**
@@ -147,7 +147,7 @@ Created comprehensive documentation:
 
 ### GitHub Container Registry
 
-**Decision:** Use `ghcr.io/gounthar/buildkit-riscv64` for container images
+**Decision:** Use `ghcr.io/<github-username>/buildkit-riscv64` for container images
 
 **Rationale:**
 - Automatic authentication via `GITHUB_TOKEN` (no secrets management)
@@ -221,13 +221,21 @@ Created comprehensive documentation:
 
 ## Testing Procedures
 
+> **Note: CI vs Local Testing**
+>
+> - **Automated in CI**: Binary compilation, container image build, and GHCR push are automated via `buildkit-weekly-build.yml`
+> - **Manual/Local**: The testing phases below are primarily for **local verification** after CI completes, or for debugging issues
+> - **When to run locally**: After triggering a workflow, download artifacts and run these tests on your RISC-V64 hardware
+
 ### Phase 1: Binary Build Test
 
 **Objective:** Verify BuildKit binaries compile natively on RISC-V64
 
+**CI Coverage:** The weekly build workflow automatically compiles binaries and creates a GitHub release.
+
 ```bash
 # Clone repository
-cd /path/to/docker-dev
+cd /path/to/docker-for-riscv64
 
 # Add buildkit as submodule (if not exists)
 git submodule add https://github.com/moby/buildkit.git buildkit
@@ -264,22 +272,22 @@ chmod +x buildkitd buildctl
 
 ```bash
 # Pull image from GHCR (after making package public)
-docker pull ghcr.io/gounthar/buildkit-riscv64:latest
+docker pull ghcr.io/<github-username>/buildkit-riscv64:latest
 
 # Verify tini symlink exists
-docker run --rm ghcr.io/gounthar/buildkit-riscv64:latest ls -la /sbin/docker-init
+docker run --rm ghcr.io/<github-username>/buildkit-riscv64:latest ls -la /sbin/docker-init
 
 # Test tini via original path
-docker run --rm ghcr.io/gounthar/buildkit-riscv64:latest /usr/bin/tini --version
+docker run --rm ghcr.io/<github-username>/buildkit-riscv64:latest /usr/bin/tini --version
 
 # Test tini via symlink
-docker run --rm ghcr.io/gounthar/buildkit-riscv64:latest /sbin/docker-init --version
+docker run --rm ghcr.io/<github-username>/buildkit-riscv64:latest /sbin/docker-init --version
 
 # Run buildkitd
 docker run -d --privileged \
   --name buildkitd-test \
   -v /var/lib/buildkit:/var/lib/buildkit \
-  ghcr.io/gounthar/buildkit-riscv64:latest
+  ghcr.io/<github-username>/buildkit-riscv64:latest
 
 # Check logs
 docker logs buildkitd-test
@@ -308,7 +316,7 @@ docker buildx rm riscv-builder || true
 docker buildx create \
   --name riscv-builder \
   --driver docker-container \
-  --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:latest \
+  --driver-opt image=ghcr.io/<github-username>/buildkit-riscv64:latest \
   --use
 
 # Bootstrap builder
@@ -405,13 +413,13 @@ gh workflow run buildkit-weekly-build.yml -f buildkit_ref=master
 
 After first successful build:
 
-1. Navigate to: https://github.com/users/gounthar/packages/container/buildkit-riscv64/settings
+1. Navigate to: https://github.com/users/<github-username>/packages/container/buildkit-riscv64/settings
 2. Change visibility from "Private" to "Public"
 3. Confirm the change
 
 This allows unauthenticated pulls:
 ```bash
-docker pull ghcr.io/gounthar/buildkit-riscv64:latest
+docker pull ghcr.io/<github-username>/buildkit-riscv64:latest
 ```
 
 ### Step 4: Update Documentation
@@ -425,7 +433,7 @@ Multi-platform builds are supported via BuildKit for RISC-V64.
 
 **Install BuildKit:**
 ```bash
-docker pull ghcr.io/gounthar/buildkit-riscv64:latest
+docker pull ghcr.io/<github-username>/buildkit-riscv64:latest
 ```
 
 **Create Buildx Builder:**
@@ -433,7 +441,7 @@ docker pull ghcr.io/gounthar/buildkit-riscv64:latest
 docker buildx create \
   --name riscv-builder \
   --driver docker-container \
-  --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:latest \
+  --driver-opt image=ghcr.io/<github-username>/buildkit-riscv64:latest \
   --use
 ```
 

@@ -4,8 +4,8 @@
 **Status:** Recommended Approach Defined
 **Related Issues:** #207, #208, #210
 
-> **Note:** This document contains project-specific URLs and usernames for the docker-for-riscv64 repository.
-> When forking or adapting, replace `gounthar` with your GitHub username.
+> **Note:** This document uses `<github-username>` as a placeholder.
+> Replace with your actual GitHub username when using these examples.
 
 ## Executive Summary
 
@@ -36,7 +36,7 @@ When choosing a container registry for BuildKit RISC-V64 images, we evaluated:
 
 **Public Access:**
 - Images can be marked as public (no authentication needed for pull)
-- Users can pull with: `docker pull ghcr.io/gounthar/buildkit-riscv64:latest`
+- Users can pull with: `docker pull ghcr.io/<github-username>/buildkit-riscv64:latest`
 - No login required for consumers
 
 **Free and Generous:**
@@ -70,21 +70,21 @@ When choosing a container registry for BuildKit RISC-V64 images, we evaluated:
 echo "$GITHUB_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
 # Tag images
-docker tag buildkit:latest ghcr.io/gounthar/buildkit-riscv64:latest
-docker tag buildkit:v0.14.0 ghcr.io/gounthar/buildkit-riscv64:v0.14.0-riscv64
+docker tag buildkit:latest ghcr.io/<github-username>/buildkit-riscv64:latest
+docker tag buildkit:v0.14.0 ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-riscv64
 
 # Push images
-docker push ghcr.io/gounthar/buildkit-riscv64:latest
-docker push ghcr.io/gounthar/buildkit-riscv64:v0.14.0-riscv64
+docker push ghcr.io/<github-username>/buildkit-riscv64:latest
+docker push ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-riscv64
 
 # User pull (no authentication needed if public)
-docker pull ghcr.io/gounthar/buildkit-riscv64:latest
+docker pull ghcr.io/<github-username>/buildkit-riscv64:latest
 ```
 
 ### Configuration Required
 
 1. **Make package public:**
-   - After first push, go to: https://github.com/users/gounthar/packages/container/buildkit-riscv64/settings
+   - After first push, go to: https://github.com/users/<github-username>/packages/container/buildkit-riscv64/settings
    - Change visibility to "Public"
    - Allows unauthenticated pulls
 
@@ -119,7 +119,7 @@ docker pull ghcr.io/gounthar/buildkit-riscv64:latest
 
 **Naming Constraints:**
 - Requires organization or personal namespace
-- `docker pull gounthar/buildkit-riscv64` (personal namespace)
+- `docker pull <github-username>/buildkit-riscv64` (personal namespace)
 - OR `docker pull riscv64/buildkit` (requires organization)
 
 **Storage Limits:**
@@ -130,18 +130,18 @@ docker pull ghcr.io/gounthar/buildkit-riscv64:latest
 
 ```bash
 # CI/CD Authentication (requires secret)
-echo "$DOCKERHUB_TOKEN" | docker login -u gounthar --password-stdin
+echo "$DOCKERHUB_TOKEN" | docker login -u <github-username> --password-stdin
 
 # Tag images
-docker tag buildkit:latest gounthar/buildkit-riscv64:latest
-docker tag buildkit:v0.14.0 gounthar/buildkit-riscv64:v0.14.0
+docker tag buildkit:latest <github-username>/buildkit-riscv64:latest
+docker tag buildkit:v0.14.0 <github-username>/buildkit-riscv64:v0.14.0
 
 # Push images
-docker push gounthar/buildkit-riscv64:latest
-docker push gounthar/buildkit-riscv64:v0.14.0
+docker push <github-username>/buildkit-riscv64:latest
+docker push <github-username>/buildkit-riscv64:v0.14.0
 
 # User pull (subject to rate limits)
-docker pull gounthar/buildkit-riscv64:latest
+docker pull <github-username>/buildkit-riscv64:latest
 ```
 
 ## Option 3: Self-Hosted Registry
@@ -229,10 +229,10 @@ docker pull gounthar/buildkit-riscv64:latest
 
 ### Image Naming Convention
 
-- **Repository:** `ghcr.io/gounthar/buildkit-riscv64`
-- **Latest tag:** `ghcr.io/gounthar/buildkit-riscv64:latest` (tracks master branch)
-- **Version tags:** `ghcr.io/gounthar/buildkit-riscv64:v0.14.0-riscv64` (official releases)
-- **Development tags:** `ghcr.io/gounthar/buildkit-riscv64:master-20251209` (dev builds)
+- **Repository:** `ghcr.io/<github-username>/buildkit-riscv64`
+- **Latest tag:** `ghcr.io/<github-username>/buildkit-riscv64:latest` (tracks master branch)
+- **Version tags:** `ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-riscv64` (official releases)
+- **Development tags:** `ghcr.io/<github-username>/buildkit-riscv64:master-20251209` (dev builds)
 
 ### User Documentation
 
@@ -240,16 +240,16 @@ Users can pull the image with:
 
 ```bash
 # Pull latest
-docker pull ghcr.io/gounthar/buildkit-riscv64:latest
+docker pull ghcr.io/<github-username>/buildkit-riscv64:latest
 
 # Pull specific version
-docker pull ghcr.io/gounthar/buildkit-riscv64:v0.14.0-riscv64
+docker pull ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-riscv64
 
 # Use with Docker Buildx
 docker buildx create \
   --name riscv-builder \
   --driver docker-container \
-  --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:latest \
+  --driver-opt image=ghcr.io/<github-username>/buildkit-riscv64:latest \
   --use
 ```
 
@@ -259,13 +259,13 @@ If needed in the future, we can mirror images to Docker Hub:
 
 ```bash
 # Pull from GHCR
-docker pull ghcr.io/gounthar/buildkit-riscv64:v0.14.0-riscv64
+docker pull ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-riscv64
 
 # Tag for Docker Hub
-docker tag ghcr.io/gounthar/buildkit-riscv64:v0.14.0-riscv64 gounthar/buildkit-riscv64:v0.14.0
+docker tag ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-riscv64 <github-username>/buildkit-riscv64:v0.14.0
 
 # Push to Docker Hub
-docker push gounthar/buildkit-riscv64:v0.14.0
+docker push <github-username>/buildkit-riscv64:v0.14.0
 ```
 
 This allows us to start with GHCR and expand to Docker Hub based on user demand.
@@ -310,18 +310,18 @@ When/if we build for multiple architectures:
 
 ```bash
 # Create manifest list
-docker manifest create ghcr.io/gounthar/buildkit-riscv64:v0.14.0 \
-  ghcr.io/gounthar/buildkit-riscv64:v0.14.0-riscv64 \
-  ghcr.io/gounthar/buildkit-riscv64:v0.14.0-amd64 \
-  ghcr.io/gounthar/buildkit-riscv64:v0.14.0-arm64
+docker manifest create ghcr.io/<github-username>/buildkit-riscv64:v0.14.0 \
+  ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-riscv64 \
+  ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-amd64 \
+  ghcr.io/<github-username>/buildkit-riscv64:v0.14.0-arm64
 
 # Push manifest
-docker manifest push ghcr.io/gounthar/buildkit-riscv64:v0.14.0
+docker manifest push ghcr.io/<github-username>/buildkit-riscv64:v0.14.0
 ```
 
 Users can then pull the appropriate architecture automatically:
 ```bash
-docker pull ghcr.io/gounthar/buildkit-riscv64:v0.14.0  # Pulls correct arch
+docker pull ghcr.io/<github-username>/buildkit-riscv64:v0.14.0  # Pulls correct arch
 ```
 
 ### Alternative: Docker Hub Mirror

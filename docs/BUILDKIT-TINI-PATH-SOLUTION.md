@@ -224,7 +224,7 @@ With the symlink in place, Docker Buildx can use the BuildKit image:
 docker buildx create \
   --name riscv-builder \
   --driver docker-container \
-  --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:latest \
+  --driver-opt image=ghcr.io/<github-username>/buildkit-riscv64:latest \
   --use
 
 # Bootstrap builder (starts BuildKit container)

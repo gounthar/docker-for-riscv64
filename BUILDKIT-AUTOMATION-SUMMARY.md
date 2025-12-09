@@ -28,7 +28,7 @@
 
 ### Container Image Details
 
-**Registry:** `ghcr.io/gounthar/buildkit-riscv64`
+**Registry:** `ghcr.io/<github-username>/buildkit-riscv64`
 
 **Tags:**
 - `latest` - Tracks master branch
@@ -37,7 +37,7 @@
 
 **Pull Command:**
 ```bash
-docker pull ghcr.io/gounthar/buildkit-riscv64:latest
+docker pull ghcr.io/<github-username>/buildkit-riscv64:latest
 ```
 
 ### Quick Start
@@ -58,19 +58,19 @@ gh workflow run buildkit-weekly-build.yml
 ```
 
 #### 3. Make Package Public
-After first build: https://github.com/users/gounthar/packages/container/buildkit-riscv64/settings
+After first build: https://github.com/users/<github-username>/packages/container/buildkit-riscv64/settings
 → Change visibility to "Public"
 
 #### 4. Test Integration
 ```bash
 # Pull image
-docker pull ghcr.io/gounthar/buildkit-riscv64:latest
+docker pull ghcr.io/<github-username>/buildkit-riscv64:latest
 
 # Create buildx builder
 docker buildx create \
   --name riscv-builder \
   --driver docker-container \
-  --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:latest \
+  --driver-opt image=ghcr.io/<github-username>/buildkit-riscv64:latest \
   --use
 
 # Bootstrap
@@ -94,7 +94,7 @@ docker buildx build --platform linux/riscv64,linux/amd64 -t test .
 - Assets: `buildkitd`, `buildctl`, `VERSION.txt`, metadata
 
 **Container Images:**
-- Registry: `ghcr.io/gounthar/buildkit-riscv64:{TAG}`
+- Registry: `ghcr.io/<github-username>/buildkit-riscv64:{TAG}`
 - Public access (after first build)
 
 ### Tini Integration
@@ -176,7 +176,7 @@ docker run --rm IMAGE ls -la /sbin/docker-init
 
 **Buildx fails:** Check symlink in container
 ```bash
-docker run --rm ghcr.io/gounthar/buildkit-riscv64:latest /sbin/docker-init --version
+docker run --rm ghcr.io/<github-username>/buildkit-riscv64:latest /sbin/docker-init --version
 ```
 
 ### Documentation Links
