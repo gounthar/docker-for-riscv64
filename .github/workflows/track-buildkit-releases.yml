@@ -1,0 +1,101 @@
+name: Track BuildKit Releases
+
+on:
+  schedule:
+    # Check for new releases daily at 09:00 UTC (after cagent tracking)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check for new BuildKit release
+        id: check
+        run: |
+          # Get latest BuildKit release
+          LATEST=$(gh api repos/moby/buildkit/releases/latest --jq '.tag_name')
+          echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
+
+          # Check if we've already built this (using buildkit-vX.Y.Z-riscv64 format)
+          # BuildKit tags are like v0.14.0, we create buildkit-v0.14.0-riscv64
+          OUR_TAG="buildkit-${LATEST}-riscv64"
+
+          if gh release view "${OUR_TAG}" >/dev/null 2>&1; then
+            echo "already_built=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_built=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Latest BuildKit release: $LATEST"
+          echo "Checking for: ${OUR_TAG}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger automatic build for new release
+        if: steps.check.outputs.already_built == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+
+          echo "New BuildKit release detected: $LATEST"
+          echo "Triggering automatic build..."
+
+          # Trigger the build workflow with the version tag
+          gh workflow run buildkit-weekly-build.yml -f buildkit_ref=$LATEST
+
+          # Create tracking issue
+          cat > issue-body.md << EOF
+          New BuildKit release detected: **$LATEST**
+
+          **Status:** Build automatically triggered
+
+          The buildkit-weekly-build workflow has been started automatically.
+          Expected completion time: ~10-15 minutes
+
+          **Monitor build progress:**
+          \`\`\`bash
+          gh run list --workflow=buildkit-weekly-build.yml --limit 1
+          gh run watch
+          \`\`\`
+
+          **Expected release:** buildkit-${LATEST}-riscv64
+
+          **Upstream release notes:** https://github.com/moby/buildkit/releases/tag/$LATEST
+
+          **Components to be built:**
+          - buildkitd binary
+          - buildctl binary
+          - BuildKit container image (ghcr.io/gounthar/buildkit-riscv64:${LATEST}-riscv64)
+
+          **Integration:**
+          This BuildKit image will be compatible with Docker Buildx for multi-platform builds.
+
+          ## Verification Checklist
+
+          After the build completes:
+          - [ ] Release created: buildkit-${LATEST}-riscv64
+          - [ ] Binaries uploaded (buildkitd, buildctl)
+          - [ ] Container image pushed to GHCR
+          - [ ] Test with Docker Buildx: \`docker buildx create --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:${LATEST}-riscv64\`
+          - [ ] Multi-platform build test passes
+
+          This issue will track the build progress. Close it once the release is published and verified.
+          EOF
+
+          gh issue create \
+            --title "Building BuildKit ${LATEST} for RISC-V64" \
+            --body-file issue-body.md \
+            --label "build-in-progress,buildkit-release"
+
+          echo "Build triggered successfully!"

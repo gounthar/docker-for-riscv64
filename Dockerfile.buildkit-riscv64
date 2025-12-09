@@ -1,0 +1,75 @@
+# syntax=docker/dockerfile:1
+# BuildKit for RISC-V64
+# Based on: https://github.com/moby/buildkit/blob/master/Dockerfile
+# Adapted for RISC-V64 with native binaries and tini integration
+
+FROM debian:trixie-slim
+
+# BuildKit version (passed as build arg)
+ARG BUILDKIT_VERSION=unknown
+
+# Install runtime dependencies
+# fuse-overlayfs: Rootless overlay filesystem support
+# iptables/ip6tables: Network management for buildkit networking
+# git: Git operations in builds
+# openssh-client: SSH operations for git+ssh://
+# pigz: Parallel gzip for faster compression
+# xz-utils: XZ compression support
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        ca-certificates \
+        fuse-overlayfs \
+        iptables \
+        ip6tables \
+        git \
+        openssh-client \
+        pigz \
+        xz-utils \
+        tini && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create buildkit directories
+RUN mkdir -p /var/lib/buildkit && \
+    mkdir -p /etc/buildkit
+
+# Copy buildkit binaries (built by workflow)
+COPY bin/buildkitd /usr/bin/buildkitd
+COPY bin/buildctl /usr/bin/buildctl
+
+# Make binaries executable
+RUN chmod +x /usr/bin/buildkitd /usr/bin/buildctl
+
+# Verify binaries work
+RUN buildkitd --version || echo "buildkitd version: $BUILDKIT_VERSION" && \
+    buildctl --version || echo "buildctl version: $BUILDKIT_VERSION"
+
+# Create symlinks for Docker compatibility
+# Docker expects tini at /sbin/docker-init
+# We have it from debian package at /usr/bin/tini
+RUN ln -sf /usr/bin/tini /sbin/docker-init
+
+# Volumes for buildkit data
+VOLUME /var/lib/buildkit
+VOLUME /tmp
+
+# Expose buildkit API port
+EXPOSE 1234
+
+# Use tini as init process
+# Tini properly handles signals and reaps zombie processes
+# This is critical for buildkit's subprocess management
+ENTRYPOINT ["/usr/bin/tini", "--"]
+
+# Start buildkitd with default configuration
+# Users can override with custom args in docker run
+CMD ["buildkitd", "--addr", "tcp://0.0.0.0:1234"]
+
+# Metadata
+LABEL org.opencontainers.image.title="BuildKit for RISC-V64"
+LABEL org.opencontainers.image.description="BuildKit toolkit for RISC-V64 architecture"
+LABEL org.opencontainers.image.version="${BUILDKIT_VERSION}"
+LABEL org.opencontainers.image.vendor="docker-for-riscv64"
+LABEL org.opencontainers.image.source="https://github.com/gounthar/docker-for-riscv64"
+LABEL org.opencontainers.image.url="https://github.com/moby/buildkit"
+LABEL org.opencontainers.image.licenses="Apache-2.0"
+LABEL maintainer="RISC-V64 Docker Project"
