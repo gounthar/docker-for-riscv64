@@ -11,12 +11,13 @@ This project provides pre-built Docker Engine, CLI, and Compose binaries for RIS
 - Docker Engine (dockerd, containerd, runc)
 - Docker CLI (docker command-line interface)
 - Docker Compose v2 plugin
+- Docker BuildKit - multi-platform build support
 - Tini - tiny init for containers
 - Debian APT repository for easy installation
 - RPM repository for Fedora/RHEL/Rocky/AlmaLinux
 - Automated `.deb` and `.rpm` package creation
 - Automated weekly builds
-- Based on official Moby, CLI, Compose, and Tini releases
+- Based on official Moby, CLI, Compose, BuildKit, and Tini releases
 - Built and tested on Debian Trixie / Armbian Trixie and Fedora RISC-V64
 - Minimal patches for RISC-V compatibility
 
@@ -345,6 +346,75 @@ docker compose logs
 docker compose down
 ```
 
+### BuildKit Installation
+
+BuildKit is available for RISC-V64, enabling multi-platform builds and advanced Docker Buildx features:
+
+#### Option 1: Container Image (Recommended)
+
+```bash
+# Pull BuildKit container image
+docker pull ghcr.io/gounthar/buildkit-riscv64:latest
+
+# Create Docker Buildx builder using BuildKit
+docker buildx create \
+  --name riscv-builder \
+  --driver docker-container \
+  --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:latest \
+  --use
+
+# Bootstrap the builder
+docker buildx inspect --bootstrap
+```
+
+#### Option 2: Manual Binary Installation
+
+```bash
+# Get latest BuildKit release
+BUILDKIT_VERSION="buildkit-v0.14.0-riscv64"
+
+# Download binaries
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${BUILDKIT_VERSION}/buildkitd"
+wget "https://github.com/gounthar/docker-for-riscv64/releases/download/${BUILDKIT_VERSION}/buildctl"
+
+# Install (requires root)
+chmod +x buildkitd buildctl
+sudo mv buildkitd buildctl /usr/local/bin/
+
+# Verify installation
+buildkitd --version
+buildctl --version
+```
+
+### Using BuildKit for Multi-Platform Builds
+
+```bash
+# Build for multiple architectures
+docker buildx build \
+  --platform linux/riscv64,linux/amd64 \
+  -t myimage:latest \
+  .
+
+# Build and push to registry
+docker buildx build \
+  --platform linux/riscv64,linux/amd64,linux/arm64 \
+  -t myregistry/myimage:latest \
+  --push \
+  .
+```
+
+**Container Registry:**
+- **Image**: ghcr.io/gounthar/buildkit-riscv64
+- **Tags**: `latest`, `v{VERSION}-riscv64`, `master-{DATE}`
+
+**Features:**
+- Multi-platform image building
+- Concurrent dependency resolution
+- Efficient caching with content-addressable storage
+- Build cache import/export
+- Rootless execution
+- Full Docker Buildx integration
+
 ## Advanced Version Detection
 
 For automation or to always use the latest versions, you can dynamically detect the latest release tags using the GitHub CLI or API:
@@ -505,8 +575,9 @@ docker --version
 - **Docker Engine releases**: `vX.Y.Z-riscv64` (e.g., `v27.5.1-riscv64`)
 - **Docker CLI releases**: `cli-vX.Y.Z-riscv64` (e.g., `cli-v28.5.1-riscv64`)
 - **Docker Compose releases**: `compose-vX.Y.Z-riscv64` (e.g., `compose-v2.40.1-riscv64`)
+- **BuildKit releases**: `buildkit-vX.Y.Z-riscv64` (e.g., `buildkit-v0.14.0-riscv64`)
 - **Tini releases**: `tini-vX.Y.Z-riscv64` (e.g., `tini-v0.19.0-riscv64`)
-- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, `compose-vYYYYMMDD-dev`, or `tini-vYYYYMMDD-dev`
+- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, `compose-vYYYYMMDD-dev`, `buildkit-vYYYYMMDD-dev`, or `tini-vYYYYMMDD-dev`
 
 ### Automated Builds
 
@@ -522,6 +593,12 @@ docker --version
 
 **Docker Compose:**
 - Weekly builds: Every Sunday at 03:00 UTC (latest Compose main)
+- Manual trigger support for specific versions
+
+**BuildKit:**
+- Weekly builds: Every Sunday at 06:30 UTC (latest BuildKit master)
+- Release tracking: Daily check for new official BuildKit releases
+- Container images pushed to GHCR (ghcr.io/gounthar/buildkit-riscv64)
 - Manual trigger support for specific versions
 
 **Tini:**
@@ -549,6 +626,13 @@ docker --version
 - **docker-compose** (~10MB) - Compose v2 binary
 - Installed to: `/usr/libexec/docker/cli-plugins/`
 - Symlink: `/usr/bin/docker-compose` (backward compat)
+
+**BuildKit releases** include:
+- **buildkitd** (~50-60MB) - BuildKit daemon binary
+- **buildctl** (~30-40MB) - BuildKit CLI client
+- **Container image** - ghcr.io/gounthar/buildkit-riscv64 (ready-to-use with Docker Buildx)
+- **VERSION.txt** - BuildKit version information
+- Enables multi-platform builds and advanced Docker Buildx features
 
 **Tini releases** include:
 - **tini-*.rpm** (~50KB) - RPM package for main binary
@@ -601,6 +685,7 @@ See build logs and details in the repository's GitHub Actions workflows.
 - **[INSTALL.md](INSTALL.md)** - Detailed installation guide
 - **[CLI-TESTING.md](CLI-TESTING.md)** - Docker CLI testing and validation guide
 - **[COMPOSE-TESTING.md](COMPOSE-TESTING.md)** - Docker Compose testing and validation guide
+- **[BUILDKIT-TESTING.md](BUILDKIT-TESTING.md)** - BuildKit testing and multi-platform build guide
 - **[RUNNER-SETUP.md](RUNNER-SETUP.md)** - CI/CD runner setup for automated builds
 - **[GitHub Actions Workflows](.github/workflows/)** - Automated build configurations
 
