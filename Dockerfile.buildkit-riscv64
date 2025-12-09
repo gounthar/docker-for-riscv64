@@ -31,11 +31,9 @@ RUN apt-get update && \
 # Create buildkit directories
 RUN mkdir -p /var/lib/buildkit /etc/buildkit
 
-# Copy buildkit binaries (built by workflow)
-COPY bin/buildkitd bin/buildctl /usr/bin/
-
-# Make binaries executable
-RUN chmod +x /usr/bin/buildkitd /usr/bin/buildctl
+# Copy buildkit binaries (built by workflow - buildx outputs to bin/build/)
+# Using --chmod to set executable permissions in a single layer
+COPY --chmod=0755 bin/build/buildkitd bin/build/buildctl /usr/bin/
 
 # Verify binaries work (will fail build if binaries are broken)
 RUN buildkitd --version && buildctl --version
