@@ -166,10 +166,13 @@ jobs:
           export DEBFULLNAME="GitHub Actions"
 
           # Copy packaging and update changelog with dch
+          # Use -b flag to allow dev versions (0.0.YYYYMMDD) that may be lower
+          # than official versions (0.17.x) already in changelog
           cp -r debian-buildkit debian
           cd debian
           dch --check-dirname-level 0 \
               --force-distribution \
+              --force-bad-version \
               --newversion "${VERSION}-riscv64-1" \
               --distribution trixie \
               "RISC-V64 prebuilt BuildKit ${VERSION}"
