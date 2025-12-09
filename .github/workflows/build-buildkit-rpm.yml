@@ -186,8 +186,15 @@ jobs:
       - name: Build RPM package
         if: steps.release.outputs.has-new-release == 'true'
         run: |
+          set -euo pipefail
           cd ~/rpmbuild/SPECS
           rpmbuild -bb buildkit.spec
+
+          # Verify package was created
+          if ! ls ~/rpmbuild/RPMS/riscv64/buildkit-*.rpm 1>/dev/null 2>&1; then
+            echo "Error: No RPM packages were created"
+            exit 1
+          fi
 
           echo ""
           echo "RPM packages built:"

@@ -192,8 +192,15 @@ jobs:
       - name: Build package
         if: steps.check_release.outputs.skip != 'true'
         run: |
+          set -euo pipefail
           # Build package (debian/ already created in previous step)
           dpkg-buildpackage -us -uc -b
+
+          # Verify package was created
+          if ! ls ../*.deb 1>/dev/null 2>&1; then
+            echo "Error: No .deb packages were created"
+            exit 1
+          fi
 
           ls -lh ../*.deb
 
