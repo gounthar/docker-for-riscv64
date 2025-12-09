@@ -68,14 +68,20 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y build-essential debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
-          # gh is typically pre-installed on GitHub runners; only install if missing
+          # gh CLI is required - install if missing and verify availability
           if ! command -v gh >/dev/null 2>&1; then
             echo "gh CLI not found, attempting to install..."
             if ! sudo apt-get install -y gh; then
-              echo "Warning: Failed to install gh CLI via apt, but it may be available via other means"
-              echo "Continuing as gh is likely pre-installed on the runner"
+              echo "Error: gh CLI is required but installation failed"
+              exit 1
             fi
           fi
+          # Verify gh is actually available
+          if ! command -v gh >/dev/null 2>&1; then
+            echo "Error: gh CLI is not available after installation attempt"
+            exit 1
+          fi
+          echo "gh CLI version: $(gh --version | head -1)"
 
       - name: Download BuildKit binaries
         if: steps.check_release.outputs.skip != 'true'
@@ -150,28 +156,8 @@ jobs:
           set -euo pipefail
           RELEASE_TAG="${{ env.RELEASE_TAG }}"
 
-          # Extract version from tag
-          # Dev build: buildkit-v20251209-dev -> 0.0.20251209
-          # Official: buildkit-v0.26.2-riscv64 -> 0.26.2
-          if [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]{8})-dev$ ]]; then
-            DATE_VER="${BASH_REMATCH[1]}"
-            VERSION="0.0.${DATE_VER}"
-          elif [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]+\.[0-9]+\.[0-9]+)-riscv64$ ]]; then
-            VERSION="${BASH_REMATCH[1]}"
-          elif [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            # Handle case without -riscv64 suffix
-            VERSION="${BASH_REMATCH[1]}"
-          else
-            echo "Error: Unrecognized release tag format: $RELEASE_TAG"
-            echo "Expected formats: buildkit-vYYYYMMDD-dev, buildkit-vX.Y.Z-riscv64, or buildkit-vX.Y.Z"
-            exit 1
-          fi
-
-          # Validate version is not empty
-          if [ -z "$VERSION" ]; then
-            echo "Error: Failed to extract version from tag: $RELEASE_TAG"
-            exit 1
-          fi
+          # Extract version using shared script
+          VERSION=$(bash .github/scripts/extract-buildkit-version.sh "$RELEASE_TAG")
 
           echo "Package version: $VERSION"
 

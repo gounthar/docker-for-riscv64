@@ -155,29 +155,8 @@ jobs:
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
-          # Extract version from tag
-          # Dev build: buildkit-v20251209-dev -> 0.0.20251209
-          # Official: buildkit-v0.26.2-riscv64 -> 0.26.2
-          if [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]{8})-dev$ ]]; then
-            DATE_VER="${BASH_REMATCH[1]}"
-            VERSION="0.0.${DATE_VER}"
-          elif [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]+\.[0-9]+\.[0-9]+)-riscv64$ ]]; then
-            VERSION="${BASH_REMATCH[1]}"
-          elif [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
-            # Handle case without -riscv64 suffix
-            VERSION="${BASH_REMATCH[1]}"
-          else
-            echo "Error: Unrecognized release tag format: $RELEASE_TAG"
-            echo "Expected formats: buildkit-vYYYYMMDD-dev, buildkit-vX.Y.Z-riscv64, or buildkit-vX.Y.Z"
-            exit 1
-          fi
-
-          # Validate version is not empty
-          if [ -z "$VERSION" ]; then
-            echo "Error: Failed to extract version from tag: $RELEASE_TAG"
-            exit 1
-          fi
-
+          # Extract version using shared script
+          VERSION=$(bash .github/scripts/extract-buildkit-version.sh "$RELEASE_TAG")
           echo "Package version: $VERSION"
 
           # Update spec file
