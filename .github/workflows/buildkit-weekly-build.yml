@@ -55,14 +55,14 @@ jobs:
           VERSION=$(git describe --tags --always --dirty)
           echo "Building BuildKit version: $VERSION"
 
-          # Build with explicit GOOS/GOARCH
-          export GOOS=linux GOARCH=riscv64 CGO_ENABLED=0
+          # Build using docker buildx bake (builds for native platform)
+          # Note: GOOS/GOARCH not needed - buildx detects host platform automatically
           make binaries
 
-          # Verify binaries exist
-          ls -lh bin/
-          file bin/buildkitd
-          file bin/buildctl
+          # Verify binaries exist (buildx outputs to bin/build/)
+          ls -lh bin/build/
+          file bin/build/buildkitd
+          file bin/build/buildctl
 
       - name: Extract binaries
         run: |
@@ -70,9 +70,9 @@ jobs:
           DATE=$(date +%Y%m%d)
           mkdir -p release-buildkit-$DATE
 
-          # Copy binaries
-          cp buildkit/bin/buildkitd release-buildkit-$DATE/
-          cp buildkit/bin/buildctl release-buildkit-$DATE/
+          # Copy binaries (buildx outputs to bin/build/)
+          cp buildkit/bin/build/buildkitd release-buildkit-$DATE/
+          cp buildkit/bin/build/buildctl release-buildkit-$DATE/
           chmod +x release-buildkit-$DATE/*
 
           # Get versions
