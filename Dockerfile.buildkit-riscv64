@@ -29,19 +29,16 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Create buildkit directories
-RUN mkdir -p /var/lib/buildkit && \
-    mkdir -p /etc/buildkit
+RUN mkdir -p /var/lib/buildkit /etc/buildkit
 
 # Copy buildkit binaries (built by workflow)
-COPY bin/buildkitd /usr/bin/buildkitd
-COPY bin/buildctl /usr/bin/buildctl
+COPY bin/buildkitd bin/buildctl /usr/bin/
 
 # Make binaries executable
 RUN chmod +x /usr/bin/buildkitd /usr/bin/buildctl
 
-# Verify binaries work
-RUN buildkitd --version || echo "buildkitd version: $BUILDKIT_VERSION" && \
-    buildctl --version || echo "buildctl version: $BUILDKIT_VERSION"
+# Verify binaries work (will fail build if binaries are broken)
+RUN buildkitd --version && buildctl --version
 
 # Create symlinks for Docker compatibility
 # Docker expects tini at /sbin/docker-init
@@ -72,4 +69,4 @@ LABEL org.opencontainers.image.vendor="docker-for-riscv64"
 LABEL org.opencontainers.image.source="https://github.com/gounthar/docker-for-riscv64"
 LABEL org.opencontainers.image.url="https://github.com/moby/buildkit"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
-LABEL maintainer="RISC-V64 Docker Project"
+LABEL org.opencontainers.image.authors="RISC-V64 Docker Project"

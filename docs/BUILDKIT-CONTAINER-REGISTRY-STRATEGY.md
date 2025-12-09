@@ -4,11 +4,14 @@
 **Status:** Recommended Approach Defined
 **Related Issues:** #207, #208, #210
 
+> **Note:** This document contains project-specific URLs and usernames for the docker-for-riscv64 repository.
+> When forking or adapting, replace `gounthar` with your GitHub username.
+
 ## Executive Summary
 
 **Recommendation:** Use GitHub Container Registry (ghcr.io) as the primary container registry for BuildKit RISC-V64 images.
 
-**Registry URL:** `ghcr.io/gounthar/buildkit-riscv64`
+**Registry URL:** `ghcr.io/<github-username>/buildkit-riscv64`
 
 ## Evaluation Criteria
 

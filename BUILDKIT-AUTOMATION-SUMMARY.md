@@ -226,7 +226,7 @@ All automation is ready when:
 **Next Action:** Add buildkit submodule and trigger first build
 
 ```bash
-cd /mnt/c/support/users/dev/riscv/docker/docker-dev
+cd /path/to/docker-for-riscv64
 git submodule add https://github.com/moby/buildkit.git buildkit
 gh workflow run buildkit-weekly-build.yml -f buildkit_ref=master
 ```

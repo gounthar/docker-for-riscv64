@@ -381,7 +381,7 @@ gh issue list --label buildkit-release
 ### Step 1: Add BuildKit Submodule
 
 ```bash
-cd /mnt/c/support/users/dev/riscv/docker/docker-dev
+cd /path/to/docker-for-riscv64
 
 # Add submodule
 git submodule add https://github.com/moby/buildkit.git buildkit

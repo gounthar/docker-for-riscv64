@@ -17,7 +17,7 @@ This document tracks the GitHub issues created for the BuildKit RISC-V64 impleme
 - RISC-V64 native build script
 - buildkitd and buildctl binaries
 - Weekly build workflow
-- Binary testing on RISC-V64 hardware (192.168.1.185)
+- Binary testing on RISC-V64 hardware (self-hosted runner)
 
 ---
 
@@ -91,7 +91,7 @@ Each phase must be completed and closed before starting the next phase.
 ## Native Compilation Approach
 
 **IMPORTANT**: This project uses **native compilation only**:
-- All builds happen on the self-hosted RISC-V64 runner (192.168.1.185)
+- All builds happen on the self-hosted RISC-V64 runner (self-hosted runner)
 - NO cross-compilation from amd64 to riscv64
 - BuildKit binaries are compiled natively on RISC-V64 hardware
 - BuildKit's multi-platform capability allows it to BUILD container images FOR other platforms while running on RISC-V64
@@ -141,7 +141,7 @@ These challenges are documented in the phase issues:
 1. **Start Phase 1** (#207):
    - Add BuildKit as git submodule
    - Create initial build script for native RISC-V64 compilation
-   - Test binary compilation locally on 192.168.1.185
+   - Test binary compilation locally on self-hosted runner
 
 2. **Monitor Progress**:
    - Check weekly build results
