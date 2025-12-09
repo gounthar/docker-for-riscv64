@@ -46,6 +46,25 @@ jobs:
 
           echo "Building from: $(git describe --tags --always)"
 
+      - name: Clean up buildx builders
+        run: |
+          # Clean up any unhealthy or stuck buildx builders
+          # This prevents "container is restarting" errors from previous failed builds
+          echo "Current buildx builders:"
+          docker buildx ls || true
+
+          # Remove riscv-builder if it exists (used by BuildKit's bake)
+          if docker buildx ls | grep -q "riscv-builder"; then
+            echo "Removing existing riscv-builder..."
+            docker buildx rm riscv-builder --force || true
+          fi
+
+          # Also clean up any dangling buildx containers
+          docker ps -a --filter "name=buildx_buildkit" --format "{{.ID}}" | xargs -r docker rm -f || true
+
+          echo "Buildx builders after cleanup:"
+          docker buildx ls || true
+
       - name: Build buildkit binaries
         run: |
           set -euo pipefail
