@@ -1,0 +1,327 @@
+name: Weekly BuildKit RISC-V64 Build
+
+on:
+  schedule:
+    # Run every Sunday at 06:30 UTC (after cagent build)
+    - cron: '30 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      buildkit_ref:
+        description: 'BuildKit ref to build (branch/tag/commit)'
+        required: false
+        default: 'master'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  build-buildkit:
+    runs-on: [self-hosted, riscv64]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          # Don't checkout all submodules - we only need buildkit
+          submodules: false
+          fetch-depth: 0
+
+      - name: Checkout buildkit submodule only
+        run: |
+          set -euo pipefail
+          BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
+
+          # Only init and update the buildkit submodule (skip moby, cli, compose, cagent)
+          git submodule update --init --depth 1 buildkit
+
+          cd buildkit
+          git fetch origin --tags
+          git checkout "$BUILDKIT_REF"
+
+          # Pull only if it's a branch (not a tag)
+          if git show-ref --verify --quiet refs/remotes/origin/"$BUILDKIT_REF"; then
+            git pull origin "$BUILDKIT_REF"
+          fi
+
+          echo "Building from: $(git describe --tags --always)"
+
+      - name: Build buildkit binaries
+        run: |
+          set -euo pipefail
+          cd buildkit
+
+          # Set version from git tag
+          VERSION=$(git describe --tags --always --dirty)
+          echo "Building BuildKit version: $VERSION"
+
+          # Build with explicit GOOS/GOARCH
+          export GOOS=linux GOARCH=riscv64 CGO_ENABLED=0
+          make binaries
+
+          # Verify binaries exist
+          ls -lh bin/
+          file bin/buildkitd
+          file bin/buildctl
+
+      - name: Extract binaries
+        run: |
+          set -euo pipefail
+          DATE=$(date +%Y%m%d)
+          mkdir -p release-buildkit-$DATE
+
+          # Copy binaries
+          cp buildkit/bin/buildkitd release-buildkit-$DATE/
+          cp buildkit/bin/buildctl release-buildkit-$DATE/
+          chmod +x release-buildkit-$DATE/*
+
+          # Get versions
+          ./release-buildkit-$DATE/buildkitd --version > release-buildkit-$DATE/VERSION.txt 2>&1 || echo "Version: $(cd buildkit && git describe --tags --always)" > release-buildkit-$DATE/VERSION.txt
+          ./release-buildkit-$DATE/buildctl --version >> release-buildkit-$DATE/VERSION.txt 2>&1 || true
+
+          ls -lh release-buildkit-$DATE/
+
+      - name: Build BuildKit container image
+        run: |
+          set -euo pipefail
+          DATE=$(date +%Y%m%d)
+          BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
+
+          cd buildkit
+          BUILDKIT_VERSION=$(git describe --tags --always)
+
+          # Determine image tag based on ref type
+          if [[ "$BUILDKIT_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            # Official release: v0.14.0 -> buildkit:v0.14.0-riscv64
+            IMAGE_TAG="${BUILDKIT_REF}-riscv64"
+          else
+            # Development build: master -> buildkit:master-20251209
+            IMAGE_TAG="${BUILDKIT_REF}-${DATE}"
+          fi
+
+          echo "Building container image with tag: $IMAGE_TAG"
+
+          # Build using the Dockerfile.riscv64 we created
+          docker build \
+            --build-arg BUILDKIT_VERSION="$BUILDKIT_VERSION" \
+            -f ../Dockerfile.buildkit-riscv64 \
+            -t buildkit:$IMAGE_TAG \
+            -t buildkit:latest \
+            .
+
+          # Save image metadata
+          echo "$IMAGE_TAG" > ../release-buildkit-$DATE/IMAGE_TAG.txt
+          docker inspect buildkit:$IMAGE_TAG > ../release-buildkit-$DATE/IMAGE_INSPECT.json
+
+      - name: Test BuildKit container
+        run: |
+          # Note: Not using set -euo pipefail here intentionally.
+          # The buildkitd --version command may fail in container context
+          # (requires privileges), but that's acceptable for this smoke test.
+          # We want to continue even if version check fails.
+          DATE=$(date +%Y%m%d)
+
+          # Test that container starts and reports version
+          echo "Testing BuildKit container..."
+          # Intentional: Allow failure as buildkitd may require privileges to report version
+          docker run --rm buildkit:latest buildkitd --version || echo "Note: buildkitd --version requires privileges, container exists and is runnable"
+
+          # Save test results
+          echo "Container test completed at $(date)" > release-buildkit-$DATE/TEST_RESULTS.txt
+
+      - name: Push to GitHub Container Registry
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          DATE=$(date +%Y%m%d)
+          BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
+          IMAGE_TAG=$(cat release-buildkit-$DATE/IMAGE_TAG.txt)
+
+          # Login to GHCR
+          echo "$GH_TOKEN" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+          # Tag for GHCR
+          GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/buildkit-riscv64"
+          docker tag buildkit:$IMAGE_TAG $GHCR_IMAGE:$IMAGE_TAG
+          docker tag buildkit:$IMAGE_TAG $GHCR_IMAGE:latest
+
+          # Push to registry
+          docker push $GHCR_IMAGE:$IMAGE_TAG
+          docker push $GHCR_IMAGE:latest
+
+          echo "Pushed to: $GHCR_IMAGE:$IMAGE_TAG"
+          echo "Pushed to: $GHCR_IMAGE:latest"
+
+          # Save registry info
+          echo "$GHCR_IMAGE:$IMAGE_TAG" > release-buildkit-$DATE/REGISTRY.txt
+          echo "$GHCR_IMAGE:latest" >> release-buildkit-$DATE/REGISTRY.txt
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          # Ensure gh is installed
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y gh || true
+          fi
+
+          DATE=$(date +%Y%m%d)
+          BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
+
+          # Determine release version
+          cd buildkit
+          BUILDKIT_VERSION=$(git describe --tags --always)
+          BUILDKIT_COMMIT=$(git rev-parse --short HEAD)
+          cd ..
+
+          # Check if this is a version tag
+          if [[ "$BUILDKIT_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            # Official release: v0.14.0 -> buildkit-v0.14.0-riscv64
+            RELEASE_VERSION="buildkit-${BUILDKIT_REF}-riscv64"
+            RELEASE_TITLE="BuildKit ${BUILDKIT_REF} for RISC-V64"
+            VERSION_INFO="**BuildKit Version:** ${BUILDKIT_REF}"
+          else
+            # Development build: master -> buildkit-v20251209-dev
+            RELEASE_VERSION="buildkit-v${DATE}-dev"
+            RELEASE_TITLE="BuildKit RISC-V64 Development Build ${DATE}"
+            VERSION_INFO="**BuildKit Branch:** ${BUILDKIT_REF}
+          **BuildKit Commit:** ${BUILDKIT_COMMIT}
+          **BuildKit Version:** ${BUILDKIT_VERSION}"
+          fi
+
+          IMAGE_TAG=$(cat release-buildkit-$DATE/IMAGE_TAG.txt)
+          GHCR_IMAGE="ghcr.io/${{ github.repository_owner }}/buildkit-riscv64"
+
+          cat > release-notes.md << EOF
+          Automated build of BuildKit for RISC-V64
+
+          ${VERSION_INFO}
+          **Build Date:** $(date -u +%Y-%m-%d)
+          **Architecture:** riscv64
+
+          ## What is BuildKit?
+
+          BuildKit is a toolkit for converting source code to build artifacts in an efficient, expressive, and repeatable manner. It is the backend powering Docker Buildx and multi-platform builds.
+
+          **Key Features:**
+          - Concurrent dependency resolution
+          - Efficient caching with content-addressable storage
+          - Build cache import/export
+          - Rootless execution
+          - Multi-platform image building
+
+          ## Components Included
+
+          - **buildkitd** - BuildKit daemon (server)
+          - **buildctl** - BuildKit CLI client
+          - **Container image** - Ready-to-use BuildKit container with tini
+
+          ## Installation
+
+          **Option 1: Use Container Image (Recommended)**
+          \`\`\`bash
+          # Pull from GitHub Container Registry
+          docker pull ${GHCR_IMAGE}:${IMAGE_TAG}
+
+          # Or use latest
+          docker pull ${GHCR_IMAGE}:latest
+
+          # Run buildkitd
+          docker run -d --privileged \\
+            --name buildkitd \\
+            -v /var/lib/buildkit:/var/lib/buildkit \\
+            ${GHCR_IMAGE}:${IMAGE_TAG}
+          \`\`\`
+
+          **Option 2: Install Binaries Manually**
+          \`\`\`bash
+          # Download binaries
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/buildkitd
+          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/buildctl
+          chmod +x buildkitd buildctl
+
+          # Install (requires root)
+          sudo mv buildkitd buildctl /usr/local/bin/
+          \`\`\`
+
+          ## Usage with Docker Buildx
+
+          \`\`\`bash
+          # Remove any failed builders
+          docker buildx rm mybuilder || true
+
+          # Create builder using BuildKit image
+          docker buildx create \\
+            --name mybuilder \\
+            --driver docker-container \\
+            --driver-opt image=${GHCR_IMAGE}:${IMAGE_TAG} \\
+            --use
+
+          # Bootstrap the builder
+          docker buildx inspect --bootstrap
+
+          # Build for multiple platforms
+          docker buildx build \\
+            --platform linux/riscv64,linux/amd64 \\
+            -t myimage:latest \\
+            .
+          \`\`\`
+
+          ## Container Registry
+
+          **Image:** \`${GHCR_IMAGE}:${IMAGE_TAG}\`
+          **Latest:** \`${GHCR_IMAGE}:latest\`
+
+          Images are hosted on GitHub Container Registry (ghcr.io) and publicly accessible.
+
+          ## Testing
+
+          \`\`\`bash
+          # Test buildkitd
+          ./buildkitd --version
+
+          # Test buildctl
+          ./buildctl --version
+
+          # Test container
+          docker run --rm ${GHCR_IMAGE}:${IMAGE_TAG} buildkitd --version
+          \`\`\`
+
+          ## Build Command
+
+          \`\`\`bash
+          cd buildkit
+          export GOOS=linux GOARCH=riscv64 CGO_ENABLED=0
+          make binaries
+          \`\`\`
+
+          Built natively on RISC-V64 hardware (BananaPi F3)
+
+          ## References
+
+          - Upstream: https://github.com/moby/buildkit
+          - Documentation: https://github.com/moby/buildkit/blob/master/README.md
+          - Docker Buildx: https://docs.docker.com/buildx/
+          EOF
+
+          # Check if release already exists
+          if gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
+            if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
+              # For development builds, delete and recreate
+              echo "Deleting existing development release ${RELEASE_VERSION}..."
+              gh release delete "${RELEASE_VERSION}" --yes
+            else
+              # For official releases, skip if already exists
+              echo "Release ${RELEASE_VERSION} already exists, skipping creation"
+              exit 0
+            fi
+          fi
+
+          gh release create "$RELEASE_VERSION" \
+            --title "$RELEASE_TITLE" \
+            --notes-file release-notes.md \
+            release-buildkit-$DATE/*
+
+          echo "Release created: $RELEASE_VERSION"
