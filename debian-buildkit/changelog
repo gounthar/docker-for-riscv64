@@ -1,0 +1,8 @@
+buildkit (0.17.3-riscv64-1) trixie; urgency=medium
+
+  * Initial RISC-V64 build of BuildKit
+  * Built from upstream moby/buildkit repository
+  * Native compilation on RISC-V64 hardware
+  * Includes buildkitd daemon and buildctl CLI
+
+ -- Bruno Verächten <bruno@verachten.fr>  Mon, 09 Dec 2024 08:00:00 +0000
