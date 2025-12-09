@@ -442,15 +442,21 @@ LATEST_COMPOSE=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 |
   grep -E '^\s*compose-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
   head -1 | awk '{print $1}')
 
+LATEST_BUILDKIT=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
+  grep -E '^\s*buildkit-v[0-9]+\.[0-9]+\.[0-9]+-riscv64' | \
+  head -1 | awk '{print $1}')
+
 # Validate all versions were detected
 [[ -z "$LATEST_ENGINE" ]] && { echo "Error: No Engine releases found"; exit 1; }
 [[ -z "$LATEST_CLI" ]] && { echo "Error: No CLI releases found"; exit 1; }
 [[ -z "$LATEST_COMPOSE" ]] && { echo "Error: No Compose releases found"; exit 1; }
+[[ -z "$LATEST_BUILDKIT" ]] && { echo "Warning: No BuildKit releases found"; }
 
 # Display detected versions
 echo "Latest Engine: $LATEST_ENGINE"
 echo "Latest CLI: $LATEST_CLI"
 echo "Latest Compose: $LATEST_COMPOSE"
+echo "Latest BuildKit: $LATEST_BUILDKIT"
 
 # Example: Download Docker Engine binaries
 for binary in dockerd docker-proxy containerd runc containerd-shim-runc-v2; do
@@ -484,14 +490,21 @@ LATEST_COMPOSE=$(curl -s https://api.github.com/repos/gounthar/docker-for-riscv6
   jq -r '[.[] | select(.tag_name | test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))] |
   .[0].tag_name')
 
+# Fetch latest BuildKit release
+LATEST_BUILDKIT=$(curl -s https://api.github.com/repos/gounthar/docker-for-riscv64/releases | \
+  jq -r '[.[] | select(.tag_name | test("^buildkit-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"))] |
+  .[0].tag_name')
+
 # Validate all versions were detected
 [[ -z "$LATEST_ENGINE" ]] && { echo "Error: No Engine releases found"; exit 1; }
 [[ -z "$LATEST_CLI" ]] && { echo "Error: No CLI releases found"; exit 1; }
 [[ -z "$LATEST_COMPOSE" ]] && { echo "Error: No Compose releases found"; exit 1; }
+[[ -z "$LATEST_BUILDKIT" ]] && { echo "Warning: No BuildKit releases found"; }
 
 echo "Latest Engine: $LATEST_ENGINE"
 echo "Latest CLI: $LATEST_CLI"
 echo "Latest Compose: $LATEST_COMPOSE"
+echo "Latest BuildKit: $LATEST_BUILDKIT"
 ```
 
 ### Automated Installation Script

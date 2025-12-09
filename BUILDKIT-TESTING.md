@@ -31,7 +31,7 @@ git describe --tags
 # Build binaries
 make binaries
 
-# Verify binaries (buildx outputs to bin/build/)
+# Verify binaries (BuildKit outputs to bin/build/)
 ls -lh bin/build/
 file bin/build/buildkitd
 file bin/build/buildctl
@@ -270,8 +270,8 @@ time docker buildx build \
   -f Dockerfile.test \
   .
 
-# Modify Dockerfile slightly
-echo 'RUN echo "Cache test"' >> Dockerfile.test
+# Modify Dockerfile slightly (insert RUN before CMD)
+sed -i '/^CMD/i RUN echo "Cache test"' Dockerfile.test
 
 # Second build (should use cache)
 time docker buildx build \
