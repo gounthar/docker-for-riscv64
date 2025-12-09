@@ -13,3 +13,6 @@
 [submodule "cagent"]
 	path = cagent
 	url = https://github.com/docker/cagent.git
+[submodule "buildkit"]
+	path = buildkit
+	url = https://github.com/moby/buildkit.git
