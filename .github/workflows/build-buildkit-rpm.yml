@@ -93,12 +93,18 @@ jobs:
           set -euo pipefail
 
           RELEASE_TAG="${{ steps.release.outputs.release-tag }}"
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: Release tag is empty"
+            exit 1
+          fi
+
           echo "Building package for release: $RELEASE_TAG"
 
           # Clean and download binaries to SOURCES
           cd ~/rpmbuild/SOURCES
           rm -f buildkitd buildctl
-          gh release download $RELEASE_TAG -p buildkitd -p buildctl --repo gounthar/docker-for-riscv64
+          gh release download "$RELEASE_TAG" -p buildkitd -p buildctl --repo gounthar/docker-for-riscv64
 
           # Validate binaries were downloaded
           if [ ! -f buildkitd ] || [ ! -f buildctl ]; then
@@ -107,6 +113,36 @@ jobs:
           fi
 
           chmod +x buildkitd buildctl
+
+          # Verify binary architecture (RISC-V64)
+          echo "=== Verifying buildkitd ==="
+          file ./buildkitd
+          if ! file ./buildkitd | grep -qi "riscv"; then
+            echo "Warning: buildkitd may not be a RISC-V64 binary"
+          fi
+
+          echo "=== Verifying buildctl ==="
+          file ./buildctl
+          if ! file ./buildctl | grep -qi "riscv"; then
+            echo "Warning: buildctl may not be a RISC-V64 binary"
+          fi
+
+          # Verify statically linked (for proper packaging)
+          echo ""
+          echo "=== Checking linking ==="
+          if ldd ./buildkitd 2>&1 | grep -q "not a dynamic executable"; then
+            echo "buildkitd: statically linked"
+          else
+            echo "buildkitd: dynamically linked (checking dependencies)"
+            ldd ./buildkitd || true
+          fi
+          if ldd ./buildctl 2>&1 | grep -q "not a dynamic executable"; then
+            echo "buildctl: statically linked"
+          else
+            echo "buildctl: dynamically linked (checking dependencies)"
+            ldd ./buildctl || true
+          fi
+
           ls -lh
 
       - name: Copy spec file
@@ -121,13 +157,27 @@ jobs:
         run: |
           # Extract version from tag
           # Dev build: buildkit-v20251209-dev -> 0.0.20251209
-          # Official: buildkit-v0.17.3-riscv64 -> 0.17.3
+          # Official: buildkit-v0.26.2-riscv64 -> 0.26.2
           if [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]{8})-dev$ ]]; then
             DATE_VER="${BASH_REMATCH[1]}"
             VERSION="0.0.${DATE_VER}"
+          elif [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]+\.[0-9]+\.[0-9]+)-riscv64$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+          elif [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            # Handle case without -riscv64 suffix
+            VERSION="${BASH_REMATCH[1]}"
           else
-            VERSION=$(echo $RELEASE_TAG | sed 's/^buildkit-v//; s/-riscv64$//')
+            echo "Error: Unrecognized release tag format: $RELEASE_TAG"
+            echo "Expected formats: buildkit-vYYYYMMDD-dev, buildkit-vX.Y.Z-riscv64, or buildkit-vX.Y.Z"
+            exit 1
           fi
+
+          # Validate version is not empty
+          if [ -z "$VERSION" ]; then
+            echo "Error: Failed to extract version from tag: $RELEASE_TAG"
+            exit 1
+          fi
+
           echo "Package version: $VERSION"
 
           # Update spec file
@@ -159,15 +209,30 @@ jobs:
           echo "Uploading RPM packages to release $RELEASE_TAG"
           echo ""
 
-          # Upload all RPM files
+          # Upload all RPM files with proper error handling
+          UPLOAD_FAILED=0
           for rpm in ~/rpmbuild/RPMS/riscv64/buildkit-*.rpm; do
-            echo "Uploading $(basename $rpm)..."
+            echo "Uploading $(basename "$rpm")..."
+            UPLOAD_SUCCESS=0
             for i in {1..3}; do
-              gh release upload "$RELEASE_TAG" "$rpm" --clobber && break
-              echo "Retry $i..."
+              if gh release upload "$RELEASE_TAG" "$rpm" --clobber --repo gounthar/docker-for-riscv64; then
+                echo "Successfully uploaded $(basename "$rpm")"
+                UPLOAD_SUCCESS=1
+                break
+              fi
+              echo "Retry $i/3..."
               sleep 3
             done
+            if [ "$UPLOAD_SUCCESS" -eq 0 ]; then
+              echo "Error: Failed to upload $(basename "$rpm") after 3 attempts"
+              UPLOAD_FAILED=1
+            fi
           done
+
+          if [ "$UPLOAD_FAILED" -eq 1 ]; then
+            echo "Error: One or more uploads failed"
+            exit 1
+          fi
 
           echo ""
           echo "BuildKit RPM packages uploaded successfully!"

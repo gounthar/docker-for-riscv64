@@ -9,8 +9,11 @@ Source1:        buildctl
 
 BuildArch:      riscv64
 
+# BuildKit requires a container runtime (containerd) as its execution backend
 Recommends:     containerd
-Recommends:     docker-ce
+# Docker is optional - only needed for docker buildx integration
+Suggests:       docker-ce
+Suggests:       moby-engine
 
 %description
 BuildKit is a toolkit for converting source code to build artifacts in an

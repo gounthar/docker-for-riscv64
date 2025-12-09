@@ -11,7 +11,8 @@ Vcs-Git: https://github.com/gounthar/docker-for-riscv64.git
 Package: buildkit
 Architecture: riscv64
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Recommends: containerd (>= 1.7) | containerd.io (>= 1.7), docker.io (>= 20.10) | docker-ce (>= 20.10)
+Recommends: containerd (>= 1.7) | containerd.io (>= 1.7)
+Suggests: docker.io (>= 20.10) | docker-ce (>= 20.10)
 Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
  BuildKit is a toolkit for converting source code to build artifacts in an
  efficient, expressive, and repeatable manner. It is the next-generation

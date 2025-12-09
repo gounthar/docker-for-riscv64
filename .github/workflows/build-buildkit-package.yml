@@ -68,8 +68,13 @@ jobs:
           set -euo pipefail
           sudo apt-get update
           sudo apt-get install -y build-essential debhelper dh-make dpkg-dev lintian devscripts libdistro-info-perl
+          # gh is typically pre-installed on GitHub runners; only install if missing
           if ! command -v gh >/dev/null 2>&1; then
-            sudo apt-get install -y gh || true
+            echo "gh CLI not found, attempting to install..."
+            if ! sudo apt-get install -y gh; then
+              echo "Warning: Failed to install gh CLI via apt, but it may be available via other means"
+              echo "Continuing as gh is likely pre-installed on the runner"
+            fi
           fi
 
       - name: Download BuildKit binaries
@@ -86,21 +91,56 @@ jobs:
             RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 --limit 20 | \
                           awk -F'\t' '$3 ~ /^buildkit-v/ {print $3; exit}')
           fi
+
+          if [ -z "$RELEASE_TAG" ]; then
+            echo "Error: Could not determine release tag"
+            exit 1
+          fi
+
           echo "Building package for release: $RELEASE_TAG"
           echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
 
-          # Download binaries
-          gh release download $RELEASE_TAG -p buildkitd -p buildctl
+          # Download binaries with explicit repo parameter
+          gh release download "$RELEASE_TAG" -p buildkitd -p buildctl --repo gounthar/docker-for-riscv64
+
+          # Validate binaries were downloaded
+          if [ ! -f buildkitd ] || [ ! -f buildctl ]; then
+            echo "Error: Failed to download BuildKit binaries from release $RELEASE_TAG"
+            exit 1
+          fi
+
           chmod +x buildkitd buildctl
 
-          # Verify binary architecture
-          echo "=== buildkitd ==="
-          file ./buildkitd || true
-          ./buildkitd --version || echo "Version check skipped"
+          # Verify binary architecture (RISC-V64)
+          echo "=== Verifying buildkitd ==="
+          file ./buildkitd
+          if ! file ./buildkitd | grep -qi "riscv"; then
+            echo "Warning: buildkitd may not be a RISC-V64 binary"
+          fi
+          ./buildkitd --version || echo "Version check skipped (may require runtime dependencies)"
 
-          echo "=== buildctl ==="
-          file ./buildctl || true
-          ./buildctl --version || echo "Version check skipped"
+          echo "=== Verifying buildctl ==="
+          file ./buildctl
+          if ! file ./buildctl | grep -qi "riscv"; then
+            echo "Warning: buildctl may not be a RISC-V64 binary"
+          fi
+          ./buildctl --version || echo "Version check skipped (may require runtime dependencies)"
+
+          # Verify statically linked (for proper packaging)
+          echo ""
+          echo "=== Checking linking ==="
+          if ldd ./buildkitd 2>&1 | grep -q "not a dynamic executable"; then
+            echo "buildkitd: statically linked"
+          else
+            echo "buildkitd: dynamically linked (checking dependencies)"
+            ldd ./buildkitd || true
+          fi
+          if ldd ./buildctl 2>&1 | grep -q "not a dynamic executable"; then
+            echo "buildctl: statically linked"
+          else
+            echo "buildctl: dynamically linked (checking dependencies)"
+            ldd ./buildctl || true
+          fi
 
           ls -lh buildkitd buildctl
 
@@ -112,13 +152,27 @@ jobs:
 
           # Extract version from tag
           # Dev build: buildkit-v20251209-dev -> 0.0.20251209
-          # Official: buildkit-v0.17.3-riscv64 -> 0.17.3
+          # Official: buildkit-v0.26.2-riscv64 -> 0.26.2
           if [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]{8})-dev$ ]]; then
             DATE_VER="${BASH_REMATCH[1]}"
             VERSION="0.0.${DATE_VER}"
+          elif [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]+\.[0-9]+\.[0-9]+)-riscv64$ ]]; then
+            VERSION="${BASH_REMATCH[1]}"
+          elif [[ "$RELEASE_TAG" =~ ^buildkit-v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+            # Handle case without -riscv64 suffix
+            VERSION="${BASH_REMATCH[1]}"
           else
-            VERSION="$(echo "$RELEASE_TAG" | sed 's/^buildkit-v//; s/-riscv64$//')"
+            echo "Error: Unrecognized release tag format: $RELEASE_TAG"
+            echo "Expected formats: buildkit-vYYYYMMDD-dev, buildkit-vX.Y.Z-riscv64, or buildkit-vX.Y.Z"
+            exit 1
           fi
+
+          # Validate version is not empty
+          if [ -z "$VERSION" ]; then
+            echo "Error: Failed to extract version from tag: $RELEASE_TAG"
+            exit 1
+          fi
+
           echo "Package version: $VERSION"
 
           # Set DEBEMAIL to avoid interactive prompt
@@ -178,14 +232,29 @@ jobs:
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
 
+          UPLOAD_FAILED=0
           for deb in ../*.deb; do
-            echo "Uploading $(basename $deb)..."
+            echo "Uploading $(basename "$deb")..."
+            UPLOAD_SUCCESS=0
             for i in {1..3}; do
-              gh release upload "$RELEASE_TAG" "$deb" --clobber && break
-              echo "Retry $i..."
+              if gh release upload "$RELEASE_TAG" "$deb" --clobber --repo gounthar/docker-for-riscv64; then
+                echo "Successfully uploaded $(basename "$deb")"
+                UPLOAD_SUCCESS=1
+                break
+              fi
+              echo "Retry $i/3..."
               sleep 3
             done
+            if [ "$UPLOAD_SUCCESS" -eq 0 ]; then
+              echo "Error: Failed to upload $(basename "$deb") after 3 attempts"
+              UPLOAD_FAILED=1
+            fi
           done
+
+          if [ "$UPLOAD_FAILED" -eq 1 ]; then
+            echo "Error: One or more uploads failed"
+            exit 1
+          fi
 
           echo ""
           echo "BuildKit Debian package uploaded successfully!"
