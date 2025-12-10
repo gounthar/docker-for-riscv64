@@ -348,9 +348,27 @@ docker compose down
 
 ### BuildKit Installation
 
-BuildKit is available for RISC-V64, enabling multi-platform builds and advanced Docker Buildx features:
+BuildKit is available for RISC-V64, enabling multi-platform builds and advanced Docker Buildx features.
 
-#### Option 1: Container Image (Recommended)
+> **Important:** The official `moby/buildkit:buildx-stable-1` container image does not support RISC-V64. You must use the RISC-V64-specific BuildKit image (`ghcr.io/gounthar/buildkit-riscv64`) when creating Docker Buildx builders. See [Option 2](#option-2-container-image-for-docker-buildx-recommended) below.
+
+#### Option 1: APT Repository (Binaries Only)
+
+Install BuildKit binaries from the APT repository:
+
+```bash
+# Install buildkitd and buildctl binaries
+sudo apt-get update
+sudo apt-get install buildkit
+
+# Verify installation
+buildkitd --version
+buildctl --version
+```
+
+**Note:** This installs only the `buildkitd` and `buildctl` binaries. For Docker Buildx integration, you need to use the container image (see Option 2).
+
+#### Option 2: Container Image for Docker Buildx (Recommended)
 
 ```bash
 # Pull BuildKit container image
