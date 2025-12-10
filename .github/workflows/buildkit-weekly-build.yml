@@ -270,6 +270,25 @@ jobs:
           sudo mv buildkitd buildctl /usr/local/bin/
           \`\`\`
 
+          **Option 3: Install from APT Repository (Standalone Binaries)**
+          \`\`\`bash
+          # Add docker-for-riscv64 APT repository (if not already configured)
+          curl -fsSL https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/gpg-public-key.asc | \\
+            sudo gpg --dearmor -o /usr/share/keyrings/docker-riscv64-archive-keyring.gpg
+          echo "deb [signed-by=/usr/share/keyrings/docker-riscv64-archive-keyring.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" | \\
+            sudo tee /etc/apt/sources.list.d/docker-riscv64.list
+
+          # Install BuildKit binaries
+          sudo apt update
+          sudo apt install buildkit
+
+          # Verify installation
+          buildkitd --version
+          buildctl --version
+          \`\`\`
+
+          > **Note:** APT installation provides standalone \`buildkitd\` and \`buildctl\` binaries for host use. For **Docker Buildx integration**, you must use the **container image** (Option 1), as Buildx requires a containerized BuildKit instance.
+
           ## Usage with Docker Buildx
 
           \`\`\`bash
