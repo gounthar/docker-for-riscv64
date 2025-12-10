@@ -8,8 +8,16 @@ FROM debian:trixie-slim
 # BuildKit version (passed as build arg)
 ARG BUILDKIT_VERSION=unknown
 
+# Add docker-for-riscv64 APT repository for runc package
+# This ensures we use the same runc version as Docker Engine builds
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates curl gnupg && \
+    curl -fsSL https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/public-key.asc | gpg --dearmor -o /usr/share/keyrings/docker-riscv64-archive-keyring.gpg && \
+    echo "deb [signed-by=/usr/share/keyrings/docker-riscv64-archive-keyring.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" > /etc/apt/sources.list.d/docker-riscv64.list && \
+    rm -rf /var/lib/apt/lists/*
+
 # Install runtime dependencies
-# runc: OCI runtime for BuildKit worker
+# runc: OCI runtime for BuildKit worker (from docker-for-riscv64 repository v1.3.0)
 # fuse-overlayfs: Rootless overlay filesystem support
 # iptables: Network management for buildkit networking (includes ip6tables in Trixie)
 # git: Git operations in builds
@@ -19,7 +27,6 @@ ARG BUILDKIT_VERSION=unknown
 # tini: Init process for proper signal handling
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
-        ca-certificates \
         runc \
         fuse-overlayfs \
         iptables \
