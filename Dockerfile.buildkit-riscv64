@@ -50,14 +50,15 @@ VOLUME /tmp
 # Expose buildkit API port
 EXPOSE 1234
 
-# Use tini as init process
+# Use tini as init process and launch buildkitd
 # Tini properly handles signals and reaps zombie processes
 # This is critical for buildkit's subprocess management
-ENTRYPOINT ["/usr/bin/tini", "--"]
+# Note: Using ENTRYPOINT with buildkitd directly allows Docker Buildx
+# to pass its own arguments (--allow-insecure-entitlement, etc.)
+ENTRYPOINT ["/usr/bin/tini", "--", "buildkitd"]
 
-# Start buildkitd with default configuration
-# Users can override with custom args in docker run
-CMD ["buildkitd", "--addr", "tcp://0.0.0.0:1234"]
+# Default arguments for buildkitd (can be overridden)
+CMD ["--addr", "tcp://0.0.0.0:1234"]
 
 # Metadata
 LABEL org.opencontainers.image.title="BuildKit for RISC-V64"
