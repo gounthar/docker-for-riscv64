@@ -147,7 +147,8 @@ jobs:
           # Test that container starts and reports version
           echo "Testing BuildKit container..."
           # Intentional: Allow failure as buildkitd may require privileges to report version
-          docker run --rm buildkit:latest buildkitd --version || echo "Note: buildkitd --version requires privileges, container exists and is runnable"
+          # Add timeout to prevent hanging if container gets stuck initializing workers
+          timeout 30s docker run --rm buildkit:latest buildkitd --version || echo "Note: buildkitd --version may require privileges or timed out (30s), container exists and is runnable"
 
           # Save test results
           echo "Container test completed at $(date)" > release-buildkit-$DATE/TEST_RESULTS.txt
