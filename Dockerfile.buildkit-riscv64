@@ -9,15 +9,18 @@ FROM debian:trixie-slim
 ARG BUILDKIT_VERSION=unknown
 
 # Install runtime dependencies
+# runc: OCI runtime for BuildKit worker
 # fuse-overlayfs: Rootless overlay filesystem support
 # iptables: Network management for buildkit networking (includes ip6tables in Trixie)
 # git: Git operations in builds
 # openssh-client: SSH operations for git+ssh://
 # pigz: Parallel gzip for faster compression
 # xz-utils: XZ compression support
+# tini: Init process for proper signal handling
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
+        runc \
         fuse-overlayfs \
         iptables \
         git \
