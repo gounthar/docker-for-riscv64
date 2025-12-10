@@ -12,7 +12,7 @@ ARG BUILDKIT_VERSION=unknown
 # This ensures we use the same runc version as Docker Engine builds
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ca-certificates curl gnupg && \
-    curl -fsSL https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/public-key.asc | gpg --dearmor -o /usr/share/keyrings/docker-riscv64-archive-keyring.gpg && \
+    curl -fsSL https://github.com/gounthar/docker-for-riscv64/releases/download/gpg-key/gpg-public-key.asc | gpg --dearmor -o /usr/share/keyrings/docker-riscv64-archive-keyring.gpg && \
     echo "deb [signed-by=/usr/share/keyrings/docker-riscv64-archive-keyring.gpg] https://gounthar.github.io/docker-for-riscv64 trixie main" > /etc/apt/sources.list.d/docker-riscv64.list && \
     rm -rf /var/lib/apt/lists/*
 
