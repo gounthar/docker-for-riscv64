@@ -70,9 +70,12 @@ jobs:
       - name: Test apt commands
         run: |
           echo "=== Testing apt-get update ==="
+          set +e
           time sudo apt-get update -y 2>&1 | tail -20
+          APT_EXIT_CODE=${PIPESTATUS[0]}
+          set -e
           echo ""
-          echo "apt-get update exit code: $?"
+          echo "apt-get update exit code: $APT_EXIT_CODE"
           echo ""
 
       - name: Check sudo configuration
