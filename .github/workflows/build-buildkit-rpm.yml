@@ -73,12 +73,31 @@ jobs:
       - name: Install build dependencies
         if: steps.release.outputs.has-new-release == 'true'
         run: |
+          set -x
+          echo "=== Starting Install build dependencies ==="
+          echo "Current user: $(whoami)"
+          echo "Current directory: $(pwd)"
+          echo "Date: $(date)"
+
           if [ -f /etc/fedora-release ]; then
+            echo "Detected Fedora"
             sudo dnf install -y rpm-build rpmdevtools rpmlint
           elif [ -f /etc/debian_version ]; then
-            sudo apt-get update
-            sudo apt-get install -y rpm rpmlint
+            echo "Detected Debian/Ubuntu"
+            echo "Checking for apt locks..."
+            sudo lsof /var/lib/dpkg/lock-frontend 2>/dev/null || echo "No lock on lock-frontend"
+            sudo lsof /var/lib/apt/lists/lock 2>/dev/null || echo "No lock on apt lists"
+            echo "Running apt-get update..."
+            sudo apt-get update -y
+            echo "apt-get update completed"
+            echo "Running apt-get install..."
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y rpm rpmlint
+            echo "apt-get install completed"
+          else
+            echo "Unknown distribution"
+            cat /etc/os-release || true
           fi
+          echo "=== Install build dependencies finished ==="
 
       - name: Set up RPM build tree
         if: steps.release.outputs.has-new-release == 'true'
