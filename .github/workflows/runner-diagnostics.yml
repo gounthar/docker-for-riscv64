@@ -1,0 +1,118 @@
+name: Runner Diagnostics
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnose:
+    runs-on: [self-hosted, riscv64]
+    strategy:
+      matrix:
+        run: [1, 2]
+      fail-fast: false
+      max-parallel: 2
+
+    steps:
+      - name: Runner identification
+        run: |
+          echo "=== Runner Identification ==="
+          echo "Matrix run: ${{ matrix.run }}"
+          echo "Runner name: ${{ runner.name }}"
+          echo "Runner OS: ${{ runner.os }}"
+          echo "Runner arch: ${{ runner.arch }}"
+          echo "Hostname: $(hostname)"
+          echo "IP addresses:"
+          ip -4 addr show | grep inet || hostname -I
+          echo ""
+
+      - name: OS Information
+        run: |
+          echo "=== OS Information ==="
+          cat /etc/os-release
+          echo ""
+          uname -a
+          echo ""
+
+      - name: Disk space
+        run: |
+          echo "=== Disk Space ==="
+          df -h
+          echo ""
+
+      - name: Memory
+        run: |
+          echo "=== Memory ==="
+          free -h
+          echo ""
+
+      - name: Check apt status
+        run: |
+          echo "=== APT Status ==="
+          echo "Checking for apt locks..."
+          sudo lsof /var/lib/dpkg/lock-frontend 2>/dev/null || echo "No lock on lock-frontend"
+          sudo lsof /var/lib/dpkg/lock 2>/dev/null || echo "No lock on dpkg lock"
+          sudo lsof /var/lib/apt/lists/lock 2>/dev/null || echo "No lock on apt lists"
+          sudo lsof /var/cache/apt/archives/lock 2>/dev/null || echo "No lock on apt archives"
+          echo ""
+          echo "APT processes:"
+          ps aux | grep -E 'apt|dpkg' | grep -v grep || echo "No apt/dpkg processes"
+          echo ""
+
+      - name: Check installed packages (RPM build related)
+        run: |
+          echo "=== RPM Build Packages ==="
+          dpkg -l | grep -E 'rpm|rpmlint' || echo "No rpm packages installed"
+          echo ""
+          echo "=== Build Tools ==="
+          dpkg -l | grep -E 'build-essential|gcc|make' | head -10 || echo "No build tools found"
+          echo ""
+
+      - name: Test apt commands
+        run: |
+          echo "=== Testing apt-get update ==="
+          time sudo apt-get update -y 2>&1 | tail -20
+          echo ""
+          echo "apt-get update exit code: $?"
+          echo ""
+
+      - name: Check sudo configuration
+        run: |
+          echo "=== Sudo Configuration ==="
+          sudo -l 2>&1 | head -20
+          echo ""
+          echo "Current user: $(whoami)"
+          echo "Groups: $(groups)"
+          echo ""
+
+      - name: Check runner service
+        run: |
+          echo "=== Runner Service Status ==="
+          systemctl status actions.runner.* --no-pager 2>&1 | head -30 || echo "Could not get runner service status"
+          echo ""
+
+      - name: Network connectivity
+        run: |
+          echo "=== Network Connectivity ==="
+          echo "Testing GitHub connectivity..."
+          curl -sI https://github.com | head -5
+          echo ""
+          echo "Testing apt repository..."
+          curl -sI http://deb.debian.org/debian/ | head -5 || echo "Cannot reach debian repos"
+          echo ""
+
+      - name: Environment variables
+        run: |
+          echo "=== Environment Variables ==="
+          env | sort | grep -E '^(HOME|USER|PATH|RUNNER|GITHUB|DEBIAN)' || true
+          echo ""
+
+      - name: Runner work directory
+        run: |
+          echo "=== Runner Work Directory ==="
+          echo "Current dir: $(pwd)"
+          echo "Work dir contents:"
+          ls -la
+          echo ""
+          echo "Parent dir:"
+          ls -la ..
+          echo ""
