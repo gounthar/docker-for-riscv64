@@ -2,7 +2,7 @@ name: Build BuildKit RPM Package
 
 on:
   workflow_run:
-    workflows: ["Weekly BuildKit RISC-V64 Build"]
+    workflows: ["Weekly BuildKit RISC-V64 Build", "Track BuildKit Releases"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
