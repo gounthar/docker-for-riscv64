@@ -74,6 +74,44 @@
             font-size: 12px;
             font-weight: bold;
         }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th {
+            background: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+            padding: 12px;
+            text-align: left;
+        }
+        td {
+            padding: 10px;
+        }
+        tr {
+            border-bottom: 1px solid #dee2e6;
+        }
+        tr.alt {
+            background: #f8f9fa;
+        }
+        tr:last-child {
+            border-bottom: none;
+        }
+        .note {
+            font-size: 12px;
+            color: #6c757d;
+            font-style: italic;
+        }
+        .separator {
+            margin: 40px 0;
+            border: none;
+            border-top: 1px solid #e0e0e0;
+        }
+        .footer {
+            text-align: center;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -83,16 +121,16 @@
         <p>
             <span class="badge">RISC-V64</span>
             <span class="badge">Debian Trixie</span>
-            <span class="badge">Docker 28.x</span>
+            <span class="badge">Docker 29.x</span>
         </p>
 
         <p>
-            Official APT repository for Docker Engine on RISC-V64 architecture.
-            Built from upstream <a href="https://github.com/moby/moby">moby</a> releases with native RISC-V64 compilation.
+            APT repository for Docker and container tools on RISC-V64 architecture.
+            Built from upstream sources with native RISC-V64 compilation.
         </p>
 
         <div class="info">
-            <strong>📦 Package Name:</strong> <code>docker.io</code> (standard Debian package name)<br>
+            <strong>📦 Packages:</strong> 8 packages available (see below)<br>
             <strong>🏗️ Architecture:</strong> <code>riscv64</code><br>
             <strong>📍 Repository:</strong> <a href="https://github.com/gounthar/docker-for-riscv64">gounthar/docker-for-riscv64</a>
         </div>
@@ -123,15 +161,74 @@ sudo systemctl enable --now docker</code></pre>
             <strong>⚠️ Important:</strong> Log out and back in for group changes to take effect, then test with: <code>docker run hello-world</code>
         </div>
 
-        <h2>📋 What's Included</h2>
+        <h2>📦 Available Packages</h2>
 
-        <p>The <code>docker.io</code> package includes the complete Docker runtime stack:</p>
+        <p>This repository provides a complete Docker ecosystem for RISC-V64:</p>
+
+        <table>
+            <tr>
+                <th>Package</th>
+                <th>Description</th>
+                <th>Install Command</th>
+            </tr>
+            <tr>
+                <td><code>docker.io</code></td>
+                <td>Meta-package: Docker Engine, CLI, containerd, and runc<br><span class="note">Recommended for most users</span></td>
+                <td><code>apt install docker.io</code></td>
+            </tr>
+            <tr class="alt">
+                <td><code>docker-cli</code></td>
+                <td>Docker CLI only (for remote Docker hosts)</td>
+                <td><code>apt install docker-cli</code></td>
+            </tr>
+            <tr>
+                <td><code>docker-compose-plugin</code></td>
+                <td>Docker Compose v2 plugin (<code>docker compose</code>)</td>
+                <td><code>apt install docker-compose-plugin</code></td>
+            </tr>
+            <tr class="alt">
+                <td><code>docker-buildx-plugin</code></td>
+                <td>Docker Buildx plugin for multi-platform builds</td>
+                <td><code>apt install docker-buildx-plugin</code></td>
+            </tr>
+            <tr>
+                <td><code>buildkit</code></td>
+                <td>BuildKit daemon for advanced image builds</td>
+                <td><code>apt install buildkit</code></td>
+            </tr>
+            <tr class="alt">
+                <td><code>containerd</code></td>
+                <td>Container runtime<br><span class="note">Included in docker.io; standalone for Kubernetes</span></td>
+                <td><code>apt install containerd</code></td>
+            </tr>
+            <tr>
+                <td><code>runc</code></td>
+                <td>OCI container runtime<br><span class="note">Included in docker.io; standalone for custom setups</span></td>
+                <td><code>apt install runc</code></td>
+            </tr>
+            <tr class="alt">
+                <td><code>cagent</code></td>
+                <td>Container agent for Docker Desktop integration and cloud services</td>
+                <td><code>apt install cagent</code></td>
+            </tr>
+        </table>
+
+        <h2>🛠️ Full Stack Installation</h2>
+
+        <p>Install the complete Docker toolchain:</p>
+
+        <pre><code>sudo apt-get install docker.io docker-compose-plugin docker-buildx-plugin</code></pre>
+
+        <h2>📋 What's in docker.io</h2>
+
+        <p>The <code>docker.io</code> meta-package bundles everything needed to run Docker:</p>
 
         <ul>
             <li><strong>dockerd</strong> - Docker Engine daemon</li>
+            <li><strong>docker</strong> - Docker CLI</li>
             <li><strong>docker-proxy</strong> - Network proxy for container port mapping</li>
-            <li><strong>containerd</strong> - Container runtime (v1.7.28)</li>
-            <li><strong>runc</strong> - OCI runtime (v1.3.0)</li>
+            <li><strong>containerd</strong> - Container runtime</li>
+            <li><strong>runc</strong> - OCI runtime</li>
             <li><strong>containerd-shim-runc-v2</strong> - Containerd shim</li>
         </ul>
 
@@ -173,9 +270,9 @@ sudo apt-get install -f</code></pre>
             <strong>License:</strong> Apache 2.0 (same as Docker/moby)
         </p>
 
-        <hr style="margin: 40px 0; border: none; border-top: 1px solid #e0e0e0;">
+        <hr class="separator">
 
-        <p style="text-align: center; color: #7f8c8d; font-size: 14px;">
+        <p class="footer">
             Generated from <a href="https://github.com/gounthar/docker-for-riscv64/tree/apt-repo">apt-repo branch</a> •
             Powered by <a href="https://mirrorer.alioth.debian.org/">reprepro</a> •
             Hosted on <a href="https://pages.github.com/">GitHub Pages</a>
