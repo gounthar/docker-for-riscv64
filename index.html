@@ -83,16 +83,16 @@
         <p>
             <span class="badge">RISC-V64</span>
             <span class="badge">Debian Trixie</span>
-            <span class="badge">Docker 28.x</span>
+            <span class="badge">Docker 29.x</span>
         </p>
 
         <p>
-            Official APT repository for Docker Engine on RISC-V64 architecture.
-            Built from upstream <a href="https://github.com/moby/moby">moby</a> releases with native RISC-V64 compilation.
+            APT repository for Docker and container tools on RISC-V64 architecture.
+            Built from upstream sources with native RISC-V64 compilation.
         </p>
 
         <div class="info">
-            <strong>📦 Package Name:</strong> <code>docker.io</code> (standard Debian package name)<br>
+            <strong>📦 Packages:</strong> 8 packages available (see below)<br>
             <strong>🏗️ Architecture:</strong> <code>riscv64</code><br>
             <strong>📍 Repository:</strong> <a href="https://github.com/gounthar/docker-for-riscv64">gounthar/docker-for-riscv64</a>
         </div>
@@ -123,15 +123,74 @@ sudo systemctl enable --now docker</code></pre>
             <strong>⚠️ Important:</strong> Log out and back in for group changes to take effect, then test with: <code>docker run hello-world</code>
         </div>
 
-        <h2>📋 What's Included</h2>
+        <h2>📦 Available Packages</h2>
 
-        <p>The <code>docker.io</code> package includes the complete Docker runtime stack:</p>
+        <p>This repository provides a complete Docker ecosystem for RISC-V64:</p>
+
+        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+            <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                <th style="padding: 12px; text-align: left;">Package</th>
+                <th style="padding: 12px; text-align: left;">Description</th>
+                <th style="padding: 12px; text-align: left;">Install Command</th>
+            </tr>
+            <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 10px;"><code>docker.io</code></td>
+                <td style="padding: 10px;">Docker Engine daemon and CLI</td>
+                <td style="padding: 10px;"><code>apt install docker.io</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #dee2e6; background: #f8f9fa;">
+                <td style="padding: 10px;"><code>docker-cli</code></td>
+                <td style="padding: 10px;">Docker CLI (standalone)</td>
+                <td style="padding: 10px;"><code>apt install docker-cli</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 10px;"><code>docker-compose-plugin</code></td>
+                <td style="padding: 10px;">Docker Compose v2 plugin</td>
+                <td style="padding: 10px;"><code>apt install docker-compose-plugin</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #dee2e6; background: #f8f9fa;">
+                <td style="padding: 10px;"><code>docker-buildx-plugin</code></td>
+                <td style="padding: 10px;">Docker Buildx plugin</td>
+                <td style="padding: 10px;"><code>apt install docker-buildx-plugin</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 10px;"><code>buildkit</code></td>
+                <td style="padding: 10px;">BuildKit daemon for advanced builds</td>
+                <td style="padding: 10px;"><code>apt install buildkit</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #dee2e6; background: #f8f9fa;">
+                <td style="padding: 10px;"><code>containerd</code></td>
+                <td style="padding: 10px;">Container runtime</td>
+                <td style="padding: 10px;"><code>apt install containerd</code></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #dee2e6;">
+                <td style="padding: 10px;"><code>runc</code></td>
+                <td style="padding: 10px;">OCI container runtime</td>
+                <td style="padding: 10px;"><code>apt install runc</code></td>
+            </tr>
+            <tr style="background: #f8f9fa;">
+                <td style="padding: 10px;"><code>cagent</code></td>
+                <td style="padding: 10px;">Docker container agent</td>
+                <td style="padding: 10px;"><code>apt install cagent</code></td>
+            </tr>
+        </table>
+
+        <h2>🛠️ Full Stack Installation</h2>
+
+        <p>Install the complete Docker toolchain:</p>
+
+        <pre><code>sudo apt-get install docker.io docker-compose-plugin docker-buildx-plugin</code></pre>
+
+        <h2>📋 What's in docker.io</h2>
+
+        <p>The <code>docker.io</code> package includes:</p>
 
         <ul>
             <li><strong>dockerd</strong> - Docker Engine daemon</li>
+            <li><strong>docker</strong> - Docker CLI</li>
             <li><strong>docker-proxy</strong> - Network proxy for container port mapping</li>
-            <li><strong>containerd</strong> - Container runtime (v1.7.28)</li>
-            <li><strong>runc</strong> - OCI runtime (v1.3.0)</li>
+            <li><strong>containerd</strong> - Container runtime</li>
+            <li><strong>runc</strong> - OCI runtime</li>
             <li><strong>containerd-shim-runc-v2</strong> - Containerd shim</li>
         </ul>
 
