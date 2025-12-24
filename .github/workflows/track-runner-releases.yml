@@ -18,13 +18,43 @@ jobs:
           LATEST=$(gh api repos/ChristopherHX/github-act-runner/releases/latest --jq '.tag_name')
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
-          # Check current version from git tag (more reliable than --version)
-          cd ~/github-act-runner-test
-          CURRENT=$(git describe --tags --exact-match 2>/dev/null || echo "unknown")
-          cd - > /dev/null
+          # Check current version - try multiple methods
+          CURRENT="unknown"
+
+          # Method 1: Check git tag in source directory (if exists)
+          for dir in ~/github-act-runner ~/github-act-runner-test /opt/github-act-runner; do
+            if [ -d "$dir/.git" ]; then
+              CURRENT=$(cd "$dir" && git describe --tags --exact-match 2>/dev/null || echo "")
+              if [ -n "$CURRENT" ]; then
+                echo "Found version from git in $dir"
+                break
+              fi
+            fi
+          done
+
+          # Method 2: Try to get version from binary (falls back if git method failed)
+          if [ "$CURRENT" = "unknown" ] || [ -z "$CURRENT" ]; then
+            # Look for the runner binary
+            for bin in ~/github-act-runner/github-act-runner /opt/github-act-runner/github-act-runner; do
+              if [ -x "$bin" ]; then
+                VER=$("$bin" --version 2>/dev/null | grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' | head -1 || echo "")
+                if [ -n "$VER" ]; then
+                  CURRENT="$VER"
+                  echo "Found version from binary: $CURRENT"
+                  break
+                fi
+              fi
+            done
+          fi
+
+          # If still unknown, that's okay - we'll report it
+          [ -z "$CURRENT" ] && CURRENT="unknown"
           echo "current_version=$CURRENT" >> $GITHUB_OUTPUT
 
-          if [ "$LATEST" != "$CURRENT" ]; then
+          if [ "$CURRENT" = "unknown" ]; then
+            echo "needs_update=unknown" >> $GITHUB_OUTPUT
+            echo "⚠️ Could not determine current runner version"
+          elif [ "$LATEST" != "$CURRENT" ]; then
             echo "needs_update=true" >> $GITHUB_OUTPUT
           else
             echo "needs_update=false" >> $GITHUB_OUTPUT
