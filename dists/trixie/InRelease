@@ -4,7 +4,7 @@ Hash: SHA512
 Origin: docker-riscv64
 Label: Docker RISC-V64
 Codename: trixie
-Date: Wed, 24 Dec 2025 06:26:24 UTC
+Date: Wed, 24 Dec 2025 08:33:25 UTC
 Architectures: riscv64
 Components: main
 Description: Docker Engine for RISC-V64
@@ -22,17 +22,17 @@ SHA256:
  58b302992d272775817ccba4454a67bde99cf7de79067618e4f23708835558c0 124 main/binary-riscv64/Release
 -----BEGIN PGP SIGNATURE-----
 
-iQIzBAEBCgAdFiEEVhiDQUJbAHQHIptI+xlj/DV1o50FAmlLh5AACgkQ+xlj/DV1
-o50HRg//Uo+aQ1q6jJojsjuSs58GmxwgTtG5RV+WklEXAEP6+Jl07crKnb1kZKnU
-sztbvlTmhrTk9xwyW80b+TrzeDeZ6aEjs+/jdsKLXWKOw/0HvipYqVsttyZr/pCQ
-gb0DWZwefAIJzHI4NGUrblBV3ynw1Xm0EbbgBvd/GEeeRjwrcwjePOpqyiaR/+yF
-G+lFd6Gr0OPFwQwxjruY6XWLIs/3U4ked/i1ZR+9fyq/osVuTAcArKCdiedHXP6U
-mfiIUGstZfgg3PMVIJXwJveC6yvD+xpghJ965ibU5tZVvrQch9YEWQe4kGs1BZrD
-U5ApPoCMMnq1Fv7LiynkMTnqYpxcsVV/IfozoY6UarEwZ51pwhMoXW4grZ0hulk5
-lM1J3lDMYYtkIg10farQgdpfVaQSU2hyYGCO4WcOG6aEo8brsegC7U3LpafmOFxh
-cpWqtjSc8zJitBdh/dQe9OhPNBTq09e11XmyVbIXDL4cO5IXcA3WPU7v+pQH36ZN
-cF1wOuDUkDX3IPj/KMko8itGKvhw1OdyOd6Wphvg29Ci4UtShRnMnnwl0ab8ih6C
-Z3afRiR8BaN0zXeANlNXLCKQtPMRn3LHDtuWRhKIyW85+tiUjOMA7IWaywHaQgyz
-xql0TiaHMCE/amB5vga/Cj5MfEgX8XzHeg4Lq0z+PWgAM1A76u4=
-=hrgD
+iQIzBAEBCgAdFiEEVhiDQUJbAHQHIptI+xlj/DV1o50FAmlLpVUACgkQ+xlj/DV1
+o50ewBAApl8pLvCwmeHxDHLe+M1ZoNhyQx0NbwEkFkxA28IJU5eonPd8I8mh6P79
+Wi9ZSBqSDSz3uFDLIogBbl9GZy78vcFnTvDLPi8IIpwjrYr14eEbGxQl/bRnq7QG
+nW/85NeHtLOYWoVZA89Lbx6lBakEjAk6CYf+KnLxwI2E9hQbNbo1ZRn59Q19NdCb
+P4gxlywDZgKKcvY84frdVrf/gOjG3hbQ1mn6yTy7iFlhMJSzcnNEO5asmYftEGl/
+CL4DZm922SythTTCO4JEwKQ+LMSSVJ+YUOBi4+7ZN/TgUyr2TbLk9FZRaD7lgnoB
+vjvtQw+20u68xkMLMfv78UZkvWsnkOG80Bdh2VnK3nCaXqXWL3uEP1+CSzoLAuLp
+eOLxYqfx1jQ7z/qNHQR9VyELSUzoIDbJPxqvJmDeL9y9kBIIcW5mRqp4EUzw4X0B
+z1Dd9PRFbfwRuZzuwancs7Qzyqr+thIEaUjIA4OWIXdVGf0nmRiHqA0V1dBnNBSL
+vSb+mx58XyTQaDcKOLSQWAdgmhEfVPLP5gh4bsV5RiVje0Zng/i6S5GvCduNbLz/
+eRMYnFih84jqijlUuQK5jNWucTGCVr72hjoogmkCkBFb1zUXcfGYpAfh/HMud9B0
+573Dx9u51dWbkjdjwCoOk057EmA2wMEpYN/srgJkH2akeS/lZn4=
+=3hFh
 -----END PGP SIGNATURE-----
