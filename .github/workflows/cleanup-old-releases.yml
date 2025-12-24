@@ -108,8 +108,7 @@ jobs:
           CUTOFF_DATE=$(date -d '1 month ago' +%Y-%m-%dT%H:%M:%SZ)
           echo "Closing cleanup report issues older than: $CUTOFF_DATE"
 
-          # Find old cleanup report issues
-          CLOSED_COUNT=0
+          # Find and close old cleanup report issues
           gh issue list \
             --repo "${{ github.repository }}" \
             --label "maintenance,automated" \
@@ -121,10 +120,9 @@ jobs:
             gh issue close "$ISSUE_NUM" \
               --repo "${{ github.repository }}" \
               --comment "Automatically closed: Cleanup report is older than 1 month."
-            CLOSED_COUNT=$((CLOSED_COUNT + 1))
           done
 
-          echo "Closed old cleanup report issues"
+          echo "Done closing old cleanup report issues"
 
       - name: Summary
         run: |
