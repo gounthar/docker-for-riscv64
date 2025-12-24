@@ -99,6 +99,33 @@ jobs:
             --body-file cleanup-report.md \
             --label "maintenance,automated"
 
+      - name: Close old cleanup report issues
+        if: inputs.dry_run != true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Calculate cutoff date (1 month ago)
+          CUTOFF_DATE=$(date -d '1 month ago' +%Y-%m-%dT%H:%M:%SZ)
+          echo "Closing cleanup report issues older than: $CUTOFF_DATE"
+
+          # Find old cleanup report issues
+          CLOSED_COUNT=0
+          gh issue list \
+            --repo "${{ github.repository }}" \
+            --label "maintenance,automated" \
+            --state open \
+            --json number,title,createdAt \
+            --jq ".[] | select(.title | startswith(\"Cleanup Report:\")) | select(.createdAt < \"$CUTOFF_DATE\") | .number" \
+          | while read -r ISSUE_NUM; do
+            echo "Closing old cleanup issue #$ISSUE_NUM"
+            gh issue close "$ISSUE_NUM" \
+              --repo "${{ github.repository }}" \
+              --comment "Automatically closed: Cleanup report is older than 1 month."
+            CLOSED_COUNT=$((CLOSED_COUNT + 1))
+          done
+
+          echo "Closed old cleanup report issues"
+
       - name: Summary
         run: |
           echo "## Cleanup Summary" >> $GITHUB_STEP_SUMMARY
