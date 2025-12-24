@@ -81,16 +81,17 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cat > cleanup-report.md << 'EOFR'
+          CLEANUP_DATE=$(date -u +%Y-%m-%d)
+          cat > cleanup-report.md << EOFR
           ## Automated Cleanup Report
 
-          **Date:** $(date -u +%Y-%m-%d)
+          **Date:** ${CLEANUP_DATE}
           **Deleted releases:** ${{ steps.cleanup.outputs.deleted_count }}
 
           ### Deleted Releases
           ${{ steps.cleanup.outputs.deleted_list }}
 
-          All releases were older than 1 month and had the development build format (`vYYYYMMDD-dev`).
+          All releases were older than 1 month and had the development build format (\`vYYYYMMDD-dev\`).
           EOFR
 
           gh issue create \
