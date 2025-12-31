@@ -1,8 +1,9 @@
 name: Build Docker CLI Debian Package
 
 on:
+  # Only trigger from Weekly Build - Track workflow completes before release exists
   workflow_run:
-    workflows: ["Weekly Docker CLI RISC-V64 Build", "Track Docker CLI Releases"]
+    workflows: ["Weekly Docker CLI RISC-V64 Build"]
     types: [completed]
     branches: [main]
   workflow_dispatch:

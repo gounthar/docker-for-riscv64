@@ -1,8 +1,9 @@
 name: Build BuildKit Debian Package
 
 on:
+  # Only trigger from Weekly Build - Track workflow completes before release exists
   workflow_run:
-    workflows: ["Weekly BuildKit RISC-V64 Build", "Track BuildKit Releases"]
+    workflows: ["Weekly BuildKit RISC-V64 Build"]
     types: [completed]
     branches: [main]
   workflow_dispatch:

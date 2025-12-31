@@ -1,8 +1,9 @@
 name: Build Docker Buildx Debian Package
 
 on:
+  # Only trigger from Weekly Build - Track workflow completes before release exists
   workflow_run:
-    workflows: ["Weekly Docker Buildx RISC-V64 Build", "Track Docker Buildx Releases"]
+    workflows: ["Weekly Docker Buildx RISC-V64 Build"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
