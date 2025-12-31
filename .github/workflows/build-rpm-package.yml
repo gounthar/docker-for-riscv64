@@ -5,8 +5,9 @@ name: Build RPM Package
 # Running rpmbuild on Debian requires extensive workarounds that are fragile.
 
 'on':
+  # Only trigger from Build workflow - Track workflow completes before release exists
   workflow_run:
-    workflows: ["Build Docker RISC-V64", "Track Moby Releases"]
+    workflows: ["Build Docker RISC-V64"]
     types: [completed]
     branches: [main]
   workflow_dispatch:
