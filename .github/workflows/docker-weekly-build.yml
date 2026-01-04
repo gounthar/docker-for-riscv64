@@ -146,6 +146,11 @@ jobs:
 
           ls -lh bin/
 
+      - name: Install runc build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libseccomp-dev pkg-config
+
       - name: Build runc
         run: |
           # Clone runc if not exists
