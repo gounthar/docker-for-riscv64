@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build-cagent:
@@ -90,6 +91,7 @@ jobs:
           ls -lh release-cagent-$DATE/
 
       - name: Create release
+        id: create_release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -121,6 +123,9 @@ jobs:
             VERSION_INFO="**cagent Branch:** ${CAGENT_REF}
             **cagent Version:** ${CAGENT_VERSION}"
           fi
+
+          # Output release version for next step
+          echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
 
           cat > release-notes.md << EOF
           Automated build of cagent for RISC-V64
@@ -180,3 +185,29 @@ jobs:
             --title "${RELEASE_TITLE}" \
             --notes-file release-notes.md \
             release-cagent-$DATE/*
+
+      - name: Trigger package builds for official releases
+        if: ${{ !endsWith(steps.create_release.outputs.release_version, '-dev') }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          RELEASE_VERSION="${{ steps.create_release.outputs.release_version }}"
+
+          # Wait briefly for release assets to be fully available
+          echo "Waiting 10 seconds for release assets to become available..."
+          sleep 10
+
+          echo "Triggering Debian package build for ${RELEASE_VERSION}..."
+          if ! gh workflow run build-cagent-package.yml -f release_tag="${RELEASE_VERSION}"; then
+            echo "::error::Failed to trigger Debian package build"
+            exit 1
+          fi
+
+          echo "Triggering RPM package build for ${RELEASE_VERSION}..."
+          if ! gh workflow run build-cagent-rpm.yml -f release_tag="${RELEASE_VERSION}"; then
+            echo "::error::Failed to trigger RPM package build"
+            exit 1
+          fi
+
+          echo "✓ Package builds triggered successfully"
