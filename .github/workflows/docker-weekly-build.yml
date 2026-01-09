@@ -11,6 +11,10 @@ on:
         required: false
         default: 'master'
 
+permissions:
+  contents: write
+  issues: write
+
 jobs:
   build-docker:
     runs-on: [self-hosted, riscv64]
@@ -274,3 +278,48 @@ jobs:
             --title "${RELEASE_TITLE}" \
             --notes-file release-notes.md \
             release-$DATE/*
+
+      - name: Close tracking issue
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
+          VERSION_REGEX='${{ env.VERSION_REGEX }}'
+
+          # Only close issues for official releases (not dev builds)
+          if [[ "$MOBY_REF" =~ $VERSION_REGEX ]]; then
+            VERSION_TAG="${MOBY_REF#docker-}"
+            RELEASE_VERSION="${VERSION_TAG}-riscv64"
+
+            echo "Searching for tracking issue for Docker ${MOBY_REF}..."
+
+            # Find the issue by label and title
+            ISSUE_NUMBER=$(gh issue list \
+              --label "build-in-progress,moby-release" \
+              --state open \
+              --limit 200 \
+              --json number,title \
+              --jq ".[] | select(.title | contains(\"${MOBY_REF}\")) | .number" \
+              | head -n1)
+
+            if [ -n "$ISSUE_NUMBER" ]; then
+              echo "Found tracking issue #${ISSUE_NUMBER}"
+
+              # Comment on the issue with release link
+              gh issue comment "$ISSUE_NUMBER" \
+                --body "Build completed successfully! Release published: https://github.com/${{ github.repository }}/releases/tag/${RELEASE_VERSION}"
+
+              # Close the issue
+              gh issue close "$ISSUE_NUMBER" \
+                --reason completed \
+                --comment "Automatically closing - release published."
+
+              echo "Issue #${ISSUE_NUMBER} closed successfully"
+            else
+              echo "No tracking issue found for ${MOBY_REF}"
+            fi
+          else
+            echo "Skipping issue closing for development build"
+          fi

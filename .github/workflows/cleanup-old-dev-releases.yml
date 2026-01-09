@@ -1,0 +1,160 @@
+name: Cleanup Old Development Releases
+
+on:
+  schedule:
+    # Run every Saturday at 01:00 UTC (before Sunday weekly builds)
+    - cron: '0 1 * * 6'
+  workflow_dispatch:
+    inputs:
+      retention_days:
+        description: 'Keep dev releases newer than this many days'
+        required: false
+        default: '30'
+        type: number
+      dry_run:
+        description: 'Dry run (only show what would be deleted)'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'true'
+          - 'false'
+
+permissions:
+  contents: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Cleanup old development releases
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          # Configuration
+          RETENTION_DAYS="${{ github.event.inputs.retention_days || '30' }}"
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+
+          # Validate inputs
+          if ! [[ "$RETENTION_DAYS" =~ ^[0-9]+$ ]]; then
+            echo "❌ ERROR: retention_days must be a non-negative integer, got: '$RETENTION_DAYS'" >&2
+            exit 2
+          fi
+
+          if ! [[ "$DRY_RUN" =~ ^(true|false)$ ]]; then
+            echo "❌ ERROR: dry_run must be 'true' or 'false', got: '$DRY_RUN'" >&2
+            exit 2
+          fi
+
+          CUTOFF_DATE=$(date -d "${RETENTION_DAYS} days ago" +%Y%m%d)
+
+          echo "🧹 Cleanup Old Development Releases"
+          echo "======================================"
+          echo "Retention period: ${RETENTION_DAYS} days"
+          echo "Cutoff date: ${CUTOFF_DATE}"
+          echo "Dry run: ${DRY_RUN}"
+          echo ""
+
+          # Component patterns for dev releases
+          DEV_PATTERNS=(
+            "^v[0-9]{8}-dev$"                    # v20251102-dev (Docker Engine)
+            "^cli-v[0-9]{8}-dev$"                # cli-v20251102-dev
+            "^compose-v[0-9]{8}-dev$"            # compose-v20251102-dev
+            "^tini-v[0-9]{8}-dev$"               # tini-v20251102-dev
+            "^buildx-v[0-9]{8}-dev$"             # buildx-v20251102-dev
+            "^buildkit-v[0-9]{8}-dev$"           # buildkit-v20251102-dev
+            "^cagent-v[0-9]{8}-dev$"             # cagent-v20251102-dev
+          )
+
+          # Get all releases
+          echo "📋 Fetching releases..."
+          RELEASES=$(gh release list --limit 9999 --json tagName,createdAt,isPrerelease)
+
+          TOTAL_DELETED=0
+          TOTAL_SKIPPED=0
+          WOULD_DELETE=0
+
+          # Process each dev pattern
+          for PATTERN in "${DEV_PATTERNS[@]}"; do
+            echo ""
+            echo "Processing pattern: ${PATTERN}"
+            echo "---"
+
+            # Find matching releases
+            MATCHING_RELEASES=$(echo "$RELEASES" | jq -r \
+              --arg pattern "$PATTERN" \
+              '.[] | select(.tagName | test($pattern)) | @json')
+
+            if [ -z "$MATCHING_RELEASES" ]; then
+              echo "No releases found for pattern ${PATTERN}"
+              continue
+            fi
+
+            while IFS= read -r release; do
+              TAG=$(echo "$release" | jq -r '.tagName')
+              CREATED_AT=$(echo "$release" | jq -r '.createdAt')
+
+              # Extract date from tag (format: YYYYMMDD)
+              # For v20251102-dev, extract 20251102
+              # For cli-v20251102-dev, extract 20251102
+              RELEASE_DATE=$(echo "$TAG" | grep -oP '[0-9]{8}' | head -n1)
+
+              if [ -z "$RELEASE_DATE" ]; then
+                echo "⚠️  Could not extract date from tag: $TAG (skipping)"
+                ((TOTAL_SKIPPED++))
+                continue
+              fi
+
+              # Compare dates (numeric comparison works for YYYYMMDD format)
+              if [ "$RELEASE_DATE" -lt "$CUTOFF_DATE" ]; then
+                AGE_DAYS=$(( ( $(date +%s) - $(date -d "${RELEASE_DATE:0:4}-${RELEASE_DATE:4:2}-${RELEASE_DATE:6:2}" +%s) ) / 86400 ))
+
+                if [ "$DRY_RUN" = "true" ]; then
+                  echo "🔍 [DRY RUN] Would delete: $TAG (${AGE_DAYS} days old, created: $CREATED_AT)"
+                  ((WOULD_DELETE++))
+                else
+                  echo "🗑️  Deleting: $TAG (${AGE_DAYS} days old, created: $CREATED_AT)"
+                  if gh release delete "$TAG" --yes --cleanup-tag 2>&1; then
+                    ((TOTAL_DELETED++))
+                  else
+                    echo "❌ Failed to delete: $TAG"
+                    ((TOTAL_SKIPPED++))
+                  fi
+                fi
+              else
+                AGE_DAYS=$(( ( $(date +%s) - $(date -d "${RELEASE_DATE:0:4}-${RELEASE_DATE:4:2}-${RELEASE_DATE:6:2}" +%s) ) / 86400 ))
+                echo "✅ Keeping: $TAG (${AGE_DAYS} days old, within retention period)"
+                ((TOTAL_SKIPPED++))
+              fi
+            done <<< "$MATCHING_RELEASES"
+          done
+
+          echo ""
+          echo "======================================"
+          echo "📊 Summary"
+          echo "======================================"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "Mode: DRY RUN (no releases deleted)"
+            echo "Would delete: ${WOULD_DELETE} releases"
+          else
+            echo "Deleted: ${TOTAL_DELETED} releases"
+          fi
+          echo "Kept/Skipped: ${TOTAL_SKIPPED} releases"
+          echo "Retention period: ${RETENTION_DAYS} days"
+          echo "======================================"
+
+      - name: Report cleanup results
+        if: always()
+        run: |
+          DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+          if [ "$DRY_RUN" = "false" ]; then
+            echo "✅ Cleanup completed successfully"
+          else
+            echo "🔍 Dry run completed - no releases were deleted"
+          fi

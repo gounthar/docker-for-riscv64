@@ -13,6 +13,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   build-cli:
@@ -145,3 +146,49 @@ jobs:
             --title "${RELEASE_TITLE}" \
             --notes-file release-notes.md \
             release-cli-$DATE/*
+
+      - name: Close tracking issue
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          CLI_REF="${{ github.event.inputs.cli_ref || 'master' }}"
+
+          # Only close issues for official releases (not dev builds)
+          if [[ "$CLI_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Normalize version format (v28.5.1 or 28.5.1 -> v28.5.1)
+            CLEAN_REF="${CLI_REF#v}"
+            VERSION_TAG="v${CLEAN_REF}"
+            RELEASE_VERSION="cli-${VERSION_TAG}-riscv64"
+
+            echo "Searching for tracking issue for Docker CLI ${VERSION_TAG}..."
+
+            # Find the issue by label and title
+            ISSUE_NUMBER=$(gh issue list \
+              --label "build-in-progress,cli-release" \
+              --state open \
+              --limit 200 \
+              --json number,title \
+              --jq ".[] | select(.title | contains(\"${VERSION_TAG}\")) | .number" \
+              | head -n1)
+
+            if [ -n "$ISSUE_NUMBER" ]; then
+              echo "Found tracking issue #${ISSUE_NUMBER}"
+
+              # Comment on the issue with release link
+              gh issue comment "$ISSUE_NUMBER" \
+                --body "Build completed successfully! Release published: https://github.com/${{ github.repository }}/releases/tag/${RELEASE_VERSION}"
+
+              # Close the issue
+              gh issue close "$ISSUE_NUMBER" \
+                --reason completed \
+                --comment "Automatically closing - release published."
+
+              echo "Issue #${ISSUE_NUMBER} closed successfully"
+            else
+              echo "No tracking issue found for ${VERSION_TAG}"
+            fi
+          else
+            echo "Skipping issue closing for development build"
+          fi
