@@ -99,8 +99,7 @@ jobs:
             # Development build: master -> buildx-v20251018-dev
             RELEASE_VERSION="buildx-v${DATE}-dev"
             RELEASE_TITLE="Docker Buildx RISC-V64 Development Build ${DATE}"
-            VERSION_INFO="**Buildx Branch:** ${BUILDX_REF}
-          **Buildx Commit:** $(cd buildx && git rev-parse --short HEAD)"
+            VERSION_INFO="**Buildx Branch:** ${BUILDX_REF}"$'\n'"**Buildx Commit:** $(cd buildx && git rev-parse --short HEAD)"
           fi
 
           cat > release-notes.md << EOF
