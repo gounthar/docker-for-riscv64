@@ -132,7 +132,7 @@ jobs:
                 echo "✅ Keeping: $TAG (${AGE_DAYS} days old, within retention period)"
                 ((TOTAL_SKIPPED++))
               fi
-            done <<< "$MATCHING_RELEASES"
+            done <<< "$MATCHING_RELEASES" || true
           done
 
           echo ""
