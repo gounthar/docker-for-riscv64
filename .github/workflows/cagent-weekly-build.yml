@@ -14,6 +14,7 @@ on:
 permissions:
   contents: write
   actions: write
+  issues: write
 
 jobs:
   build-cagent:
@@ -211,3 +212,49 @@ jobs:
           fi
 
           echo "✓ Package builds triggered successfully"
+
+      - name: Close tracking issue
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          CAGENT_REF="${{ github.event.inputs.cagent_ref || 'main' }}"
+
+          # Only close issues for official releases (not dev builds)
+          if [[ "$CAGENT_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Normalize version format to match release creation
+            CLEAN_REF="${CAGENT_REF#v}"
+            VERSION_TAG="v${CLEAN_REF}"
+            RELEASE_VERSION="cagent-${VERSION_TAG}-riscv64"
+
+            echo "Searching for tracking issue for cagent ${VERSION_TAG}..."
+
+            # Find the issue by label and title
+            ISSUE_NUMBER=$(gh issue list \
+              --label "build-in-progress,cagent-release" \
+              --state open \
+              --limit 200 \
+              --json number,title \
+              --jq ".[] | select(.title | contains(\"${VERSION_TAG}\")) | .number" \
+              | head -n1)
+
+            if [ -n "$ISSUE_NUMBER" ]; then
+              echo "Found tracking issue #${ISSUE_NUMBER}"
+
+              # Comment on the issue with release link
+              gh issue comment "$ISSUE_NUMBER" \
+                --body "Build completed successfully! Release published: https://github.com/${{ github.repository }}/releases/tag/${RELEASE_VERSION}"
+
+              # Close the issue
+              gh issue close "$ISSUE_NUMBER" \
+                --reason completed \
+                --comment "Automatically closing - release published."
+
+              echo "Issue #${ISSUE_NUMBER} closed successfully"
+            else
+              echo "No tracking issue found for ${VERSION_TAG}"
+            fi
+          else
+            echo "Skipping issue closing for development build"
+          fi
