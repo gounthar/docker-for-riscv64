@@ -154,24 +154,29 @@ jobs:
             release-compose-$DATE/*
 
       - name: Close tracking issue
-        if: ${{ !cancelled() }}
+        if: ${{ success() }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           COMPOSE_REF="${{ github.event.inputs.compose_ref || 'main' }}"
 
           # Only close issues for official releases (not dev builds)
-          if [[ "$COMPOSE_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-            RELEASE_VERSION="${COMPOSE_REF}-riscv64"
+          if [[ "$COMPOSE_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Normalize version format to match release creation
+            CLEAN_REF="${COMPOSE_REF#v}"
+            VERSION_TAG="v${CLEAN_REF}"
+            RELEASE_VERSION="compose-${VERSION_TAG}-riscv64"
 
-            echo "Searching for tracking issue for Docker Compose ${COMPOSE_REF}..."
+            echo "Searching for tracking issue for Docker Compose ${VERSION_TAG}..."
 
             # Find the issue by label and title (if tracking workflow exists)
             ISSUE_NUMBER=$(gh issue list \
               --label "build-in-progress,compose-release" \
               --state open \
+              --limit 200 \
               --json number,title \
-              --jq ".[] | select(.title | contains(\"${COMPOSE_REF}\")) | .number" \
+              --jq ".[] | select(.title | contains(\"${VERSION_TAG}\")) | .number" \
               | head -n1)
 
             if [ -n "$ISSUE_NUMBER" ]; then
@@ -188,7 +193,7 @@ jobs:
 
               echo "Issue #${ISSUE_NUMBER} closed successfully"
             else
-              echo "No tracking issue found for ${COMPOSE_REF}"
+              echo "No tracking issue found for ${VERSION_TAG}"
             fi
           else
             echo "Skipping issue closing for development build"

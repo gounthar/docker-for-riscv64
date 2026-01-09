@@ -10,6 +10,7 @@ on:
         description: 'Keep dev releases newer than this many days'
         required: false
         default: '30'
+        type: number
       dry_run:
         description: 'Dry run (only show what would be deleted)'
         required: false
@@ -39,6 +40,18 @@ jobs:
           # Configuration
           RETENTION_DAYS="${{ github.event.inputs.retention_days || '30' }}"
           DRY_RUN="${{ github.event.inputs.dry_run || 'false' }}"
+
+          # Validate inputs
+          if ! [[ "$RETENTION_DAYS" =~ ^[0-9]+$ ]]; then
+            echo "❌ ERROR: retention_days must be a non-negative integer, got: '$RETENTION_DAYS'" >&2
+            exit 2
+          fi
+
+          if ! [[ "$DRY_RUN" =~ ^(true|false)$ ]]; then
+            echo "❌ ERROR: dry_run must be 'true' or 'false', got: '$DRY_RUN'" >&2
+            exit 2
+          fi
+
           CUTOFF_DATE=$(date -d "${RETENTION_DAYS} days ago" +%Y%m%d)
 
           echo "🧹 Cleanup Old Development Releases"
@@ -61,10 +74,11 @@ jobs:
 
           # Get all releases
           echo "📋 Fetching releases..."
-          RELEASES=$(gh release list --limit 200 --json tagName,createdAt,isPrerelease)
+          RELEASES=$(gh release list --limit 9999 --json tagName,createdAt,isPrerelease)
 
           TOTAL_DELETED=0
           TOTAL_SKIPPED=0
+          WOULD_DELETE=0
 
           # Process each dev pattern
           for PATTERN in "${DEV_PATTERNS[@]}"; do
@@ -103,6 +117,7 @@ jobs:
 
                 if [ "$DRY_RUN" = "true" ]; then
                   echo "🔍 [DRY RUN] Would delete: $TAG (${AGE_DAYS} days old, created: $CREATED_AT)"
+                  ((WOULD_DELETE++))
                 else
                   echo "🗑️  Deleting: $TAG (${AGE_DAYS} days old, created: $CREATED_AT)"
                   if gh release delete "$TAG" --yes --cleanup-tag 2>&1; then
@@ -126,7 +141,7 @@ jobs:
           echo "======================================"
           if [ "$DRY_RUN" = "true" ]; then
             echo "Mode: DRY RUN (no releases deleted)"
-            echo "Would delete: ${TOTAL_DELETED} releases"
+            echo "Would delete: ${WOULD_DELETE} releases"
           else
             echo "Deleted: ${TOTAL_DELETED} releases"
           fi

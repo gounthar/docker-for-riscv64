@@ -148,10 +148,11 @@ jobs:
             release-cli-$DATE/*
 
       - name: Close tracking issue
-        if: ${{ !cancelled() }}
+        if: ${{ success() }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           CLI_REF="${{ github.event.inputs.cli_ref || 'master' }}"
 
           # Only close issues for official releases (not dev builds)
@@ -167,6 +168,7 @@ jobs:
             ISSUE_NUMBER=$(gh issue list \
               --label "build-in-progress,cli-release" \
               --state open \
+              --limit 200 \
               --json number,title \
               --jq ".[] | select(.title | contains(\"${VERSION_TAG}\")) | .number" \
               | head -n1)

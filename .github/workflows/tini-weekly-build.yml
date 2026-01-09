@@ -206,33 +206,35 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          TINI_REF="${{ github.event.inputs.tini_ref || github.ref_name || 'master' }}"
+          set -euo pipefail
+          TINI_REF="${{ github.event.inputs.tini_ref || 'v0.19.0' }}"
 
           # Only close issues for official releases (not dev builds)
           # Relaxed regex to accept optional leading v
           if [[ "$TINI_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
             # Normalize to ensure leading v for tag
-            TINI_TAG="${TINI_REF#v}"  # Remove v if present
-            TINI_TAG="v${TINI_TAG}"   # Add v back
+            TINI_TAG="v${TINI_REF#v}"
             RELEASE_VERSION="tini-${TINI_TAG}-riscv64"
 
-            echo "Searching for tracking issue for Tini ${TINI_REF}..."
+            echo "Searching for tracking issue for Tini ${TINI_TAG}..."
 
             # Find the issue by label and title (if tracking workflow exists)
             # Note: gh issue list --label filter is OR-based
             ISSUE_NUMBER=$(gh issue list \
               --label "build-in-progress,tini-release" \
               --state open \
+              --limit 200 \
               --json number,title \
-              --jq ".[] | select(.title | contains(\"${TINI_REF}\")) | .number" \
+              --jq ".[] | select(.title | contains(\"${TINI_TAG}\")) | .number" \
               | head -n1)
 
             if [ -n "$ISSUE_NUMBER" ]; then
               echo "Found tracking issue #${ISSUE_NUMBER}"
 
               # Comment on the issue with release link
+              RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${RELEASE_VERSION}"
               gh issue comment "$ISSUE_NUMBER" \
-                --body "Build completed successfully! Release published: https://github.com/${{ github.repository }}/releases/tag/${RELEASE_VERSION}"
+                --body "Build completed successfully! Release published: ${RELEASE_URL}"
 
               # Close the issue
               gh issue close "$ISSUE_NUMBER" \
@@ -241,7 +243,7 @@ jobs:
 
               echo "Issue #${ISSUE_NUMBER} closed successfully"
             else
-              echo "No tracking issue found for ${TINI_REF}"
+              echo "No tracking issue found for ${TINI_TAG}"
             fi
           else
             echo "Skipping issue closing for development build"

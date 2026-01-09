@@ -284,6 +284,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
           MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
           VERSION_REGEX='${{ env.VERSION_REGEX }}'
 
@@ -298,6 +299,7 @@ jobs:
             ISSUE_NUMBER=$(gh issue list \
               --label "build-in-progress,moby-release" \
               --state open \
+              --limit 200 \
               --json number,title \
               --jq ".[] | select(.title | contains(\"${MOBY_REF}\")) | .number" \
               | head -n1)
