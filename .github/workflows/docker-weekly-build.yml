@@ -280,7 +280,7 @@ jobs:
             release-$DATE/*
 
       - name: Close tracking issue
-        if: ${{ !cancelled() }}
+        if: ${{ success() }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
