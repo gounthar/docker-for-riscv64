@@ -16,14 +16,17 @@ on:
       release_tag:
         description: |
           Release tag containing the .deb package
-          (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, buildx-v*-riscv64, buildkit-v*-riscv64, or cagent-v*-riscv64)
+          (v*-riscv64, compose-v*-riscv64, cli-v*-riscv64, \
+          buildx-v*-riscv64, buildkit-v*-riscv64, or cagent-v*-riscv64)
         required: true
         default: 'v28.5.2-riscv64'
 
 jobs:
   update-repo:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' ||
+          github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout apt-repo branch
@@ -47,10 +50,13 @@ jobs:
             RELEASE_TAG="${{ github.event.inputs.release_tag }}"
           else
             # Find the latest -riscv64 release using JSON output
-            RELEASE_TAG=$(gh release list --repo gounthar/docker-for-riscv64 \
+            PATTERN="^(compose-|cli-|buildx-|buildkit-|cagent-)?"
+            PATTERN="${PATTERN}v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$"
+            RELEASE_TAG=$(gh release list \
+                          --repo gounthar/docker-for-riscv64 \
                           --limit 100 --json tagName | \
-                          jq -r '.[] | select(.tagName |
-                            test("^(compose-|cli-|buildx-|buildkit-|cagent-)?v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) |
+                          jq -r --arg pattern "$PATTERN" \
+                            '.[] | select(.tagName | test($pattern)) |
                             .tagName' | \
                           head -1)
           fi
@@ -89,50 +95,62 @@ jobs:
           echo ""
 
           # Find latest Engine release (docker.io, containerd, runc)
-          DOCKER_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+          DOCKER_RELEASE=$(gh release list \
+                           --repo gounthar/docker-for-riscv64 \
                            --limit 100 --json tagName | \
-                           jq -r '.[] | select(.tagName |
-                             test("^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           jq -r '.[] | select(.tagName | test(
+                             "^v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | \
+                             .tagName' | \
                            head -1)
           echo "Latest Engine release: $DOCKER_RELEASE"
 
           # Find latest CLI release
-          CLI_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+          CLI_RELEASE=$(gh release list \
+                        --repo gounthar/docker-for-riscv64 \
                         --limit 100 --json tagName | \
-                        jq -r '.[] | select(.tagName |
-                          test("^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                        jq -r '.[] | select(.tagName | test(
+                          "^cli-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | \
+                          .tagName' | \
                         head -1)
           echo "Latest CLI release: $CLI_RELEASE"
 
           # Find latest Compose release
-          COMPOSE_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+          COMPOSE_RELEASE=$(gh release list \
+                            --repo gounthar/docker-for-riscv64 \
                             --limit 100 --json tagName | \
-                            jq -r '.[] | select(.tagName |
-                              test("^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                            jq -r '.[] | select(.tagName | test(
+                              "^compose-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) \
+                              | .tagName' | \
                             head -1)
           echo "Latest Compose release: $COMPOSE_RELEASE"
 
           # Find latest Buildx release
-          BUILDX_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+          BUILDX_RELEASE=$(gh release list \
+                           --repo gounthar/docker-for-riscv64 \
                            --limit 100 --json tagName | \
-                           jq -r '.[] | select(.tagName |
-                             test("^buildx-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           jq -r '.[] | select(.tagName | test(
+                             "^buildx-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) \
+                             | .tagName' | \
                            head -1)
           echo "Latest Buildx release: $BUILDX_RELEASE"
 
           # Find latest cagent release
-          CAGENT_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+          CAGENT_RELEASE=$(gh release list \
+                           --repo gounthar/docker-for-riscv64 \
                            --limit 100 --json tagName | \
-                           jq -r '.[] | select(.tagName |
-                             test("^cagent-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           jq -r '.[] | select(.tagName | test(
+                             "^cagent-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) \
+                             | .tagName' | \
                            head -1)
           echo "Latest cagent release: $CAGENT_RELEASE"
 
           # Find latest BuildKit release
-          BUILDKIT_RELEASE=$(gh release list --repo gounthar/docker-for-riscv64 \
+          BUILDKIT_RELEASE=$(gh release list \
+                           --repo gounthar/docker-for-riscv64 \
                            --limit 100 --json tagName | \
-                           jq -r '.[] | select(.tagName |
-                             test("^buildkit-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) | .tagName' | \
+                           jq -r '.[] | select(.tagName | test(
+                             "^buildkit-v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64$")) |
+                             .tagName' | \
                            head -1)
           echo "Latest BuildKit release: $BUILDKIT_RELEASE"
           echo ""
@@ -154,10 +172,12 @@ jobs:
                 return 0
               else
                 if [ $attempt -lt $max_retries ]; then
-                  echo "⚠️  Download attempt $attempt failed, retrying in ${retry_delay}s..."
+                  echo "⚠️  Download attempt $attempt failed, " \
+                       "retrying in ${retry_delay}s..."
                   sleep $retry_delay
                 else
-                  echo "❌ Failed to download $package_name after $max_retries attempts"
+                  echo "❌ Failed to download $package_name after " \
+                       "$max_retries attempts"
                   return 1
                 fi
               fi
@@ -170,57 +190,92 @@ jobs:
           # Download Engine packages (docker.io, containerd, runc)
           if [ -n "$DOCKER_RELEASE" ]; then
             echo "Downloading Engine packages from $DOCKER_RELEASE..."
-            download_package "$DOCKER_RELEASE" 'docker.io_*.deb' 'docker.io' || FAILED_DOWNLOADS+=("docker.io from $DOCKER_RELEASE")
-            download_package "$DOCKER_RELEASE" 'containerd_*.deb' 'containerd' || FAILED_DOWNLOADS+=("containerd from $DOCKER_RELEASE")
-            download_package "$DOCKER_RELEASE" 'runc_*.deb' 'runc' || FAILED_DOWNLOADS+=("runc from $DOCKER_RELEASE")
+            download_package "$DOCKER_RELEASE" 'docker.io_*.deb' \
+              'docker.io' || \
+              FAILED_DOWNLOADS+=("docker.io from $DOCKER_RELEASE")
+            download_package "$DOCKER_RELEASE" 'containerd_*.deb' \
+              'containerd' || \
+              FAILED_DOWNLOADS+=("containerd from $DOCKER_RELEASE")
+            download_package "$DOCKER_RELEASE" 'runc_*.deb' 'runc' || \
+              FAILED_DOWNLOADS+=("runc from $DOCKER_RELEASE")
           fi
 
           # Download CLI package
           if [ -n "$CLI_RELEASE" ]; then
-            download_package "$CLI_RELEASE" 'docker-cli_*.deb' 'docker-cli' || FAILED_DOWNLOADS+=("docker-cli from $CLI_RELEASE")
+            download_package "$CLI_RELEASE" 'docker-cli_*.deb' \
+              'docker-cli' || \
+              FAILED_DOWNLOADS+=("docker-cli from $CLI_RELEASE")
           fi
 
           # Download Compose package
           if [ -n "$COMPOSE_RELEASE" ]; then
-            download_package "$COMPOSE_RELEASE" 'docker-compose-plugin_*.deb' 'docker-compose-plugin' || FAILED_DOWNLOADS+=("docker-compose-plugin from $COMPOSE_RELEASE")
+            download_package "$COMPOSE_RELEASE" \
+              'docker-compose-plugin_*.deb' \
+              'docker-compose-plugin' || \
+              FAILED_DOWNLOADS+=(
+                "docker-compose-plugin from $COMPOSE_RELEASE")
           fi
 
           # Download Buildx package
           if [ -n "$BUILDX_RELEASE" ]; then
-            download_package "$BUILDX_RELEASE" 'docker-buildx-plugin_*.deb' 'docker-buildx-plugin' || FAILED_DOWNLOADS+=("docker-buildx-plugin from $BUILDX_RELEASE")
+            download_package "$BUILDX_RELEASE" \
+              'docker-buildx-plugin_*.deb' \
+              'docker-buildx-plugin' || \
+              FAILED_DOWNLOADS+=(
+                "docker-buildx-plugin from $BUILDX_RELEASE")
           fi
 
           # Download cagent package
           if [ -n "$CAGENT_RELEASE" ]; then
-            download_package "$CAGENT_RELEASE" 'cagent_*.deb' 'cagent' || FAILED_DOWNLOADS+=("cagent from $CAGENT_RELEASE")
+            download_package "$CAGENT_RELEASE" 'cagent_*.deb' \
+              'cagent' || \
+              FAILED_DOWNLOADS+=("cagent from $CAGENT_RELEASE")
           fi
 
           # Download BuildKit package
           if [ -n "$BUILDKIT_RELEASE" ]; then
-            download_package "$BUILDKIT_RELEASE" 'buildkit_*.deb' 'buildkit' || FAILED_DOWNLOADS+=("buildkit from $BUILDKIT_RELEASE")
+            download_package "$BUILDKIT_RELEASE" 'buildkit_*.deb' \
+              'buildkit' || \
+              FAILED_DOWNLOADS+=("buildkit from $BUILDKIT_RELEASE")
           fi
 
           # Report download failures
           if [ ${#FAILED_DOWNLOADS[@]} -gt 0 ]; then
             echo ""
-            echo "⚠️  WARNING: ${#FAILED_DOWNLOADS[@]} package(s) failed to download:"
+            echo "⚠️  WARNING: ${#FAILED_DOWNLOADS[@]} package(s) " \
+                 "failed to download:"
             printf '  - %s\n' "${FAILED_DOWNLOADS[@]}"
             echo ""
             echo "This may indicate:"
-            echo "  1. Package not yet available in release (CDN propagation delay)"
+            echo "  1. Package not yet available in release " \
+                 "(CDN propagation delay)"
             echo "  2. Package build failed or was skipped"
             echo "  3. Network or authentication issue"
+            echo ""
+            echo "To manually verify package availability, check:"
+            # Show specific release URLs for failed downloads
+            for failed in "${FAILED_DOWNLOADS[@]}"; do
+              FAILED_RELEASE=$(echo "$failed" | sed 's/.* from //')
+              RELEASE_URL="https://github.com/gounthar"
+              RELEASE_URL="$RELEASE_URL/docker-for-riscv64"
+              RELEASE_URL="$RELEASE_URL/releases/tag/$FAILED_RELEASE"
+              echo "  $RELEASE_URL"
+            done
             echo ""
             echo "Continuing with available packages..."
           fi
 
           echo ""
-          echo "Cleaning up: keeping only the latest version of each package..."
-          # For each package prefix, keep only the newest file (by timestamp)
-          for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc cagent buildkit; do
-            # Get all matching files sorted by modification time (newest first)
+          printf '%s\n' "Cleaning up: keeping only the latest version"
+          printf '%s\n' "of each package..."
+          # For each package prefix, keep only the newest file
+          for pattern in docker.io docker-cli docker-compose-plugin \
+                         docker-buildx-plugin containerd runc cagent \
+                         buildkit; do
+            # Get all matching files sorted by modification time
             # Keep the first (newest), delete the rest
-            ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v || true
+            ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | \
+              xargs -r rm -v || true
           done
 
           echo ""
@@ -277,7 +332,8 @@ jobs:
 
           MISSING_PACKAGES=()
           for pkg in "${EXPECTED_PACKAGES[@]}"; do
-            if reprepro -b . list trixie | grep -q "^trixie|main|riscv64: $pkg "; then
+            if reprepro -b . list trixie | \
+               grep -q "^trixie|main|riscv64: $pkg "; then
               echo "✅ $pkg found"
             else
               echo "❌ $pkg MISSING"
@@ -287,10 +343,12 @@ jobs:
 
           echo ""
           if [ ${#MISSING_PACKAGES[@]} -gt 0 ]; then
-            echo "⚠️  WARNING: ${#MISSING_PACKAGES[@]} package(s) missing from repository:"
+            echo "⚠️  WARNING: ${#MISSING_PACKAGES[@]} package(s) " \
+                 "missing from repository:"
             printf '  - %s\n' "${MISSING_PACKAGES[@]}"
             echo ""
-            echo "This indicates the APT repository update may have failed."
+            echo "This indicates the APT repository update may " \
+                 "have failed."
             echo "Current repository state:"
             reprepro -b . list trixie
             exit 1
@@ -343,8 +401,9 @@ jobs:
 
           # Create commit message with all package versions
           # Capture package list with error handling
-          PACKAGE_LIST=$(reprepro -b . list trixie | sed 's/^/  - /' || echo "  - Failed to list packages")
-          
+          PACKAGE_LIST=$(reprepro -b . list trixie | sed 's/^/  - /' || \
+                         echo "  - Failed to list packages")
+
           # Build commit message using printf (YAML-safe)
           COMMIT_MSG=$(printf "%s\n\n%s\n\n%s\n%s\n\n%s\n%s\n%s" \
             "Update APT repository with latest packages" \
@@ -367,12 +426,15 @@ jobs:
             else
               RETRY_COUNT=$((RETRY_COUNT + 1))
               if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                echo "⚠️  Push failed (attempt $RETRY_COUNT/$MAX_RETRIES). Pulling and retrying..."
+                echo "⚠️  Push failed (attempt $RETRY_COUNT/" \
+                     "$MAX_RETRIES). Pulling and retrying..."
 
                 # Fetch latest changes with error handling
                 if ! git fetch origin apt-repo; then
-                  echo "❌ Failed to fetch from remote. This may indicate network or authentication issues."
-                  echo "Skipping remaining retries and failing the workflow."
+                  echo "❌ Failed to fetch from remote. This may " \
+                       "indicate network or authentication issues."
+                  echo "Skipping remaining retries and failing the " \
+                       "workflow."
                   exit 1
                 fi
 
@@ -380,25 +442,33 @@ jobs:
                 if git rebase origin/apt-repo; then
                   echo "✅ Rebased successfully, retrying push..."
                 else
-                  echo "⚠️  Rebase conflict detected. Resolving by accepting remote changes and re-adding package..."
-                  # Only abort if rebase is actually in progress (check filesystem state)
-                  if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
+                  echo "⚠️  Rebase conflict detected. Resolving by " \
+                       "accepting remote changes and re-adding package..."
+                  # Only abort if rebase is actually in progress
+                  if [ -d .git/rebase-merge ] || \
+                     [ -d .git/rebase-apply ]; then
                     git rebase --abort
                   fi
 
                   # Reset to remote state
                   git reset --hard origin/apt-repo
 
-                  # Re-add the package (reprepro will handle if it's already there)
+                  # Re-add the package
+                  # (reprepro will handle if it's already there)
                   for deb in *.deb; do
                     if [ -f "$deb" ]; then
                       echo "Re-adding: $deb"
-                      if reprepro -b . includedeb trixie "$deb" 2>&1 | tee /tmp/reprepro.log; then
+                      if reprepro -b . includedeb trixie "$deb" 2>&1 | \
+                         tee /tmp/reprepro.log; then
                         echo "✅ Package added successfully"
                       else
-                        # Check if error is due to package already existing (exit code 254)
-                        if grep -q "already registered with other version" /tmp/reprepro.log; then
-                          echo "ℹ️  Package already in repository with different version - this is expected"
+                        # Check if error is due to package already
+                        # existing (exit code 254)
+                        if grep -q "already registered with other version" \
+                           /tmp/reprepro.log; then
+                          echo "ℹ️  Package already in repository " \
+                               "with different version - " \
+                               "this is expected"
                         else
                           echo "⚠️  reprepro error occurred:"
                           cat /tmp/reprepro.log
@@ -410,19 +480,21 @@ jobs:
                   # Commit again if there are changes
                   if ! git diff --quiet dists pool; then
                     git add dists pool
-                    git commit -m "Add $PACKAGE_NAME $VERSION from release $RELEASE_TAG" \
-                               -m "Automated update from GitHub Actions (retry $RETRY_COUNT)." \
-                               -m "Package: ${PACKAGE_NAME}_${VERSION}-*_riscv64.deb" \
-                               -m "Release: $RELEASE_TAG" \
-                               -m "Workflow: ${{ github.workflow }}" \
-                               -m "Run: ${{ github.run_id }}"
+                    git commit \
+                      -m "Add $PACKAGE_NAME $VERSION from $RELEASE_TAG" \
+                      -m "Automated update from Actions (retry $RETRY_COUNT)." \
+                      -m "Package: ${PACKAGE_NAME}_${VERSION}-*_riscv64.deb" \
+                      -m "Release: $RELEASE_TAG" \
+                      -m "Workflow: ${{ github.workflow }}" \
+                      -m "Run: ${{ github.run_id }}"
                   else
                     echo "📝 Package already added by concurrent workflow"
                     exit 0
                   fi
                 fi
 
-                # Wait a bit before retrying (random delay to avoid thundering herd)
+                # Wait a bit before retrying
+                # (random delay to avoid thundering herd)
                 sleep $((RANDOM % 10 + 5))
               else
                 echo "❌ Failed to push after $MAX_RETRIES attempts"
