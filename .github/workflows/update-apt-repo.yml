@@ -266,8 +266,8 @@ jobs:
           fi
 
           echo ""
-          printf '%s\n' "Cleaning up: keeping only the latest version"
-          printf '%s\n' "of each package..."
+          echo "Cleaning up: keeping only the latest version"
+          echo "of each package..."
           # For each package prefix, keep only the newest file
           for pattern in docker.io docker-cli docker-compose-plugin \
                          docker-buildx-plugin containerd runc cagent \
