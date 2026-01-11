@@ -170,34 +170,44 @@ jobs:
           # Download Engine packages (docker.io, containerd, runc)
           if [ -n "$DOCKER_RELEASE" ]; then
             echo "Downloading Engine packages from $DOCKER_RELEASE..."
-            download_package "$DOCKER_RELEASE" 'docker.io_*.deb' 'docker.io' || FAILED_DOWNLOADS+=("docker.io from $DOCKER_RELEASE")
-            download_package "$DOCKER_RELEASE" 'containerd_*.deb' 'containerd' || FAILED_DOWNLOADS+=("containerd from $DOCKER_RELEASE")
-            download_package "$DOCKER_RELEASE" 'runc_*.deb' 'runc' || FAILED_DOWNLOADS+=("runc from $DOCKER_RELEASE")
+            download_package "$DOCKER_RELEASE" 'docker.io_*.deb' 'docker.io' || \
+              FAILED_DOWNLOADS+=("docker.io from $DOCKER_RELEASE")
+            download_package "$DOCKER_RELEASE" 'containerd_*.deb' 'containerd' || \
+              FAILED_DOWNLOADS+=("containerd from $DOCKER_RELEASE")
+            download_package "$DOCKER_RELEASE" 'runc_*.deb' 'runc' || \
+              FAILED_DOWNLOADS+=("runc from $DOCKER_RELEASE")
           fi
 
           # Download CLI package
           if [ -n "$CLI_RELEASE" ]; then
-            download_package "$CLI_RELEASE" 'docker-cli_*.deb' 'docker-cli' || FAILED_DOWNLOADS+=("docker-cli from $CLI_RELEASE")
+            download_package "$CLI_RELEASE" 'docker-cli_*.deb' 'docker-cli' || \
+              FAILED_DOWNLOADS+=("docker-cli from $CLI_RELEASE")
           fi
 
           # Download Compose package
           if [ -n "$COMPOSE_RELEASE" ]; then
-            download_package "$COMPOSE_RELEASE" 'docker-compose-plugin_*.deb' 'docker-compose-plugin' || FAILED_DOWNLOADS+=("docker-compose-plugin from $COMPOSE_RELEASE")
+            download_package "$COMPOSE_RELEASE" 'docker-compose-plugin_*.deb' \
+              'docker-compose-plugin' || \
+              FAILED_DOWNLOADS+=("docker-compose-plugin from $COMPOSE_RELEASE")
           fi
 
           # Download Buildx package
           if [ -n "$BUILDX_RELEASE" ]; then
-            download_package "$BUILDX_RELEASE" 'docker-buildx-plugin_*.deb' 'docker-buildx-plugin' || FAILED_DOWNLOADS+=("docker-buildx-plugin from $BUILDX_RELEASE")
+            download_package "$BUILDX_RELEASE" 'docker-buildx-plugin_*.deb' \
+              'docker-buildx-plugin' || \
+              FAILED_DOWNLOADS+=("docker-buildx-plugin from $BUILDX_RELEASE")
           fi
 
           # Download cagent package
           if [ -n "$CAGENT_RELEASE" ]; then
-            download_package "$CAGENT_RELEASE" 'cagent_*.deb' 'cagent' || FAILED_DOWNLOADS+=("cagent from $CAGENT_RELEASE")
+            download_package "$CAGENT_RELEASE" 'cagent_*.deb' 'cagent' || \
+              FAILED_DOWNLOADS+=("cagent from $CAGENT_RELEASE")
           fi
 
           # Download BuildKit package
           if [ -n "$BUILDKIT_RELEASE" ]; then
-            download_package "$BUILDKIT_RELEASE" 'buildkit_*.deb' 'buildkit' || FAILED_DOWNLOADS+=("buildkit from $BUILDKIT_RELEASE")
+            download_package "$BUILDKIT_RELEASE" 'buildkit_*.deb' 'buildkit' || \
+              FAILED_DOWNLOADS+=("buildkit from $BUILDKIT_RELEASE")
           fi
 
           # Report download failures
@@ -210,6 +220,9 @@ jobs:
             echo "  1. Package not yet available in release (CDN propagation delay)"
             echo "  2. Package build failed or was skipped"
             echo "  3. Network or authentication issue"
+            echo ""
+            echo "Verify releases manually at:"
+            echo "  https://github.com/gounthar/docker-for-riscv64/releases"
             echo ""
             echo "Continuing with available packages..."
           fi
