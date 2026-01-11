@@ -137,50 +137,81 @@ jobs:
           echo "Latest BuildKit release: $BUILDKIT_RELEASE"
           echo ""
 
+          # Function to download package with retry logic
+          download_package() {
+            local release="$1"
+            local pattern="$2"
+            local package_name="$3"
+            local max_retries=3
+            local retry_delay=5
+
+            echo "Downloading $package_name from $release..."
+
+            for attempt in $(seq 1 $max_retries); do
+              if gh release download "$release" -p "$pattern" \
+                 --repo gounthar/docker-for-riscv64 --clobber; then
+                echo "✅ Successfully downloaded $package_name"
+                return 0
+              else
+                if [ $attempt -lt $max_retries ]; then
+                  echo "⚠️  Download attempt $attempt failed, retrying in ${retry_delay}s..."
+                  sleep $retry_delay
+                else
+                  echo "❌ Failed to download $package_name after $max_retries attempts"
+                  return 1
+                fi
+              fi
+            done
+          }
+
+          # Track download failures
+          FAILED_DOWNLOADS=()
+
           # Download Engine packages (docker.io, containerd, runc)
           if [ -n "$DOCKER_RELEASE" ]; then
             echo "Downloading Engine packages from $DOCKER_RELEASE..."
-            gh release download "$DOCKER_RELEASE" -p 'docker.io_*.deb' \
-              --repo gounthar/docker-for-riscv64 --clobber || true
-            gh release download "$DOCKER_RELEASE" -p 'containerd_*.deb' \
-              --repo gounthar/docker-for-riscv64 --clobber || true
-            gh release download "$DOCKER_RELEASE" -p 'runc_*.deb' \
-              --repo gounthar/docker-for-riscv64 --clobber || true
+            download_package "$DOCKER_RELEASE" 'docker.io_*.deb' 'docker.io' || FAILED_DOWNLOADS+=("docker.io from $DOCKER_RELEASE")
+            download_package "$DOCKER_RELEASE" 'containerd_*.deb' 'containerd' || FAILED_DOWNLOADS+=("containerd from $DOCKER_RELEASE")
+            download_package "$DOCKER_RELEASE" 'runc_*.deb' 'runc' || FAILED_DOWNLOADS+=("runc from $DOCKER_RELEASE")
           fi
 
           # Download CLI package
           if [ -n "$CLI_RELEASE" ]; then
-            echo "Downloading CLI package from $CLI_RELEASE..."
-            gh release download "$CLI_RELEASE" -p 'docker-cli_*.deb' \
-              --repo gounthar/docker-for-riscv64 --clobber || true
+            download_package "$CLI_RELEASE" 'docker-cli_*.deb' 'docker-cli' || FAILED_DOWNLOADS+=("docker-cli from $CLI_RELEASE")
           fi
 
           # Download Compose package
           if [ -n "$COMPOSE_RELEASE" ]; then
-            echo "Downloading Compose package from $COMPOSE_RELEASE..."
-            gh release download "$COMPOSE_RELEASE" -p 'docker-compose-plugin_*.deb' \
-              --repo gounthar/docker-for-riscv64 --clobber || true
+            download_package "$COMPOSE_RELEASE" 'docker-compose-plugin_*.deb' 'docker-compose-plugin' || FAILED_DOWNLOADS+=("docker-compose-plugin from $COMPOSE_RELEASE")
           fi
 
           # Download Buildx package
           if [ -n "$BUILDX_RELEASE" ]; then
-            echo "Downloading Buildx package from $BUILDX_RELEASE..."
-            gh release download "$BUILDX_RELEASE" -p 'docker-buildx-plugin_*.deb' \
-              --repo gounthar/docker-for-riscv64 --clobber || true
+            download_package "$BUILDX_RELEASE" 'docker-buildx-plugin_*.deb' 'docker-buildx-plugin' || FAILED_DOWNLOADS+=("docker-buildx-plugin from $BUILDX_RELEASE")
           fi
 
           # Download cagent package
           if [ -n "$CAGENT_RELEASE" ]; then
-            echo "Downloading cagent package from $CAGENT_RELEASE..."
-            gh release download "$CAGENT_RELEASE" -p 'cagent_*.deb' \
-              --repo gounthar/docker-for-riscv64 --clobber || true
+            download_package "$CAGENT_RELEASE" 'cagent_*.deb' 'cagent' || FAILED_DOWNLOADS+=("cagent from $CAGENT_RELEASE")
           fi
 
           # Download BuildKit package
           if [ -n "$BUILDKIT_RELEASE" ]; then
-            echo "Downloading BuildKit package from $BUILDKIT_RELEASE..."
-            gh release download "$BUILDKIT_RELEASE" -p 'buildkit_*.deb' \
-              --repo gounthar/docker-for-riscv64 --clobber || true
+            download_package "$BUILDKIT_RELEASE" 'buildkit_*.deb' 'buildkit' || FAILED_DOWNLOADS+=("buildkit from $BUILDKIT_RELEASE")
+          fi
+
+          # Report download failures
+          if [ ${#FAILED_DOWNLOADS[@]} -gt 0 ]; then
+            echo ""
+            echo "⚠️  WARNING: ${#FAILED_DOWNLOADS[@]} package(s) failed to download:"
+            printf '  - %s\n' "${FAILED_DOWNLOADS[@]}"
+            echo ""
+            echo "This may indicate:"
+            echo "  1. Package not yet available in release (CDN propagation delay)"
+            echo "  2. Package build failed or was skipped"
+            echo "  3. Network or authentication issue"
+            echo ""
+            echo "Continuing with available packages..."
           fi
 
           echo ""
