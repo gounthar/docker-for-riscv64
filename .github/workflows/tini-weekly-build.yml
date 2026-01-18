@@ -14,6 +14,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 jobs:
   build-tini:
@@ -247,4 +248,31 @@ jobs:
             fi
           else
             echo "Skipping issue closing for development build"
+          fi
+
+      - name: Trigger package builds
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          TINI_REF="${{ github.event.inputs.tini_ref || 'v0.19.0' }}"
+
+          # Only trigger package builds for official releases (not dev builds)
+          if [[ "$TINI_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Normalize to ensure leading v for tag
+            TINI_TAG="v${TINI_REF#v}"
+            RELEASE_TAG="tini-${TINI_TAG}-riscv64"
+
+            echo "Triggering package builds for $RELEASE_TAG..."
+
+            # Trigger RPM package build (tini is primarily for RPM-based distros)
+            gh workflow run build-tini-rpm.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-tini-rpm.yml"
+
+            echo ""
+            echo "Package builds triggered successfully!"
+            echo "Monitor progress: gh run list --workflow=build-tini-rpm.yml --limit 1"
+          else
+            echo "Skipping package builds for development build"
           fi
