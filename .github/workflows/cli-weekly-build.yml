@@ -14,6 +14,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 jobs:
   build-cli:
@@ -191,4 +192,34 @@ jobs:
             fi
           else
             echo "Skipping issue closing for development build"
+          fi
+
+      - name: Trigger package builds
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          CLI_REF="${{ github.event.inputs.cli_ref || 'master' }}"
+
+          # Only trigger package builds for official releases (not dev builds)
+          if [[ "$CLI_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            CLEAN_REF="${CLI_REF#v}"
+            RELEASE_TAG="cli-v${CLEAN_REF}-riscv64"
+
+            echo "Triggering package builds for $RELEASE_TAG..."
+
+            # Trigger Debian package build
+            gh workflow run build-cli-package.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-cli-package.yml"
+
+            # Trigger RPM package build
+            gh workflow run build-cli-rpm.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-cli-rpm.yml"
+
+            echo ""
+            echo "Package builds triggered successfully!"
+            echo "Monitor progress: gh run list --workflow=build-cli-package.yml --limit 1"
+          else
+            echo "Skipping package builds for development build"
           fi

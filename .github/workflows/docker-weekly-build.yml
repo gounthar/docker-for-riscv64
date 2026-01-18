@@ -14,6 +14,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 jobs:
   build-docker:
@@ -322,4 +323,35 @@ jobs:
             fi
           else
             echo "Skipping issue closing for development build"
+          fi
+
+      - name: Trigger package builds
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
+          VERSION_REGEX='${{ env.VERSION_REGEX }}'
+
+          # Only trigger package builds for official releases (not dev builds)
+          if [[ "$MOBY_REF" =~ $VERSION_REGEX ]]; then
+            VERSION_TAG="${MOBY_REF#docker-}"
+            RELEASE_TAG="${VERSION_TAG}-riscv64"
+
+            echo "Triggering package builds for $RELEASE_TAG..."
+
+            # Trigger Debian package build
+            gh workflow run build-debian-package.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-debian-package.yml"
+
+            # Trigger RPM package build
+            gh workflow run build-rpm-package.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-rpm-package.yml"
+
+            echo ""
+            echo "Package builds triggered successfully!"
+            echo "Monitor progress: gh run list --workflow=build-debian-package.yml --limit 1"
+          else
+            echo "Skipping package builds for development build"
           fi

@@ -14,6 +14,7 @@ on:
 permissions:
   contents: write
   packages: write
+  actions: write
 
 jobs:
   build-buildkit:
@@ -368,3 +369,32 @@ jobs:
             release-buildkit-$DATE/*
 
           echo "Release created: $RELEASE_VERSION"
+
+      - name: Trigger package builds
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
+
+          # Only trigger package builds for official releases (not dev builds)
+          if [[ "$BUILDKIT_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9]+)?$ ]]; then
+            RELEASE_TAG="buildkit-${BUILDKIT_REF}-riscv64"
+
+            echo "Triggering package builds for $RELEASE_TAG..."
+
+            # Trigger Debian package build
+            gh workflow run build-buildkit-package.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-buildkit-package.yml"
+
+            # Trigger RPM package build
+            gh workflow run build-buildkit-rpm.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-buildkit-rpm.yml"
+
+            echo ""
+            echo "Package builds triggered successfully!"
+            echo "Monitor progress: gh run list --workflow=build-buildkit-package.yml --limit 1"
+          else
+            echo "Skipping package builds for development build"
+          fi

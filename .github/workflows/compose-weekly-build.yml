@@ -14,6 +14,7 @@ on:
 permissions:
   contents: write
   issues: write
+  actions: write
 
 jobs:
   build-compose:
@@ -197,4 +198,34 @@ jobs:
             fi
           else
             echo "Skipping issue closing for development build"
+          fi
+
+      - name: Trigger package builds
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          COMPOSE_REF="${{ github.event.inputs.compose_ref || 'main' }}"
+
+          # Only trigger package builds for official releases (not dev builds)
+          if [[ "$COMPOSE_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            CLEAN_REF="${COMPOSE_REF#v}"
+            RELEASE_TAG="compose-v${CLEAN_REF}-riscv64"
+
+            echo "Triggering package builds for $RELEASE_TAG..."
+
+            # Trigger Debian package build
+            gh workflow run build-compose-package.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-compose-package.yml"
+
+            # Trigger RPM package build
+            gh workflow run build-compose-rpm.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-compose-rpm.yml"
+
+            echo ""
+            echo "Package builds triggered successfully!"
+            echo "Monitor progress: gh run list --workflow=build-compose-package.yml --limit 1"
+          else
+            echo "Skipping package builds for development build"
           fi
