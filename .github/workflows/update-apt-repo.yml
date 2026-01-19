@@ -20,6 +20,10 @@ on:
         required: true
         default: 'v28.5.2-riscv64'
 
+concurrency:
+  group: repo-branch-updates
+  cancel-in-progress: false
+
 jobs:
   update-repo:
     runs-on: ubuntu-latest
@@ -357,7 +361,7 @@ jobs:
           # Create commit message with all package versions
           # Capture package list with error handling
           PACKAGE_LIST=$(reprepro -b . list trixie | sed 's/^/  - /' || echo "  - Failed to list packages")
-          
+
           # Build commit message using printf (YAML-safe)
           COMMIT_MSG=$(printf "%s\n\n%s\n\n%s\n%s\n\n%s\n%s\n%s" \
             "Update APT repository with latest packages" \

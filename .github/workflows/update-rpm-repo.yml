@@ -15,6 +15,10 @@ on:
 env:
   GPG_KEY_ID: '56188341425B007407229B48FB1963FC3575A39D'
 
+concurrency:
+  group: repo-branch-updates
+  cancel-in-progress: false
+
 jobs:
   update-repo:
     runs-on: ubuntu-latest
