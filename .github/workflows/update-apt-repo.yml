@@ -20,6 +20,10 @@ on:
         required: true
         default: 'v28.5.2-riscv64'
 
+concurrency:
+  group: apt-repo-branch-updates
+  cancel-in-progress: false
+
 jobs:
   update-repo:
     runs-on: ubuntu-latest
