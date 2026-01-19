@@ -21,7 +21,7 @@ on:
         default: 'v28.5.2-riscv64'
 
 concurrency:
-  group: apt-repo-branch-updates
+  group: repo-branch-updates
   cancel-in-progress: false
 
 jobs:
