@@ -1,18 +1,18 @@
 Package: buildkit
-Version: 0.26.3-riscv64-1
+Version: 0.27.0-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verächten <bruno@verachten.fr>
-Installed-Size: 66805
+Installed-Size: 71759
 Recommends: containerd (>= 1.7) | containerd.io (>= 1.7)
 Suggests: docker.io (>= 20.10) | docker-ce (>= 20.10)
 Homepage: https://github.com/moby/buildkit
 Priority: optional
 Section: devel
-Filename: pool/main/b/buildkit/buildkit_0.26.3-riscv64-1_riscv64.deb
-Size: 15852640
-SHA256: fd3209f84ce0197ec82417226cb53b85b57e14b1df6ea9fc399766d87e4ecc24
-SHA1: b07c7cb172e7be78b37a57172eb7341a37f42d0a
-MD5sum: d7f7bf10ca290e0d1df7b3eff18d0b17
+Filename: pool/main/b/buildkit/buildkit_0.27.0-riscv64-1_riscv64.deb
+Size: 16932920
+SHA256: a9288396f7e013ded6637967f1b0377fa672ecc9145a69195c0cfee3277fde83
+SHA1: 31b46b1117c3a0efd0213c24d55016568783beb8
+MD5sum: 1957c220da81c8eede56223078ef525a
 Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
  BuildKit is a toolkit for converting source code to build artifacts in an
  efficient, expressive, and repeatable manner. It is the next-generation
@@ -39,18 +39,18 @@ Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolki
  the RISC-V 64-bit architecture.
 
 Package: cagent
-Version: 1.19.2-1
+Version: 1.19.5-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 94349
+Installed-Size: 95188
 Homepage: https://github.com/docker/cagent
 Priority: optional
 Section: devel
-Filename: pool/main/c/cagent/cagent_1.19.2-1_riscv64.deb
-Size: 32433012
-SHA256: a0ae1ca10b6d6344051b09e198e19afc00ac2fc34f76aa686a9cb85b815ec5cf
-SHA1: a90725397ee3e27bd281bfdf097f01b3f735aa69
-MD5sum: 8d97410078d1b944fd60f1db9625807d
+Filename: pool/main/c/cagent/cagent_1.19.5-1_riscv64.deb
+Size: 32775216
+SHA256: ea7b55c5a2ede955da47b8d354afbf5d44c48e1b8b9575ea9781b5ae854457c0
+SHA1: e80900f80246db2689068aea07adb4439d1b9903
+MD5sum: 5ee398b1502a327e7a2564ee4ccda5bc
 Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
  cagent is a powerful, easy to use, customizable multi-agent runtime that
  orchestrates AI agents with specialized capabilities and tools.
@@ -92,19 +92,19 @@ Description: Container runtime for RISC-V64 architecture
  Built on BananaPi F3 running Armbian Trixie.
 
 Package: docker-buildx-plugin
-Version: 0.30.1-riscv64-1
+Version: 0.31.0-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verächten <bruno@verachten.fr>
-Installed-Size: 66197
+Installed-Size: 83704
 Recommends: docker.io (>= 20.10) | docker-ce (>= 20.10)
 Homepage: https://github.com/docker/buildx
 Priority: optional
 Section: devel
-Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.30.1-riscv64-1_riscv64.deb
-Size: 13958500
-SHA256: dfd97ff5e6144cfad3e67d07af031e7c571adf5885c9ce4f6fdb331d0dfb4821
-SHA1: 16a654ed91781dbc9a9091b0e431fbc0a7a3fde0
-MD5sum: a80beffba646539312310b6812689a77
+Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.31.0-riscv64-1_riscv64.deb
+Size: 17275052
+SHA256: 42e633a8663c10492bfd374ee9f10e9e06e21c7376df7c1d2b219dee3be60af5
+SHA1: 00dffd5c147d65b28efb8fab4cf016c1724fb35d
+MD5sum: 4e00f169eb72a7dcf0a798c9508121f5
 Description: Docker CLI plugin for extended build capabilities
  Docker Buildx is a Docker CLI plugin that extends the docker build command
  with the full BuildKit features.
