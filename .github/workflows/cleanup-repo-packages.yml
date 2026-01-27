@@ -121,13 +121,13 @@ jobs:
 
               if [ "$kept" -lt "$KEEP_VERSIONS" ] || [ "$commit_date" -ge "$CUTOFF_EPOCH" ]; then
                 echo "  KEEP: $fname"
-                ((kept++))
+                kept=$((kept + 1))
               else
                 echo "  REMOVE: $fname"
                 if [ "$DRY_RUN" != "true" ]; then
                   git rm -q "$deb"
                 fi
-                ((APT_REMOVED++))
+                APT_REMOVED=$((APT_REMOVED + 1))
               fi
             done
             APT_KEPT=$((APT_KEPT + kept))
@@ -234,13 +234,13 @@ jobs:
 
               if [ "$kept" -lt "$KEEP_VERSIONS" ] || [ "$commit_date" -ge "$CUTOFF_EPOCH" ]; then
                 echo "  KEEP: $fname"
-                ((kept++))
+                kept=$((kept + 1))
               else
                 echo "  REMOVE: $fname"
                 if [ "$DRY_RUN" != "true" ]; then
                   git rm -q "$rpm_file"
                 fi
-                ((RPM_REMOVED++))
+                RPM_REMOVED=$((RPM_REMOVED + 1))
               fi
             done
             RPM_KEPT=$((RPM_KEPT + kept))
