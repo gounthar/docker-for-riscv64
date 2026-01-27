@@ -16,7 +16,7 @@ on:
       keep_days:
         description: 'Keep packages newer than this many days'
         type: number
-        default: 90
+        default: 30
 
 permissions:
   contents: write
@@ -50,7 +50,7 @@ jobs:
             echo "dry_run=${{ github.event.inputs.dry_run }}" >> "$GITHUB_OUTPUT"
           else
             echo "keep_versions=3" >> "$GITHUB_OUTPUT"
-            echo "keep_days=90" >> "$GITHUB_OUTPUT"
+            echo "keep_days=30" >> "$GITHUB_OUTPUT"
             echo "dry_run=false" >> "$GITHUB_OUTPUT"
           fi
 
