@@ -70,6 +70,9 @@ jobs:
           echo "Dry run: $DRY_RUN"
           echo ""
 
+          # Packages to never remove (rarely rebuilt, would disappear from repo)
+          PROTECTED_PACKAGES="tini containerd runc docker-compose-plugin"
+
           APT_REMOVED=0
           APT_KEPT=0
 
@@ -94,6 +97,13 @@ jobs:
             [ -d "$pkg_dir" ] || continue
 
             pkg_name=$(basename "$pkg_dir")
+
+            # Skip protected packages
+            if echo "$PROTECTED_PACKAGES" | grep -qw "$pkg_name"; then
+              echo "Package: $pkg_name (PROTECTED, skipping)"
+              continue
+            fi
+
             debs=()
             while IFS= read -r f; do
               [ -f "$f" ] && debs+=("$f")
@@ -175,6 +185,9 @@ jobs:
             fi
           done < <(git log --diff-filter=A --name-only --format="DATE:%ct" -- "$RPM_DIR/" 2>/dev/null)
 
+          # Packages to never remove (rarely rebuilt, would disappear from repo)
+          PROTECTED_PACKAGES="tini tini-static containerd runc docker-compose-plugin"
+
           # Group RPM files by package name using NVR parsing
           declare -A RPM_PACKAGES
           for rpm_file in "$RPM_DIR"/*.rpm; do
@@ -197,6 +210,12 @@ jobs:
           RPM_KEPT=0
 
           for pkg_name in $(echo "${!RPM_PACKAGES[@]}" | tr ' ' '\n' | sort -u); do
+            # Skip protected packages
+            if echo "$PROTECTED_PACKAGES" | grep -qw "$pkg_name"; then
+              echo "Package: $pkg_name (PROTECTED, skipping)"
+              continue
+            fi
+
             # Sort files by version (newest first)
             files=()
             while IFS= read -r f; do
