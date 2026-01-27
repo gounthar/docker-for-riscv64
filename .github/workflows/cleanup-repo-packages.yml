@@ -145,11 +145,28 @@ jobs:
           echo "Importing GPG key for signing..."
           echo "$GPG_PRIVATE_KEY" | gpg --batch --import
 
-          echo "Removing unreferenced pool files from reprepro DB..."
-          reprepro -b . deleteunreferenced
+          # The reprepro DB (db/) is in .gitignore and not tracked in git.
+          # We must rebuild it from scratch using all remaining .deb files.
+          echo "Rebuilding reprepro DB from remaining pool files..."
 
-          echo "Re-exporting APT repository metadata..."
-          reprepro -b . export
+          # Re-add all remaining pool .deb files
+          for deb in pool/main/*/*/*.deb; do
+            [ -f "$deb" ] || continue
+            echo "  Adding: $(basename "$deb")"
+            reprepro -b . includedeb trixie "$deb" 2>/dev/null || true
+          done
+
+          # Also include root-level .deb files (legacy packages)
+          for deb in *.deb; do
+            [ -f "$deb" ] || continue
+            echo "  Adding root: $deb"
+            reprepro -b . includedeb trixie "$deb" 2>/dev/null || true
+          done
+
+          echo ""
+          echo "Repository contents after rebuild:"
+          reprepro -b . list trixie
+          echo ""
 
           echo "APT metadata rebuilt"
           git add dists/ pool/
