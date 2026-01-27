@@ -39,18 +39,18 @@ Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolki
  the RISC-V 64-bit architecture.
 
 Package: cagent
-Version: 1.19.5-1
+Version: 1.19.7-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 95188
+Installed-Size: 95311
 Homepage: https://github.com/docker/cagent
 Priority: optional
 Section: devel
-Filename: pool/main/c/cagent/cagent_1.19.5-1_riscv64.deb
-Size: 32775216
-SHA256: ea7b55c5a2ede955da47b8d354afbf5d44c48e1b8b9575ea9781b5ae854457c0
-SHA1: e80900f80246db2689068aea07adb4439d1b9903
-MD5sum: 5ee398b1502a327e7a2564ee4ccda5bc
+Filename: pool/main/c/cagent/cagent_1.19.7-1_riscv64.deb
+Size: 32822352
+SHA256: 8b9d4f8f1a4b0c15f2e8ff3c22fdec4edf087680faaf96a6d295b84e1ceaf5ee
+SHA1: 3bec770b077e500a5bbd2fcba608324c66ac8ed4
+MD5sum: 0936282e47090f5ca152833fbbf688b1
 Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
  cagent is a powerful, easy to use, customizable multi-agent runtime that
  orchestrates AI agents with specialized capabilities and tools.
@@ -121,10 +121,10 @@ Description: Docker CLI plugin for extended build capabilities
  the RISC-V 64-bit architecture.
 
 Package: docker-cli
-Version: 29.1.5-riscv64-1
+Version: 29.2.0-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 37861
+Installed-Size: 37889
 Recommends: docker.io
 Conflicts: docker (<< 1.5~), docker.io (<< 18.09)
 Breaks: docker (<< 1.5~), docker.io (<< 18.09)
@@ -133,11 +133,11 @@ Provides: docker
 Homepage: https://github.com/docker/cli
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker-cli/docker-cli_29.1.5-riscv64-1_riscv64.deb
-Size: 13813268
-SHA256: 64983c87c673f0e815c75133c11f34e93239dc74b9fadf0d7953d83fb9bd2c9d
-SHA1: ba5b525c57187588f1d52959eef3edcee7129664
-MD5sum: 6c3aa7cfaafdf02d5437890896927fd7
+Filename: pool/main/d/docker-cli/docker-cli_29.2.0-riscv64-1_riscv64.deb
+Size: 13825544
+SHA256: 0c496beb86bc168b54db28dccb8798c6f939de58de02ed5ad6b1f01851f5916c
+SHA1: 8ede75c5226f45670ae43fea57bb355f67edc72f
+MD5sum: 88fd82da8fb516d90b2c50b909f3f0b2
 Description: Docker command-line interface (CLI) for RISC-V64
  The Docker CLI is the command-line interface for Docker, allowing users
  to interact with Docker containers and images from the terminal. It provides
@@ -145,37 +145,11 @@ Description: Docker command-line interface (CLI) for RISC-V64
  .
  This package provides pre-built binaries for RISC-V64 architecture.
 
-Package: docker-compose-plugin
-Version: 2.40.1-riscv64-1
-Architecture: riscv64
-Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 61814
-Recommends: docker-cli
-Conflicts: docker-compose
-Breaks: docker-compose
-Replaces: docker-compose
-Provides: docker-compose
-Homepage: https://github.com/docker/compose
-Priority: optional
-Section: admin
-Filename: pool/main/d/docker-compose-plugin/docker-compose-plugin_2.40.1-riscv64-1_riscv64.deb
-Size: 12005728
-SHA256: 83c98a45d65339d1ef387c59b89840b3781d56ce5817550f32b013d56767f4b4
-SHA1: 1e663b8a64f036984d9d4da760639b153a383bff
-MD5sum: 29479b016838acaa216638497cbcb668
-Description: Docker Compose v2 plugin for RISC-V64
- Docker Compose is a tool for running multi-container applications on
- Docker defined using the Compose file format. A Compose file is used
- to define how one or more containers that make up your application
- are configured.
- .
- This package provides pre-built binaries for RISC-V64 architecture.
-
 Package: docker.io
-Version: 29.1.5-1
+Version: 29.2.0-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <gounthar@gmail.com>
-Installed-Size: 83335
+Installed-Size: 89570
 Pre-Depends: init-system-helpers (>= 1.54~)
 Depends: adduser, containerd (>= 1.7.28), runc (>= 1.3.0), iptables, systemd, tini
 Recommends: ca-certificates, git, xz-utils, docker-cli
@@ -185,11 +159,11 @@ Provides: docker-engine
 Homepage: https://github.com/moby/moby
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker.io/docker.io_29.1.5-1_riscv64.deb
-Size: 17825532
-SHA256: d53981ce52c1905737e43162602ed818f9e4bedbd6da1e2f76f12cd67f35eb2c
-SHA1: fa37c61d315e39b1187e55f7cfbfe3e95c37347d
-MD5sum: d1af2c4cf8f7778353459cfb3990bfce
+Filename: pool/main/d/docker.io/docker.io_29.2.0-1_riscv64.deb
+Size: 19116284
+SHA256: 80a42e07444dc81e64b6aba5e6495c1daef5dbe18f1fed9dc9d7f58bff3a676b
+SHA1: 7c3333e6e45b7b96a6ad6658ad72dbffec60d4aa
+MD5sum: 56bc93e4b9a81ed569d9b9f06013e5a8
 Description: Docker Engine for RISC-V64 architecture
  Docker is an open-source project to easily create lightweight, portable,
  self-sufficient containers from any application. The same container that a
