@@ -1,0 +1,312 @@
+name: Cleanup Repository Packages
+
+on:
+  schedule:
+    - cron: '0 9 * * 0'  # Weekly Sunday 09:00 UTC (after builds + repo updates)
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Preview what would be removed without deleting'
+        type: boolean
+        default: false
+      keep_versions:
+        description: 'Minimum number of versions to keep per package'
+        type: number
+        default: 3
+      keep_days:
+        description: 'Keep packages newer than this many days'
+        type: number
+        default: 90
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repo-branch-updates
+  cancel-in-progress: false
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout apt-repo branch
+        uses: actions/checkout@v6
+        with:
+          ref: apt-repo
+          fetch-depth: 0
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y reprepro createrepo-c
+
+      - name: Set retention parameters
+        id: params
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "keep_versions=${{ github.event.inputs.keep_versions }}" >> "$GITHUB_OUTPUT"
+            echo "keep_days=${{ github.event.inputs.keep_days }}" >> "$GITHUB_OUTPUT"
+            echo "dry_run=${{ github.event.inputs.dry_run }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "keep_versions=3" >> "$GITHUB_OUTPUT"
+            echo "keep_days=90" >> "$GITHUB_OUTPUT"
+            echo "dry_run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Cleanup APT packages
+        id: apt_cleanup
+        run: |
+          set -euo pipefail
+
+          KEEP_VERSIONS="${{ steps.params.outputs.keep_versions }}"
+          KEEP_DAYS="${{ steps.params.outputs.keep_days }}"
+          DRY_RUN="${{ steps.params.outputs.dry_run }}"
+          CUTOFF_EPOCH=$(date -d "-${KEEP_DAYS} days" +%s)
+
+          echo "=== APT Package Cleanup ==="
+          echo "Policy: keep latest $KEEP_VERSIONS versions OR newer than $KEEP_DAYS days"
+          echo "Cutoff date: $(date -d @$CUTOFF_EPOCH -Iseconds)"
+          echo "Dry run: $DRY_RUN"
+          echo ""
+
+          # Packages to never remove (rarely rebuilt, would disappear from repo)
+          PROTECTED_PACKAGES="tini containerd runc docker-compose-plugin"
+
+          APT_REMOVED=0
+          APT_KEPT=0
+
+          if [ ! -d "pool/main" ]; then
+            echo "No pool/main directory found, skipping APT cleanup"
+            echo "apt_removed=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Build a map of file -> commit date (batch for performance)
+          declare -A FILE_DATES
+          while IFS= read -r line; do
+            if [[ "$line" == DATE:* ]]; then
+              current_date="${line#DATE:}"
+            elif [[ -n "$line" ]]; then
+              FILE_DATES["$line"]="$current_date"
+            fi
+          done < <(git log --diff-filter=A --name-only --format="DATE:%ct" -- "pool/main/" 2>/dev/null)
+
+          # Process each package directory
+          for pkg_dir in pool/main/*/*; do
+            [ -d "$pkg_dir" ] || continue
+
+            pkg_name=$(basename "$pkg_dir")
+
+            # Skip protected packages
+            if echo "$PROTECTED_PACKAGES" | grep -qw "$pkg_name"; then
+              echo "Package: $pkg_name (PROTECTED, skipping)"
+              continue
+            fi
+
+            debs=()
+            while IFS= read -r f; do
+              [ -f "$f" ] && debs+=("$f")
+            done < <(find "$pkg_dir" -name '*.deb' -type f | sort -t_ -k2 -V -r)
+
+            total=${#debs[@]}
+            [ "$total" -le "$KEEP_VERSIONS" ] && continue
+
+            echo "Package: $pkg_name ($total versions)"
+
+            kept=0
+            for deb in "${debs[@]}"; do
+              fname=$(basename "$deb")
+              commit_date="${FILE_DATES[$deb]:-0}"
+
+              if [ "$kept" -lt "$KEEP_VERSIONS" ] || [ "$commit_date" -ge "$CUTOFF_EPOCH" ]; then
+                echo "  KEEP: $fname"
+                ((kept++))
+              else
+                echo "  REMOVE: $fname"
+                if [ "$DRY_RUN" != "true" ]; then
+                  git rm -q "$deb"
+                fi
+                ((APT_REMOVED++))
+              fi
+            done
+            APT_KEPT=$((APT_KEPT + kept))
+            echo ""
+          done
+
+          echo "APT summary: removed=$APT_REMOVED, kept=$APT_KEPT"
+          echo "apt_removed=$APT_REMOVED" >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild APT metadata
+        if: steps.params.outputs.dry_run != 'true' && steps.apt_cleanup.outputs.apt_removed != '0'
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          echo "Importing GPG key for signing..."
+          echo "$GPG_PRIVATE_KEY" | gpg --batch --import
+
+          echo "Removing unreferenced pool files from reprepro DB..."
+          reprepro -b . deleteunreferenced
+
+          echo "Re-exporting APT repository metadata..."
+          reprepro -b . export
+
+          echo "APT metadata rebuilt"
+          git add dists/ pool/
+
+      - name: Cleanup RPM packages
+        id: rpm_cleanup
+        run: |
+          set -euo pipefail
+
+          KEEP_VERSIONS="${{ steps.params.outputs.keep_versions }}"
+          KEEP_DAYS="${{ steps.params.outputs.keep_days }}"
+          DRY_RUN="${{ steps.params.outputs.dry_run }}"
+          CUTOFF_EPOCH=$(date -d "-${KEEP_DAYS} days" +%s)
+
+          RPM_DIR="rpm/fedora/riscv64"
+
+          echo "=== RPM Package Cleanup ==="
+          echo ""
+
+          if [ ! -d "$RPM_DIR" ]; then
+            echo "No RPM directory found, skipping"
+            echo "rpm_removed=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Build file date map
+          declare -A FILE_DATES
+          while IFS= read -r line; do
+            if [[ "$line" == DATE:* ]]; then
+              current_date="${line#DATE:}"
+            elif [[ -n "$line" ]]; then
+              FILE_DATES["$line"]="$current_date"
+            fi
+          done < <(git log --diff-filter=A --name-only --format="DATE:%ct" -- "$RPM_DIR/" 2>/dev/null)
+
+          # Packages to never remove (rarely rebuilt, would disappear from repo)
+          PROTECTED_PACKAGES="tini tini-static containerd runc docker-compose-plugin"
+
+          # Group RPM files by package name using NVR parsing
+          declare -A RPM_PACKAGES
+          for rpm_file in "$RPM_DIR"/*.rpm; do
+            [ -f "$rpm_file" ] || continue
+            fname=$(basename "$rpm_file")
+            # Parse RPM NVR (Name-Version-Release) from the end to handle
+            # names with hyphens like tini-static, moby-engine, docker-cli
+            base="${fname%.rpm}"       # strip .rpm
+            base="${base%.riscv64}"    # strip .riscv64
+            base="${base%.fc41}"       # strip .fc41 if present
+            nvr="${base}"
+            release="${nvr##*-}"      # last segment = release (e.g., "1")
+            nv="${nvr%-*}"            # strip release
+            version="${nv##*-}"       # last segment = version (e.g., "29.2.0")
+            pkg_name="${nv%-*}"       # everything before version = name
+            RPM_PACKAGES["$pkg_name"]+="$rpm_file "
+          done
+
+          RPM_REMOVED=0
+          RPM_KEPT=0
+
+          for pkg_name in $(echo "${!RPM_PACKAGES[@]}" | tr ' ' '\n' | sort -u); do
+            # Skip protected packages
+            if echo "$PROTECTED_PACKAGES" | grep -qw "$pkg_name"; then
+              echo "Package: $pkg_name (PROTECTED, skipping)"
+              continue
+            fi
+
+            # Sort files by version (newest first)
+            files=()
+            while IFS= read -r f; do
+              [ -n "$f" ] && files+=("$f")
+            done < <(echo "${RPM_PACKAGES[$pkg_name]}" | tr ' ' '\n' | sort -V -r)
+
+            total=${#files[@]}
+            [ "$total" -le "$KEEP_VERSIONS" ] && continue
+
+            echo "Package: $pkg_name ($total versions)"
+
+            kept=0
+            for rpm_file in "${files[@]}"; do
+              fname=$(basename "$rpm_file")
+              commit_date="${FILE_DATES[$rpm_file]:-0}"
+
+              if [ "$kept" -lt "$KEEP_VERSIONS" ] || [ "$commit_date" -ge "$CUTOFF_EPOCH" ]; then
+                echo "  KEEP: $fname"
+                ((kept++))
+              else
+                echo "  REMOVE: $fname"
+                if [ "$DRY_RUN" != "true" ]; then
+                  git rm -q "$rpm_file"
+                fi
+                ((RPM_REMOVED++))
+              fi
+            done
+            RPM_KEPT=$((RPM_KEPT + kept))
+            echo ""
+          done
+
+          echo "RPM summary: removed=$RPM_REMOVED, kept=$RPM_KEPT"
+          echo "rpm_removed=$RPM_REMOVED" >> "$GITHUB_OUTPUT"
+
+      - name: Rebuild RPM metadata
+        if: steps.params.outputs.dry_run != 'true' && steps.rpm_cleanup.outputs.rpm_removed != '0'
+        run: |
+          RPM_DIR="rpm/fedora/riscv64"
+          if [ -d "$RPM_DIR" ]; then
+            echo "Rebuilding RPM repository metadata..."
+            createrepo_c --update "$RPM_DIR"
+            git add "$RPM_DIR/repodata/"
+          fi
+
+      - name: Commit and push changes
+        if: steps.params.outputs.dry_run != 'true'
+        run: |
+          APT_REMOVED="${{ steps.apt_cleanup.outputs.apt_removed }}"
+          RPM_REMOVED="${{ steps.rpm_cleanup.outputs.rpm_removed }}"
+
+          TOTAL=$((APT_REMOVED + RPM_REMOVED))
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "Nothing to clean up, all packages within retention policy"
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          KEEP_VERSIONS="${{ steps.params.outputs.keep_versions }}"
+          KEEP_DAYS="${{ steps.params.outputs.keep_days }}"
+
+          git add -A pool/ rpm/
+          git commit -m "chore: cleanup old package versions
+
+          Removed $TOTAL old packages (APT: $APT_REMOVED, RPM: $RPM_REMOVED).
+
+          Retention policy: keep latest $KEEP_VERSIONS versions or newer than $KEEP_DAYS days.
+
+          Workflow: ${{ github.workflow }}
+          Run: ${{ github.run_id }}"
+
+          git push origin apt-repo
+          echo "Pushed cleanup to apt-repo branch"
+
+      - name: Summary
+        run: |
+          APT_REMOVED="${{ steps.apt_cleanup.outputs.apt_removed }}"
+          RPM_REMOVED="${{ steps.rpm_cleanup.outputs.rpm_removed }}"
+          DRY_RUN="${{ steps.params.outputs.dry_run }}"
+
+          echo "## Package Cleanup Summary" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ "$DRY_RUN" = "true" ]; then
+            echo "> **DRY RUN** - no files were deleted" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "| Type | Removed |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|------|---------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| APT (.deb) | $APT_REMOVED |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| RPM (.rpm) | $RPM_REMOVED |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Total** | **$((APT_REMOVED + RPM_REMOVED))** |" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Policy: keep latest ${{ steps.params.outputs.keep_versions }} versions or newer than ${{ steps.params.outputs.keep_days }} days" >> "$GITHUB_STEP_SUMMARY"
