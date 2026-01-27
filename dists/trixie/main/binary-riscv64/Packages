@@ -1,0 +1,202 @@
+Package: buildkit
+Version: 0.27.0-riscv64-1
+Architecture: riscv64
+Maintainer: Bruno Verächten <bruno@verachten.fr>
+Installed-Size: 71759
+Recommends: containerd (>= 1.7) | containerd.io (>= 1.7)
+Suggests: docker.io (>= 20.10) | docker-ce (>= 20.10)
+Homepage: https://github.com/moby/buildkit
+Priority: optional
+Section: devel
+Filename: pool/main/b/buildkit/buildkit_0.27.0-riscv64-1_riscv64.deb
+Size: 16932920
+SHA256: a9288396f7e013ded6637967f1b0377fa672ecc9145a69195c0cfee3277fde83
+SHA1: 31b46b1117c3a0efd0213c24d55016568783beb8
+MD5sum: 1957c220da81c8eede56223078ef525a
+Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
+ BuildKit is a toolkit for converting source code to build artifacts in an
+ efficient, expressive, and repeatable manner. It is the next-generation
+ container image builder, designed to be the backend for Docker Buildx and
+ multi-platform builds.
+ .
+ Features include:
+  - Automatic garbage collection
+  - Extendable frontend formats
+  - Concurrent dependency resolution
+  - Efficient instruction caching
+  - Build cache import/export
+  - Nested build job invocations
+  - Distributable workers
+  - Multiple output formats
+  - Pluggable architecture
+  - Execution without root privileges
+ .
+ This package contains:
+  - buildkitd: BuildKit daemon (server)
+  - buildctl: BuildKit CLI client
+ .
+ This is the RISC-V64 port of BuildKit, providing native support for
+ the RISC-V 64-bit architecture.
+
+Package: cagent
+Version: 1.19.7-1
+Architecture: riscv64
+Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
+Installed-Size: 95311
+Homepage: https://github.com/docker/cagent
+Priority: optional
+Section: devel
+Filename: pool/main/c/cagent/cagent_1.19.7-1_riscv64.deb
+Size: 32822352
+SHA256: 8b9d4f8f1a4b0c15f2e8ff3c22fdec4edf087680faaf96a6d295b84e1ceaf5ee
+SHA1: 3bec770b077e500a5bbd2fcba608324c66ac8ed4
+MD5sum: 0936282e47090f5ca152833fbbf688b1
+Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
+ cagent is a powerful, easy to use, customizable multi-agent runtime that
+ orchestrates AI agents with specialized capabilities and tools.
+ .
+ Key features:
+  - Multi-agent architecture for domain-specific specialists
+  - MCP (Model Context Protocol) integration for external tools
+  - Smart task delegation between agents
+  - YAML-based declarative configuration
+  - Support for multiple AI providers (OpenAI, Anthropic, Gemini, xAI, Mistral)
+ .
+ This package provides pre-built binaries for RISC-V64 architecture.
+
+Package: containerd
+Version: 1.7.28-1
+Architecture: riscv64
+Maintainer: Bruno Verachten <gounthar@gmail.com>
+Installed-Size: 54066
+Depends: libc6 (>= 2.34), runc (>= 1.3.0)
+Conflicts: containerd.io
+Provides: containerd.io
+Homepage: https://github.com/containerd/containerd
+Priority: optional
+Section: admin
+Filename: pool/main/c/containerd/containerd_1.7.28-1_riscv64.deb
+Size: 12488876
+SHA256: 6daa85c6086a862b2fe4e503e7c8bd5aa43be353d34a4c12f42e4f78afac8f03
+SHA1: 2961b64525b3ad7a328575019e0423d165c86cf7
+MD5sum: 57e59a2af3b46d7e5bd1a174b1fef564
+Description: Container runtime for RISC-V64 architecture
+ containerd is an industry-standard container runtime with an emphasis on
+ simplicity, robustness and portability. It is available as a daemon for
+ Linux and Windows, which can manage the complete container lifecycle of
+ its host system.
+ .
+ This package contains containerd v1.7.28 and containerd-shim-runc-v2,
+ built natively for RISC-V64 architecture from official upstream source.
+ .
+ Built on BananaPi F3 running Armbian Trixie.
+
+Package: docker-buildx-plugin
+Version: 0.31.0-riscv64-1
+Architecture: riscv64
+Maintainer: Bruno Verächten <bruno@verachten.fr>
+Installed-Size: 83704
+Recommends: docker.io (>= 20.10) | docker-ce (>= 20.10)
+Homepage: https://github.com/docker/buildx
+Priority: optional
+Section: devel
+Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.31.0-riscv64-1_riscv64.deb
+Size: 17275052
+SHA256: 42e633a8663c10492bfd374ee9f10e9e06e21c7376df7c1d2b219dee3be60af5
+SHA1: 00dffd5c147d65b28efb8fab4cf016c1724fb35d
+MD5sum: 4e00f169eb72a7dcf0a798c9508121f5
+Description: Docker CLI plugin for extended build capabilities
+ Docker Buildx is a Docker CLI plugin that extends the docker build command
+ with the full BuildKit features.
+ .
+ Features include:
+  - Multi-platform builds (--platform flag)
+  - Advanced caching strategies
+  - Build-time secrets and SSH forwarding
+  - Remote builder support
+  - OCI exporter support
+  - Custom builder creation and management
+ .
+ This is the RISC-V64 port of docker-buildx, providing native support for
+ the RISC-V 64-bit architecture.
+
+Package: docker-cli
+Version: 29.2.0-riscv64-1
+Architecture: riscv64
+Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
+Installed-Size: 37889
+Recommends: docker.io
+Conflicts: docker (<< 1.5~), docker.io (<< 18.09)
+Breaks: docker (<< 1.5~), docker.io (<< 18.09)
+Replaces: docker (<< 1.5~), docker.io (<< 18.09)
+Provides: docker
+Homepage: https://github.com/docker/cli
+Priority: optional
+Section: admin
+Filename: pool/main/d/docker-cli/docker-cli_29.2.0-riscv64-1_riscv64.deb
+Size: 13825544
+SHA256: 0c496beb86bc168b54db28dccb8798c6f939de58de02ed5ad6b1f01851f5916c
+SHA1: 8ede75c5226f45670ae43fea57bb355f67edc72f
+MD5sum: 88fd82da8fb516d90b2c50b909f3f0b2
+Description: Docker command-line interface (CLI) for RISC-V64
+ The Docker CLI is the command-line interface for Docker, allowing users
+ to interact with Docker containers and images from the terminal. It provides
+ commands for building, running, and managing containers.
+ .
+ This package provides pre-built binaries for RISC-V64 architecture.
+
+Package: docker.io
+Version: 29.2.0-1
+Architecture: riscv64
+Maintainer: Bruno Verachten <gounthar@gmail.com>
+Installed-Size: 89570
+Pre-Depends: init-system-helpers (>= 1.54~)
+Depends: adduser, containerd (>= 1.7.28), runc (>= 1.3.0), iptables, systemd, tini
+Recommends: ca-certificates, git, xz-utils, docker-cli
+Suggests: cgroupfs-mount | cgroup-lite
+Conflicts: docker-ce, docker-engine
+Provides: docker-engine
+Homepage: https://github.com/moby/moby
+Priority: optional
+Section: admin
+Filename: pool/main/d/docker.io/docker.io_29.2.0-1_riscv64.deb
+Size: 19116284
+SHA256: 80a42e07444dc81e64b6aba5e6495c1daef5dbe18f1fed9dc9d7f58bff3a676b
+SHA1: 7c3333e6e45b7b96a6ad6658ad72dbffec60d4aa
+MD5sum: 56bc93e4b9a81ed569d9b9f06013e5a8
+Description: Docker Engine for RISC-V64 architecture
+ Docker is an open-source project to easily create lightweight, portable,
+ self-sufficient containers from any application. The same container that a
+ developer builds and tests on a laptop can run at scale, in production, on
+ VMs, bare metal, OpenStack clusters, public clouds and more.
+ .
+ This package contains Docker Engine v28.5.1 daemon (dockerd) and
+ docker-proxy, built natively for RISC-V64 architecture from the official
+ Moby project source code.
+ .
+ Built on BananaPi F3 running Armbian Trixie.
+
+Package: runc
+Version: 1.3.0-1
+Architecture: riscv64
+Maintainer: Bruno Verachten <gounthar@gmail.com>
+Installed-Size: 10639
+Conflicts: runc-nvidia
+Homepage: https://github.com/opencontainers/runc
+Priority: optional
+Section: admin
+Filename: pool/main/r/runc/runc_1.3.0-1_riscv64.deb
+Size: 3152884
+SHA256: 296362b02d7c1798b18cf30a060dd18b3f38b919be0a567cfb05903cee2446b2
+SHA1: 5f0ac8f412cfddae9bcf7bf6d283a7c20b6e1fd3
+MD5sum: 1e0c435688d7f6ba03a4be7245f046db
+Description: OCI container runtime for RISC-V64 architecture
+ runc is a CLI tool for spawning and running containers according to the
+ OCI specification. It is designed to be as minimal as possible, and is
+ the reference implementation of the OCI runtime specification.
+ .
+ This package contains the runc binary (v1.3.0), built natively for
+ RISC-V64 architecture from official upstream source.
+ .
+ Built on BananaPi F3 running Armbian Trixie.
+
