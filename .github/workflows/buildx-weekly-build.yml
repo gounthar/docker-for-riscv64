@@ -196,3 +196,48 @@ jobs:
           # Trigger RPM package build
           gh workflow run build-buildx-rpm.yml \
             -f release_tag="$RELEASE_TAG" || echo "Failed to trigger RPM package build (workflow may not exist yet)"
+
+      - name: Close build-in-progress issue
+        if: ${{ success() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BUILDX_REF="${{ github.event.inputs.buildx_ref || 'master' }}"
+
+          # Only close issues for official releases (not dev builds)
+          if [[ ! "$BUILDX_REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-rc[0-9]+)?$ ]]; then
+            echo "Skipping issue close for development build"
+            exit 0
+          fi
+
+          RELEASE_TAG="buildx-${BUILDX_REF}-riscv64"
+          SEARCH="Buildx $BUILDX_REF"
+
+          echo "Looking for build-in-progress issues matching: $SEARCH"
+
+          # Find matching issues
+          ISSUES=$(gh issue list \
+            --repo "${{ github.repository }}" \
+            --label "build-in-progress" \
+            --state open \
+            --json number,title \
+            --jq ".[] | select(.title | test(\"$SEARCH\"; \"i\")) | .number") || true
+
+          if [ -z "$ISSUES" ]; then
+            echo "No matching issues found"
+            exit 0
+          fi
+
+          echo "Found issues to close: $ISSUES"
+
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/$RELEASE_TAG"
+
+          for ISSUE in $ISSUES; do
+            echo "Closing issue #$ISSUE"
+            gh issue close "$ISSUE" \
+              --repo "${{ github.repository }}" \
+              --comment "✅ Automatically closed: Release [$RELEASE_TAG]($RELEASE_URL) has been published."
+          done
+
+          echo "Done! Closed $(echo "$ISSUES" | wc -w) issue(s)"
