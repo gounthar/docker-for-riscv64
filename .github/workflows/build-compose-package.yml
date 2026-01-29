@@ -14,6 +14,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build-deb:
@@ -191,3 +192,9 @@ jobs:
           echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/docker-compose-plugin_*.deb"
           echo "  sudo dpkg -i docker-compose-plugin_*.deb"
           echo "  docker compose version"
+
+          # Trigger APT repository update
+          # Cannot rely on workflow_run events due to GITHUB_TOKEN limitation
+          echo ""
+          echo "Triggering APT repository update..."
+          gh workflow run update-apt-repo.yml -f release_tag="$RELEASE_TAG" || echo "Warning: Failed to trigger APT repo update"

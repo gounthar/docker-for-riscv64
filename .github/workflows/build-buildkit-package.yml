@@ -15,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  actions: write
 
 jobs:
   build-deb:
@@ -265,3 +266,9 @@ jobs:
           echo "  sudo dpkg -i buildkit_*.deb"
           echo "  buildkitd --version"
           echo "  buildctl --version"
+
+          # Trigger APT repository update
+          # Cannot rely on workflow_run events due to GITHUB_TOKEN limitation
+          echo ""
+          echo "Triggering APT repository update..."
+          gh workflow run update-apt-repo.yml -f release_tag="$RELEASE_TAG" || echo "Warning: Failed to trigger APT repo update"
