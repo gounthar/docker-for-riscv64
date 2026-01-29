@@ -13,6 +13,10 @@ on:
         required: true
         default: 'v28.5.1-riscv64'
 
+permissions:
+  contents: write
+  actions: write
+
 jobs:
   build-deb:
     runs-on: [self-hosted, riscv64]
@@ -186,3 +190,9 @@ jobs:
           echo "  sudo dpkg -i containerd_*_riscv64.deb"
           echo "  sudo dpkg -i docker.io_*_riscv64.deb"
           echo "  sudo apt-get install -f"
+
+          # Trigger APT repository update
+          # Cannot rely on workflow_run events due to GITHUB_TOKEN limitation
+          echo ""
+          echo "Triggering APT repository update..."
+          gh workflow run update-apt-repo.yml -f release_tag="$RELEASE_TAG" || echo "Warning: Failed to trigger APT repo update"
