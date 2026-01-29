@@ -15,6 +15,7 @@ permissions:
   contents: write
   packages: write
   actions: write
+  issues: write
 
 jobs:
   build-buildkit:
