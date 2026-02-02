@@ -1,0 +1,87 @@
+name: Track Docker Compose Releases
+
+on:
+  schedule:
+    # Check for new releases daily at 09:00 UTC (after Buildx tracking)
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: write
+
+jobs:
+  check-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Check for new Docker Compose release
+        id: check
+        run: |
+          # Get latest stable release from docker/compose repository
+          LATEST=$(gh api repos/docker/compose/releases/latest --jq '.tag_name')
+
+          echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
+
+          # Check if we've already built this (using compose-v*-riscv64 format)
+          # Docker Compose tags are like v2.40.1, we create compose-v2.40.1-riscv64
+          CLEAN_VERSION="${LATEST#v}"
+          OUR_TAG="compose-v${CLEAN_VERSION}-riscv64"
+
+          if gh release view "${OUR_TAG}" >/dev/null 2>&1; then
+            echo "already_built=true" >> $GITHUB_OUTPUT
+          else
+            echo "already_built=false" >> $GITHUB_OUTPUT
+          fi
+
+          echo "Latest Docker Compose release: $LATEST"
+          echo "Checking for: ${OUR_TAG}"
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Trigger automatic build for new release
+        if: steps.check.outputs.already_built == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+
+          echo "New Docker Compose release detected: $LATEST"
+          echo "Triggering automatic build..."
+
+          # Trigger the build workflow with the version tag
+          gh workflow run compose-weekly-build.yml -f compose_ref=$LATEST
+
+          # Create tracking issue
+          CLEAN_VERSION="${LATEST#v}"
+          cat > issue-body.md << EOF
+          New Docker Compose release detected: **$LATEST**
+
+          **Status:** Build automatically triggered
+
+          The compose-weekly-build workflow has been started automatically.
+          Expected completion time: ~15-20 minutes on self-hosted riscv64 runner
+
+          **Monitor build progress:**
+          \`\`\`bash
+          gh run list --workflow=compose-weekly-build.yml --limit 1
+          gh run watch
+          \`\`\`
+
+          **Expected release:** compose-v${CLEAN_VERSION}-riscv64
+
+          **Upstream release notes:** https://github.com/docker/compose/releases/tag/$LATEST
+
+          This issue will track the build progress. Close it once the release is published.
+          EOF
+
+          gh issue create \
+            --title "Building Docker Compose ${LATEST} for RISC-V64" \
+            --body-file issue-body.md \
+            --label "build-in-progress,compose-release"
+
+          echo "Build triggered successfully!"
