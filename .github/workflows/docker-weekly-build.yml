@@ -160,7 +160,7 @@ jobs:
         run: |
           # Clone runc if not exists
           if [ ! -d "runc" ]; then
-            git clone --depth 1 --branch v1.3.0 https://github.com/opencontainers/runc.git
+            git clone --depth 1 --branch v1.4.0 https://github.com/opencontainers/runc.git
           fi
           cd runc
 
@@ -238,7 +238,7 @@ jobs:
           - dockerd (Docker Engine)
           - docker-proxy (Network proxy)
           - containerd (Container runtime v1.7.28)
-          - runc (OCI runtime v1.3.0)
+          - runc (OCI runtime v1.4.0)
           - containerd-shim-runc-v2 (Containerd shim)
 
           **Build Command:**
