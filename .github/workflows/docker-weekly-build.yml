@@ -10,6 +10,14 @@ on:
         description: 'Moby ref to build (branch/tag/commit)'
         required: false
         default: 'master'
+      containerd_ref:
+        description: 'Containerd version tag to build'
+        required: false
+        default: 'v1.7.28'
+      runc_ref:
+        description: 'Runc version tag to build'
+        required: false
+        default: 'v1.4.0'
 
 permissions:
   contents: write
@@ -140,9 +148,10 @@ jobs:
 
       - name: Build containerd
         run: |
+          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v1.7.28' }}"
           # Clone containerd if not exists
           if [ ! -d "containerd" ]; then
-            git clone --depth 1 --branch v1.7.28 https://github.com/containerd/containerd.git
+            git clone --depth 1 --branch "$CONTAINERD_REF" https://github.com/containerd/containerd.git
           fi
           cd containerd
 
@@ -158,9 +167,10 @@ jobs:
 
       - name: Build runc
         run: |
+          RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
           # Clone runc if not exists
           if [ ! -d "runc" ]; then
-            git clone --depth 1 --branch v1.4.0 https://github.com/opencontainers/runc.git
+            git clone --depth 1 --branch "$RUNC_REF" https://github.com/opencontainers/runc.git
           fi
           cd runc
 
@@ -227,6 +237,9 @@ jobs:
             VERSION_INFO=$'**Moby Branch:** '"${MOBY_REF}"$'\n**Moby Commit:** '"${MOBY_COMMIT}"$'\n**Built Version:** '"${VERSION}"
           fi
 
+          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v1.7.28' }}"
+          RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
+
           cat > release-notes.md << EOF
           Automated build of Docker Engine for RISC-V64
 
@@ -237,8 +250,8 @@ jobs:
           **Components:**
           - dockerd (Docker Engine)
           - docker-proxy (Network proxy)
-          - containerd (Container runtime v1.7.28)
-          - runc (OCI runtime v1.4.0)
+          - containerd (Container runtime ${CONTAINERD_REF})
+          - runc (OCI runtime ${RUNC_REF})
           - containerd-shim-runc-v2 (Containerd shim)
 
           **Build Command:**
@@ -280,14 +293,18 @@ jobs:
             --notes-file release-notes.md \
             release-$DATE/*
 
-      - name: Close tracking issue
+      - name: Close tracking issues
         if: ${{ success() }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
+          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v1.7.28' }}"
+          RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
           VERSION_REGEX='${{ env.VERSION_REGEX }}'
+
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases"
 
           # Only close issues for official releases (not dev builds)
           if [[ "$MOBY_REF" =~ $VERSION_REGEX ]]; then
@@ -307,23 +324,46 @@ jobs:
 
             if [ -n "$ISSUE_NUMBER" ]; then
               echo "Found tracking issue #${ISSUE_NUMBER}"
-
-              # Comment on the issue with release link
               gh issue comment "$ISSUE_NUMBER" \
-                --body "Build completed successfully! Release published: https://github.com/${{ github.repository }}/releases/tag/${RELEASE_VERSION}"
-
-              # Close the issue
+                --body "Build completed successfully! Release published: ${RELEASE_URL}/tag/${RELEASE_VERSION}"
               gh issue close "$ISSUE_NUMBER" \
                 --reason completed \
                 --comment "Automatically closing - release published."
-
               echo "Issue #${ISSUE_NUMBER} closed successfully"
             else
               echo "No tracking issue found for ${MOBY_REF}"
             fi
           else
-            echo "Skipping issue closing for development build"
+            echo "Skipping moby issue closing for development build"
           fi
+
+          # Close containerd tracking issues
+          close_component_issue() {
+            local LABEL="$1" REF="$2" NAME="$3"
+            echo "Searching for tracking issue for ${NAME} ${REF}..."
+            local ISSUE_NUMBER
+            ISSUE_NUMBER=$(gh issue list \
+              --label "build-in-progress,${LABEL}" \
+              --state open \
+              --limit 200 \
+              --json number,title \
+              --jq ".[] | select(.title | contains(\"${REF}\")) | .number" \
+              | head -n1)
+            if [ -n "$ISSUE_NUMBER" ]; then
+              echo "Found ${NAME} tracking issue #${ISSUE_NUMBER}"
+              gh issue comment "$ISSUE_NUMBER" \
+                --body "Docker Engine build completed with ${NAME} ${REF}. Release: ${RELEASE_URL}"
+              gh issue close "$ISSUE_NUMBER" \
+                --reason completed \
+                --comment "Automatically closing - included in Docker Engine build."
+              echo "Issue #${ISSUE_NUMBER} closed successfully"
+            else
+              echo "No tracking issue found for ${NAME} ${REF}"
+            fi
+          }
+
+          close_component_issue "containerd-release" "$CONTAINERD_REF" "containerd"
+          close_component_issue "runc-release" "$RUNC_REF" "runc"
 
       - name: Trigger package builds
         if: ${{ success() }}
