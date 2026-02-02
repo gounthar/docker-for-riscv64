@@ -80,6 +80,15 @@ jobs:
             echo "Building development version: $VERSION"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
+
+          # Extract Go version required by go.mod
+          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+          if [ -z "$GO_VERSION" ]; then
+            echo "WARNING: Could not extract Go version from go.mod, falling back to 1.25.5"
+            GO_VERSION="1.25.5"
+          fi
+          echo "Go version from go.mod: $GO_VERSION"
+          echo "go_version=$GO_VERSION" >> $GITHUB_OUTPUT
       
       - name: Apply RISC-V patches
         run: |
@@ -136,10 +145,11 @@ jobs:
         run: |
           cd moby
           VERSION="${{ steps.moby_update.outputs.version }}"
-          echo "Building Docker with VERSION=$VERSION"
+          GO_VERSION="${{ steps.moby_update.outputs.go_version }}"
+          echo "Building Docker with VERSION=$VERSION, GO_VERSION=$GO_VERSION"
           docker build \
             --build-arg BASE_DEBIAN_DISTRO=trixie \
-            --build-arg GO_VERSION=1.25.5 \
+            --build-arg GO_VERSION="$GO_VERSION" \
             --build-arg VERSION="$VERSION" \
             --target=binary \
             -f Dockerfile \
@@ -239,6 +249,7 @@ jobs:
 
           CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v1.7.28' }}"
           RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
+          GO_VERSION="${{ steps.moby_update.outputs.go_version }}"
 
           cat > release-notes.md << EOF
           Automated build of Docker Engine for RISC-V64
@@ -257,7 +268,7 @@ jobs:
           **Build Command:**
           \`\`\`bash
           docker build --build-arg BASE_DEBIAN_DISTRO=trixie \\
-                       --build-arg GO_VERSION=1.25.5 \\
+                       --build-arg GO_VERSION=${GO_VERSION} \\
                        --target=binary \\
                        -f moby/Dockerfile .
           \`\`\`
