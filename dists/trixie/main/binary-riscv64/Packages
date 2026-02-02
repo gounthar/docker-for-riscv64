@@ -9,10 +9,10 @@ Homepage: https://github.com/moby/buildkit
 Priority: optional
 Section: devel
 Filename: pool/main/b/buildkit/buildkit_0.27.1-riscv64-1_riscv64.deb
-Size: 16929716
-SHA256: bec26800d7803919ab232762735c18af8d7acfb9d3135bd8e194adb25edb13f0
-SHA1: 37c4bbdf9b6eeb5f6dda56f14e1d6feb1d34557f
-MD5sum: be69325e666fcaf3ca7580640e3310d2
+Size: 16930824
+SHA256: d066b8740dccef113548a2d06edd9597d69e0c07b2cd15bc434b1b6e28c367f2
+SHA1: 91467181e3b06394805777562a9506a645f48061
+MD5sum: 3d50e8427f7508a7f43be3246568ed83
 Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
  BuildKit is a toolkit for converting source code to build artifacts in an
  efficient, expressive, and repeatable manner. It is the next-generation
