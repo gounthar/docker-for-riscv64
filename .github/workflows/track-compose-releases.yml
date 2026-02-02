@@ -25,6 +25,11 @@ jobs:
           # Get latest stable release from docker/compose repository
           LATEST=$(gh api repos/docker/compose/releases/latest --jq '.tag_name')
 
+          if [ -z "$LATEST" ]; then
+            echo "ERROR: Failed to fetch latest Docker Compose release"
+            exit 1
+          fi
+
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
           # Check if we've already built this (using compose-v*-riscv64 format)

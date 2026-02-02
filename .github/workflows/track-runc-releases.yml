@@ -25,6 +25,11 @@ jobs:
           # Get latest stable release from opencontainers/runc
           LATEST=$(gh api repos/opencontainers/runc/releases/latest --jq '.tag_name')
 
+          if [ -z "$LATEST" ]; then
+            echo "ERROR: Failed to fetch latest runc release"
+            exit 1
+          fi
+
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
           # Runc is bundled in Docker Engine builds, not released separately.

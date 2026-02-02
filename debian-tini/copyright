@@ -3,7 +3,7 @@ Upstream-Name: tini
 Source: https://github.com/krallin/tini
 
 Files: *
-Copyright: 2015-2025 Thomas Orozco
+Copyright: 2015 Thomas Orozco
 License: MIT
 
 License: MIT
