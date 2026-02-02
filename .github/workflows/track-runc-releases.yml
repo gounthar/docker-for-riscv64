@@ -23,7 +23,7 @@ jobs:
         id: check
         run: |
           # Get latest stable release from opencontainers/runc
-          LATEST=$(gh api repos/opencontainers/runc/releases/latest --jq '.tag_name')
+          LATEST=$(gh api repos/opencontainers/runc/releases/latest --jq '.tag_name // empty')
 
           if [ -z "$LATEST" ]; then
             echo "ERROR: Failed to fetch latest runc release"

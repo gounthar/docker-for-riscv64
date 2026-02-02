@@ -23,7 +23,7 @@ jobs:
         id: check
         run: |
           # Get latest stable release from containerd/containerd
-          LATEST=$(gh api repos/containerd/containerd/releases/latest --jq '.tag_name')
+          LATEST=$(gh api repos/containerd/containerd/releases/latest --jq '.tag_name // empty')
 
           if [ -z "$LATEST" ]; then
             echo "ERROR: Failed to fetch latest containerd release"

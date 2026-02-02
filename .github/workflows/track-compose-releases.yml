@@ -23,7 +23,7 @@ jobs:
         id: check
         run: |
           # Get latest stable release from docker/compose repository
-          LATEST=$(gh api repos/docker/compose/releases/latest --jq '.tag_name')
+          LATEST=$(gh api repos/docker/compose/releases/latest --jq '.tag_name // empty')
 
           if [ -z "$LATEST" ]; then
             echo "ERROR: Failed to fetch latest Docker Compose release"
