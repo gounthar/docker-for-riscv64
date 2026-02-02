@@ -9,10 +9,10 @@ Homepage: https://github.com/moby/buildkit
 Priority: optional
 Section: devel
 Filename: pool/main/b/buildkit/buildkit_0.27.1-riscv64-1_riscv64.deb
-Size: 16925600
-SHA256: 39de10de20350850be8f246a6aafa65469a80d09cfc4efad134260aa4da902bc
-SHA1: 3afb36606a61395baba900020d62de681605bbe5
-MD5sum: caefa435ef78ea7ed61b66c6654f3b68
+Size: 16929716
+SHA256: bec26800d7803919ab232762735c18af8d7acfb9d3135bd8e194adb25edb13f0
+SHA1: 37c4bbdf9b6eeb5f6dda56f14e1d6feb1d34557f
+MD5sum: be69325e666fcaf3ca7580640e3310d2
 Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
  BuildKit is a toolkit for converting source code to build artifacts in an
  efficient, expressive, and repeatable manner. It is the next-generation
@@ -142,32 +142,6 @@ Description: Docker command-line interface (CLI) for RISC-V64
  The Docker CLI is the command-line interface for Docker, allowing users
  to interact with Docker containers and images from the terminal. It provides
  commands for building, running, and managing containers.
- .
- This package provides pre-built binaries for RISC-V64 architecture.
-
-Package: docker-compose-plugin
-Version: 2.40.1-riscv64-1
-Architecture: riscv64
-Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 61814
-Recommends: docker-cli
-Conflicts: docker-compose
-Breaks: docker-compose
-Replaces: docker-compose
-Provides: docker-compose
-Homepage: https://github.com/docker/compose
-Priority: optional
-Section: admin
-Filename: pool/main/d/docker-compose-plugin/docker-compose-plugin_2.40.1-riscv64-1_riscv64.deb
-Size: 12005728
-SHA256: 83c98a45d65339d1ef387c59b89840b3781d56ce5817550f32b013d56767f4b4
-SHA1: 1e663b8a64f036984d9d4da760639b153a383bff
-MD5sum: 29479b016838acaa216638497cbcb668
-Description: Docker Compose v2 plugin for RISC-V64
- Docker Compose is a tool for running multi-container applications on
- Docker defined using the Compose file format. A Compose file is used
- to define how one or more containers that make up your application
- are configured.
  .
  This package provides pre-built binaries for RISC-V64 architecture.
 
