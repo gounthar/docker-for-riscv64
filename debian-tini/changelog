@@ -1,0 +1,8 @@
+tini (0.19.0-riscv64-1) trixie; urgency=medium
+
+  * Initial RISC-V64 build of Tini v0.19.0
+  * Pre-built binary package for RISC-V64 architecture
+  * Includes both dynamic and static tini binaries
+  * Used by Docker with --init flag for proper signal handling
+
+ -- Bruno Verachten <bruno.verachten@gmail.com>  Sun, 02 Feb 2026 12:00:00 +0100

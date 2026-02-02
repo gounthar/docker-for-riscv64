@@ -1,0 +1,22 @@
+Source: tini
+Section: admin
+Priority: optional
+Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://github.com/krallin/tini
+Rules-Requires-Root: no
+
+Package: tini
+Architecture: riscv64
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: Tiny but valid init for containers (RISC-V64)
+ Tini is the simplest init you could think of. It spawns a single
+ child process and waits for it to exit while reaping zombies and
+ performing signal forwarding.
+ .
+ Tini is used by Docker with the --init flag to properly handle
+ process signals and prevent zombie processes in containers.
+ .
+ This package provides both tini and tini-static pre-built binaries
+ for RISC-V64 architecture.
