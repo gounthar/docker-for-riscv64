@@ -266,13 +266,19 @@ jobs:
 
             echo "Triggering package builds for $RELEASE_TAG..."
 
-            # Trigger RPM package build (tini is primarily for RPM-based distros)
+            # Trigger Debian package build
+            gh workflow run build-tini-package.yml -f release_tag="$RELEASE_TAG"
+            echo "✓ Triggered build-tini-package.yml"
+
+            # Trigger RPM package build
             gh workflow run build-tini-rpm.yml -f release_tag="$RELEASE_TAG"
             echo "✓ Triggered build-tini-rpm.yml"
 
             echo ""
             echo "Package builds triggered successfully!"
-            echo "Monitor progress: gh run list --workflow=build-tini-rpm.yml --limit 1"
+            echo "Monitor progress:"
+            echo "  gh run list --workflow=build-tini-package.yml --limit 1"
+            echo "  gh run list --workflow=build-tini-rpm.yml --limit 1"
           else
             echo "Skipping package builds for development build"
           fi
