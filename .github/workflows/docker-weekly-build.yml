@@ -13,7 +13,7 @@ on:
       containerd_ref:
         description: 'Containerd version tag to build'
         required: false
-        default: 'v1.7.28'
+        default: 'v2.2.1'
       runc_ref:
         description: 'Runc version tag to build'
         required: false
@@ -158,12 +158,16 @@ jobs:
 
       - name: Build containerd
         run: |
-          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v1.7.28' }}"
-          # Clone containerd if not exists
+          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v2.2.1' }}"
+          # Clone if needed, then always sync to the requested ref
           if [ ! -d "containerd" ]; then
-            git clone --depth 1 --branch "$CONTAINERD_REF" https://github.com/containerd/containerd.git
+            git clone https://github.com/containerd/containerd.git
           fi
           cd containerd
+          git fetch --tags --prune origin
+          git checkout --force "$CONTAINERD_REF"
+          git reset --hard "$CONTAINERD_REF"
+          git clean -fdx
 
           # Build containerd binaries
           make BUILDTAGS='no_btrfs' binaries
@@ -178,11 +182,15 @@ jobs:
       - name: Build runc
         run: |
           RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
-          # Clone runc if not exists
+          # Clone if needed, then always sync to the requested ref
           if [ ! -d "runc" ]; then
-            git clone --depth 1 --branch "$RUNC_REF" https://github.com/opencontainers/runc.git
+            git clone https://github.com/opencontainers/runc.git
           fi
           cd runc
+          git fetch --tags --prune origin
+          git checkout --force "$RUNC_REF"
+          git reset --hard "$RUNC_REF"
+          git clean -fdx
 
           # Build runc
           make static
@@ -247,7 +255,7 @@ jobs:
             VERSION_INFO=$'**Moby Branch:** '"${MOBY_REF}"$'\n**Moby Commit:** '"${MOBY_COMMIT}"$'\n**Built Version:** '"${VERSION}"
           fi
 
-          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v1.7.28' }}"
+          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v2.2.1' }}"
           RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
           GO_VERSION="${{ steps.moby_update.outputs.go_version }}"
 
@@ -311,7 +319,7 @@ jobs:
         run: |
           set -euo pipefail
           MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
-          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v1.7.28' }}"
+          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v2.2.1' }}"
           RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
           VERSION_REGEX='${{ env.VERSION_REGEX }}'
 
