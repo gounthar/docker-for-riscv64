@@ -73,7 +73,10 @@ jobs:
             --state all \
             --search "in:title Building cagent ${LATEST} for RISC-V64" \
             --json number,title \
-            --jq 'map(select(.title == "Building cagent '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
+            --jq 'map(select(.title == "Building cagent '"${LATEST}"' for RISC-V64")) | .[0].number // empty') || {
+            echo "ERROR: gh issue list failed while checking duplicates for cagent ${LATEST}"
+            exit 1
+          }
 
           if [ -n "$EXISTING" ]; then
             echo "ℹ️ Tracking issue #$EXISTING already exists for cagent ${LATEST}, skipping build and issue"

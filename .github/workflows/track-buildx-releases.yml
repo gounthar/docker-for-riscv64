@@ -60,7 +60,10 @@ jobs:
             --state all \
             --search "in:title Building Docker Buildx ${LATEST} for RISC-V64" \
             --json number,title \
-            --jq 'map(select(.title == "Building Docker Buildx '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
+            --jq 'map(select(.title == "Building Docker Buildx '"${LATEST}"' for RISC-V64")) | .[0].number // empty') || {
+            echo "ERROR: gh issue list failed while checking duplicates for Docker Buildx ${LATEST}"
+            exit 1
+          }
 
           if [ -n "$EXISTING" ]; then
             echo "ℹ️ Tracking issue #$EXISTING already exists for Docker Buildx ${LATEST}, skipping build and issue"

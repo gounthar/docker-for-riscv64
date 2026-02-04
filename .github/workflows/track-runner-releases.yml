@@ -84,7 +84,10 @@ jobs:
             --state all \
             --search "in:title Update github-act-runner to $LATEST" \
             --json number,title \
-            --jq 'map(select(.title == "Update github-act-runner to '"$LATEST"'")) | .[0].number // empty')
+            --jq 'map(select(.title == "Update github-act-runner to '"$LATEST"'")) | .[0].number // empty') || {
+            echo "ERROR: gh issue list failed while checking duplicates for runner $LATEST"
+            exit 1
+          }
 
           if [ -n "$EXISTING" ]; then
             echo "ℹ️ Tracking issue #$EXISTING already exists for runner $LATEST, skipping update and issue"
