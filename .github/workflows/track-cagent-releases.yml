@@ -56,8 +56,34 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Trigger automatic build for new release
+      - name: Check for duplicate tracking issue
+        id: dedup
         if: steps.check.outputs.already_built == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+
+          # Check if labels exist, create if they don't
+          gh label create "build-in-progress" --description "Build is currently in progress" --color "FFA500" 2>/dev/null || true
+          gh label create "cagent-release" --description "cagent release tracking" --color "1E90FF" 2>/dev/null || true
+
+          EXISTING=$(gh issue list \
+            --label cagent-release \
+            --state all \
+            --search "in:title Building cagent ${LATEST} for RISC-V64" \
+            --json number,title \
+            --jq 'map(select(.title == "Building cagent '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for cagent ${LATEST}, skipping build and issue"
+            echo "is_duplicate=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_duplicate=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger automatic build for new release
+        if: steps.check.outputs.already_built == 'false' && steps.dedup.outputs.is_duplicate != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -66,10 +92,16 @@ jobs:
           echo "New cagent release detected: $LATEST"
           echo "Triggering automatic build..."
 
-          # Trigger the build workflow with the version tag
           gh workflow run cagent-weekly-build.yml -f cagent_ref=$LATEST
 
-          # Create tracking issue
+          echo "Build triggered successfully!"
+
+      - name: Create tracking issue
+        if: steps.check.outputs.already_built == 'false' && steps.dedup.outputs.is_duplicate != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
           CLEAN_VERSION="${LATEST#v}"
           cat > issue-body.md << EOF
           New cagent release detected: **$LATEST**
@@ -95,25 +127,7 @@ jobs:
           This issue will track the build progress. Close it once the release is published.
           EOF
 
-          # Check if labels exist, create if they don't
-          gh label create "build-in-progress" --description "Build is currently in progress" --color "FFA500" 2>/dev/null || true
-          gh label create "cagent-release" --description "cagent release tracking" --color "1E90FF" 2>/dev/null || true
-
-          # Check for existing issue to avoid duplicates
-          EXISTING=$(gh issue list \
-            --label cagent-release \
-            --state all \
-            --search "in:title Building cagent ${LATEST} for RISC-V64" \
-            --json number,title \
-            --jq 'map(select(.title == "Building cagent '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
-
-          if [ -n "$EXISTING" ]; then
-            echo "ℹ️ Tracking issue #$EXISTING already exists for cagent ${LATEST}, skipping"
-          else
-            gh issue create \
-              --title "Building cagent ${LATEST} for RISC-V64" \
-              --body-file issue-body.md \
-              --label "build-in-progress,cagent-release"
-          fi
-
-          echo "Build triggered successfully!"
+          gh issue create \
+            --title "Building cagent ${LATEST} for RISC-V64" \
+            --body-file issue-body.md \
+            --label "build-in-progress,cagent-release"

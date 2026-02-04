@@ -53,8 +53,29 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Trigger automatic build for new release
+      - name: Check for duplicate tracking issue
+        id: dedup
         if: steps.check.outputs.already_built == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+          EXISTING=$(gh issue list \
+            --label cli-release \
+            --state all \
+            --search "in:title Building Docker CLI ${LATEST} for RISC-V64" \
+            --json number,title \
+            --jq 'map(select(.title == "Building Docker CLI '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for Docker CLI ${LATEST}, skipping build and issue"
+            echo "is_duplicate=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_duplicate=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger automatic build for new release
+        if: steps.check.outputs.already_built == 'false' && steps.dedup.outputs.is_duplicate != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -63,10 +84,16 @@ jobs:
           echo "New Docker CLI release detected: $LATEST"
           echo "Triggering automatic build..."
 
-          # Trigger the build workflow with the version tag
           gh workflow run cli-weekly-build.yml -f cli_ref=$LATEST
 
-          # Create tracking issue
+          echo "Build triggered successfully!"
+
+      - name: Create tracking issue
+        if: steps.check.outputs.already_built == 'false' && steps.dedup.outputs.is_duplicate != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
           CLEAN_VERSION="${LATEST#v}"
           cat > issue-body.md << EOF
           New Docker CLI release detected: **$LATEST**
@@ -89,21 +116,7 @@ jobs:
           This issue will track the build progress. Close it once the release is published.
           EOF
 
-          # Check for existing issue to avoid duplicates
-          EXISTING=$(gh issue list \
-            --label cli-release \
-            --state all \
-            --search "in:title Building Docker CLI ${LATEST} for RISC-V64" \
-            --json number,title \
-            --jq 'map(select(.title == "Building Docker CLI '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
-
-          if [ -n "$EXISTING" ]; then
-            echo "ℹ️ Tracking issue #$EXISTING already exists for Docker CLI ${LATEST}, skipping"
-          else
-            gh issue create \
-              --title "Building Docker CLI ${LATEST} for RISC-V64" \
-              --body-file issue-body.md \
-              --label "build-in-progress,cli-release"
-          fi
-
-          echo "Build triggered successfully!"
+          gh issue create \
+            --title "Building Docker CLI ${LATEST} for RISC-V64" \
+            --body-file issue-body.md \
+            --label "build-in-progress,cli-release"
