@@ -92,10 +92,22 @@ jobs:
           This issue will track the build progress. Close it once the release is published.
           ISSUE_EOF
 
-          gh issue create \
-            --title "Building BuildKit ${LATEST} for RISC-V64" \
-            --body-file issue-body.md \
-            --label "build-in-progress,buildkit-release"
+          # Check for existing issue to avoid duplicates
+          EXISTING=$(gh issue list \
+            --label buildkit-release \
+            --state all \
+            --search "Building BuildKit ${LATEST}" \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for BuildKit ${LATEST}, skipping"
+          else
+            gh issue create \
+              --title "Building BuildKit ${LATEST} for RISC-V64" \
+              --body-file issue-body.md \
+              --label "build-in-progress,buildkit-release"
+          fi
 
           echo "Build triggered successfully!"
 

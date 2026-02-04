@@ -84,9 +84,21 @@ jobs:
           This issue will track the build progress. Close it once the release is published.
           EOF
 
-          gh issue create \
-            --title "Building Docker CLI ${LATEST} for RISC-V64" \
-            --body-file issue-body.md \
-            --label "build-in-progress,cli-release"
+          # Check for existing issue to avoid duplicates
+          EXISTING=$(gh issue list \
+            --label cli-release \
+            --state all \
+            --search "Building Docker CLI ${LATEST}" \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for Docker CLI ${LATEST}, skipping"
+          else
+            gh issue create \
+              --title "Building Docker CLI ${LATEST} for RISC-V64" \
+              --body-file issue-body.md \
+              --label "build-in-progress,cli-release"
+          fi
 
           echo "Build triggered successfully!"

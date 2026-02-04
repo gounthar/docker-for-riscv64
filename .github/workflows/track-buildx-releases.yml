@@ -86,9 +86,21 @@ jobs:
           This issue will track the build progress. Close it once the release is published.
           EOF
 
-          gh issue create \
-            --title "Building Docker Buildx ${LATEST} for RISC-V64" \
-            --body-file issue-body.md \
-            --label "build-in-progress,buildx-release"
+          # Check for existing issue to avoid duplicates
+          EXISTING=$(gh issue list \
+            --label buildx-release \
+            --state all \
+            --search "Building Docker Buildx ${LATEST}" \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for Docker Buildx ${LATEST}, skipping"
+          else
+            gh issue create \
+              --title "Building Docker Buildx ${LATEST} for RISC-V64" \
+              --body-file issue-body.md \
+              --label "build-in-progress,buildx-release"
+          fi
 
           echo "Build triggered successfully!"

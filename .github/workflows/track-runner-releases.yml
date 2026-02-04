@@ -93,6 +93,20 @@ jobs:
           LATEST=${{ steps.check.outputs.latest_release }}
           CURRENT=${{ steps.check.outputs.current_version }}
 
+          # Check for existing open or closed issue to avoid duplicates
+          EXISTING=$(gh issue list \
+            --repo gounthar/docker-for-riscv64 \
+            --label runner-update \
+            --state all \
+            --search "Update github-act-runner to $LATEST" \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for runner $LATEST, skipping"
+            exit 0
+          fi
+
           cat > issue-body.md << EOF
           Automated runner update triggered!
 

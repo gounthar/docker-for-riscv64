@@ -99,9 +99,21 @@ jobs:
           gh label create "build-in-progress" --description "Build is currently in progress" --color "FFA500" 2>/dev/null || true
           gh label create "cagent-release" --description "cagent release tracking" --color "1E90FF" 2>/dev/null || true
 
-          gh issue create \
-            --title "Building cagent ${LATEST} for RISC-V64" \
-            --body-file issue-body.md \
-            --label "build-in-progress,cagent-release"
+          # Check for existing issue to avoid duplicates
+          EXISTING=$(gh issue list \
+            --label cagent-release \
+            --state all \
+            --search "Building cagent ${LATEST}" \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for cagent ${LATEST}, skipping"
+          else
+            gh issue create \
+              --title "Building cagent ${LATEST} for RISC-V64" \
+              --body-file issue-body.md \
+              --label "build-in-progress,cagent-release"
+          fi
 
           echo "Build triggered successfully!"
