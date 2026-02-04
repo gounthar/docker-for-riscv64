@@ -9,13 +9,19 @@ name: Track Runner Releases
 jobs:
   check-release:
     runs-on: [self-hosted, riscv64]
-    
+
     steps:
       - name: Check for new github-act-runner release
         id: check
         run: |
           # Get latest runner release
           LATEST=$(gh api repos/ChristopherHX/github-act-runner/releases/latest --jq '.tag_name')
+
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            echo "ERROR: Failed to fetch latest github-act-runner release"
+            exit 1
+          fi
+
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
           # Check current version - try multiple methods
@@ -64,9 +70,34 @@ jobs:
           echo "Current runner: $CURRENT"
         env:
           GH_TOKEN: ${{ github.token }}
-      
-      - name: Trigger automated update
+
+      - name: Check for duplicate tracking issue
+        id: dedup
         if: steps.check.outputs.needs_update == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+          EXISTING=$(gh issue list \
+            --repo gounthar/docker-for-riscv64 \
+            --label runner-update \
+            --state all \
+            --search "in:title Update github-act-runner to $LATEST" \
+            --json number,title \
+            --jq 'map(select(.title == "Update github-act-runner to '"$LATEST"'")) | .[0].number // empty') || {
+            echo "ERROR: gh issue list failed while checking duplicates for runner $LATEST"
+            exit 1
+          }
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for runner $LATEST, skipping update and issue"
+            echo "is_duplicate=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_duplicate=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger automated update
+        if: steps.check.outputs.needs_update == 'true' && steps.dedup.outputs.is_duplicate != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -86,7 +117,7 @@ jobs:
           echo "📊 Monitor progress: gh run list --workflow=update-runner.yml"
 
       - name: Create tracking issue
-        if: steps.check.outputs.needs_update == 'true'
+        if: steps.check.outputs.needs_update == 'true' && steps.dedup.outputs.is_duplicate != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

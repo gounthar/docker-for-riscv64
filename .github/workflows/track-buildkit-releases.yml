@@ -52,8 +52,32 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-      - name: Trigger automatic build for new release
+      - name: Check for duplicate tracking issue
+        id: dedup
         if: steps.check.outputs.already_built == 'false'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
+          EXISTING=$(gh issue list \
+            --label buildkit-release \
+            --state all \
+            --search "in:title Building BuildKit ${LATEST} for RISC-V64" \
+            --json number,title \
+            --jq 'map(select(.title == "Building BuildKit '"${LATEST}"' for RISC-V64")) | .[0].number // empty') || {
+            echo "ERROR: gh issue list failed while checking duplicates for BuildKit ${LATEST}"
+            exit 1
+          }
+
+          if [ -n "$EXISTING" ]; then
+            echo "ℹ️ Tracking issue #$EXISTING already exists for BuildKit ${LATEST}, skipping build and issue"
+            echo "is_duplicate=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_duplicate=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Trigger automatic build for new release
+        if: steps.check.outputs.already_built == 'false' && steps.dedup.outputs.is_duplicate != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -62,10 +86,16 @@ jobs:
           echo "New BuildKit release detected: $LATEST"
           echo "Triggering automatic build..."
 
-          # Trigger the build workflow with the version tag
           gh workflow run buildkit-weekly-build.yml -f buildkit_ref=$LATEST
 
-          # Create tracking issue
+          echo "Build triggered successfully!"
+
+      - name: Create tracking issue
+        if: steps.check.outputs.already_built == 'false' && steps.dedup.outputs.is_duplicate != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          LATEST=${{ steps.check.outputs.latest_release }}
           cat > issue-body.md << ISSUE_EOF
           New BuildKit release detected: **$LATEST**
 
@@ -96,8 +126,6 @@ jobs:
             --title "Building BuildKit ${LATEST} for RISC-V64" \
             --body-file issue-body.md \
             --label "build-in-progress,buildkit-release"
-
-          echo "Build triggered successfully!"
 
       - name: Log status when already built
         if: steps.check.outputs.already_built == 'true'
