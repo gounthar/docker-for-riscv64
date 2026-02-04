@@ -25,6 +25,11 @@ jobs:
           # Get latest stable release from docker/buildx repository
           LATEST=$(gh api repos/docker/buildx/releases/latest --jq '.tag_name')
 
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            echo "ERROR: Failed to fetch latest Docker Buildx release"
+            exit 1
+          fi
+
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
           # Check if we've already built this (using buildx-v*-riscv64 format)
@@ -90,9 +95,9 @@ jobs:
           EXISTING=$(gh issue list \
             --label buildx-release \
             --state all \
-            --search "Building Docker Buildx ${LATEST}" \
-            --json number \
-            --jq '.[0].number // empty')
+            --search "in:title Building Docker Buildx ${LATEST} for RISC-V64" \
+            --json number,title \
+            --jq 'map(select(.title == "Building Docker Buildx '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
 
           if [ -n "$EXISTING" ]; then
             echo "ℹ️ Tracking issue #$EXISTING already exists for Docker Buildx ${LATEST}, skipping"

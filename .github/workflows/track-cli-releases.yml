@@ -30,6 +30,11 @@ jobs:
             | sort -V \
             | tail -n1)
 
+          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+            echo "ERROR: Failed to fetch latest Docker CLI release"
+            exit 1
+          fi
+
           echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
 
           # Check if we've already built this (using cli-v*-riscv64 format)
@@ -88,9 +93,9 @@ jobs:
           EXISTING=$(gh issue list \
             --label cli-release \
             --state all \
-            --search "Building Docker CLI ${LATEST}" \
-            --json number \
-            --jq '.[0].number // empty')
+            --search "in:title Building Docker CLI ${LATEST} for RISC-V64" \
+            --json number,title \
+            --jq 'map(select(.title == "Building Docker CLI '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
 
           if [ -n "$EXISTING" ]; then
             echo "ℹ️ Tracking issue #$EXISTING already exists for Docker CLI ${LATEST}, skipping"

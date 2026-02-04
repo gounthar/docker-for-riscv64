@@ -9,7 +9,7 @@ name: Track Runner Releases
 jobs:
   check-release:
     runs-on: [self-hosted, riscv64]
-    
+
     steps:
       - name: Check for new github-act-runner release
         id: check
@@ -98,9 +98,9 @@ jobs:
             --repo gounthar/docker-for-riscv64 \
             --label runner-update \
             --state all \
-            --search "Update github-act-runner to $LATEST" \
-            --json number \
-            --jq '.[0].number // empty')
+            --search "in:title Update github-act-runner to $LATEST" \
+            --json number,title \
+            --jq 'map(select(.title == "Update github-act-runner to '"$LATEST"'")) | .[0].number // empty')
 
           if [ -n "$EXISTING" ]; then
             echo "ℹ️ Tracking issue #$EXISTING already exists for runner $LATEST, skipping"

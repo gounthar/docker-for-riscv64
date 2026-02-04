@@ -96,9 +96,9 @@ jobs:
           EXISTING=$(gh issue list \
             --label buildkit-release \
             --state all \
-            --search "Building BuildKit ${LATEST}" \
-            --json number \
-            --jq '.[0].number // empty')
+            --search "in:title Building BuildKit ${LATEST} for RISC-V64" \
+            --json number,title \
+            --jq 'map(select(.title == "Building BuildKit '"${LATEST}"' for RISC-V64")) | .[0].number // empty')
 
           if [ -n "$EXISTING" ]; then
             echo "ℹ️ Tracking issue #$EXISTING already exists for BuildKit ${LATEST}, skipping"
