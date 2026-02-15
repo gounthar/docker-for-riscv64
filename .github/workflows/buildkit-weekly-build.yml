@@ -85,13 +85,19 @@ jobs:
           VERSION=$(git describe --tags --always --dirty)
           echo "Building BuildKit version: $VERSION"
 
-          # Use the default Docker driver instead of docker-container to avoid
-          # the "exec /sbin/docker-init: no such file" error. The docker-container
-          # driver pulls moby/buildkit:buildx-stable-1 which lacks tini for riscv64.
-          # The default driver uses the host Docker daemon's built-in BuildKit.
-          docker buildx use default || true
+          # Pre-create mybuilder with our own BuildKit image that includes tini.
+          # BuildKit's docker-bake.hcl creates a "mybuilder" using docker-container
+          # driver with moby/buildkit:buildx-stable-1, which lacks tini for riscv64
+          # causing "exec /sbin/docker-init: no such file". By pre-creating mybuilder
+          # with our tini-enabled image, docker-bake.hcl reuses it.
+          docker buildx create \
+            --name mybuilder \
+            --driver docker-container \
+            --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:latest \
+            --use || true
+          docker buildx inspect --bootstrap || true
           echo "Active buildx builder:"
-          docker buildx ls | head -5
+          docker buildx ls | head -10
 
           # Build using docker buildx bake (builds for native platform)
           # Note: GOOS/GOARCH not needed - buildx detects host platform automatically
