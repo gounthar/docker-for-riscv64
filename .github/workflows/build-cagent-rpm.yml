@@ -92,15 +92,16 @@ jobs:
 
           # Extract version from tag (cagent-v1.9.13-riscv64 -> 1.9.13)
           VERSION=$(echo "$RELEASE_TAG" | sed 's/^cagent-v//; s/-riscv64$//')
-          # RPM versions cannot contain hyphens - replace with dots
-          VERSION=$(echo "$VERSION" | tr '-' '.')
-          echo "Package version: $VERSION"
 
-          # Validate VERSION extraction succeeded
+          # Validate VERSION extraction succeeded (before hyphen normalization)
           if [ -z "$VERSION" ] || [ "$VERSION" = "$RELEASE_TAG" ]; then
             echo "Error: Failed to extract version from tag: $RELEASE_TAG"
             exit 1
           fi
+
+          # RPM versions cannot contain hyphens - replace with dots
+          VERSION=$(echo "$VERSION" | tr '-' '.')
+          echo "Package version: $VERSION"
 
           # Update spec file
           sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/cagent.spec

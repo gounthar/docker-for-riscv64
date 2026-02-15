@@ -122,6 +122,12 @@ jobs:
           # Extract version from tag (buildx-v0.19.2-riscv64 -> 0.19.2)
           VERSION=$(echo "$RELEASE_TAG" | sed 's/^buildx-v//; s/-riscv64$//')
 
+          # Validate VERSION extraction succeeded (before hyphen normalization)
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$RELEASE_TAG" ]; then
+            echo "Error: Failed to extract version from tag: $RELEASE_TAG"
+            exit 1
+          fi
+
           # RPM versions cannot contain hyphens - replace with dots
           # e.g., "20260215-dev" -> "20260215.dev"
           VERSION=$(echo "$VERSION" | tr '-' '.')

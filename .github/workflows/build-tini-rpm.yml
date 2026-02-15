@@ -96,6 +96,13 @@ jobs:
         run: |
           # Extract version from tag (tini-v0.19.0-riscv64 -> 0.19.0)
           VERSION=$(echo "$RELEASE_TAG" | sed 's/^tini-v//; s/-riscv64$//')
+
+          # Validate VERSION extraction succeeded (before hyphen normalization)
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$RELEASE_TAG" ]; then
+            echo "Error: Failed to extract version from tag: $RELEASE_TAG"
+            exit 1
+          fi
+
           # RPM versions cannot contain hyphens - replace with dots
           VERSION=$(echo "$VERSION" | tr '-' '.')
           echo "Package version: $VERSION"
