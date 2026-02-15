@@ -37,13 +37,3 @@ jobs:
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Run UpdateCLI for cagent Go version
-        uses: updatecli/updatecli-action@v2
-        with:
-          command: apply
-          config: .updatecli.d/cagent-go-version.yaml
-          values: .updatecli.d/values.yaml
-        env:
-          UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

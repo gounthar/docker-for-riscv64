@@ -58,7 +58,13 @@ jobs:
           echo "Current buildx builders:"
           docker buildx ls || true
 
-          # Remove riscv-builder if it exists (used by BuildKit's bake)
+          # Remove mybuilder if it exists (created by BuildKit's docker-bake.hcl)
+          if docker buildx ls | grep -q "mybuilder"; then
+            echo "Removing existing mybuilder..."
+            docker buildx rm mybuilder --force || true
+          fi
+
+          # Remove riscv-builder if it exists
           if docker buildx ls | grep -q "riscv-builder"; then
             echo "Removing existing riscv-builder..."
             docker buildx rm riscv-builder --force || true
@@ -78,6 +84,20 @@ jobs:
           # Set version from git tag
           VERSION=$(git describe --tags --always --dirty)
           echo "Building BuildKit version: $VERSION"
+
+          # Pre-create mybuilder with our own BuildKit image that includes tini.
+          # BuildKit's docker-bake.hcl creates a "mybuilder" using docker-container
+          # driver with moby/buildkit:buildx-stable-1, which lacks tini for riscv64
+          # causing "exec /sbin/docker-init: no such file". By pre-creating mybuilder
+          # with our tini-enabled image, docker-bake.hcl reuses it.
+          docker buildx create \
+            --name mybuilder \
+            --driver docker-container \
+            --driver-opt image=ghcr.io/gounthar/buildkit-riscv64:latest \
+            --use || true
+          docker buildx inspect --bootstrap || true
+          echo "Active buildx builder:"
+          docker buildx ls | head -10
 
           # Build using docker buildx bake (builds for native platform)
           # Note: GOOS/GOARCH not needed - buildx detects host platform automatically
