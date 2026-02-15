@@ -43,13 +43,21 @@ jobs:
             echo "Checked out tag or commit, skipping pull"
           fi
 
-      # WARNING: UpdateCLI automation targets this step at index [2].
-      # Do not reorder steps before "Set up Go" or automation will break.
-      # See .updatecli.d/cagent-go-version.yaml
+      - name: Detect Go version from cagent go.mod
+        id: detect_go
+        run: |
+          GO_VERSION=$(grep '^go ' cagent/go.mod | awk '{print $2}')
+          if [ -z "$GO_VERSION" ]; then
+            echo "WARNING: Could not extract Go version from cagent/go.mod, falling back to 1.26.0"
+            GO_VERSION="1.26.0"
+          fi
+          echo "Go version from cagent/go.mod: $GO_VERSION"
+          echo "go_version=$GO_VERSION" >> "$GITHUB_OUTPUT"
+
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: '1.26.0'
+          go-version: '${{ steps.detect_go.outputs.go_version }}'
 
       - name: Install build dependencies
         run: |
