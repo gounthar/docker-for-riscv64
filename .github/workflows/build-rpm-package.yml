@@ -92,7 +92,9 @@ jobs:
           RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
-          VERSION=$(echo $RELEASE_TAG | sed 's/^v//; s/-riscv64$//')
+          VERSION=$(echo "$RELEASE_TAG" | sed 's/^v//; s/-riscv64$//')
+          # RPM versions cannot contain hyphens - replace with dots
+          VERSION=$(echo "$VERSION" | tr '-' '.')
           echo "Package version: $VERSION"
 
           # Update moby-engine version

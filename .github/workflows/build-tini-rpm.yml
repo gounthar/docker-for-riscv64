@@ -95,7 +95,9 @@ jobs:
           RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           # Extract version from tag (tini-v0.19.0-riscv64 -> 0.19.0)
-          VERSION=$(echo $RELEASE_TAG | sed 's/^tini-v//; s/-riscv64$//')
+          VERSION=$(echo "$RELEASE_TAG" | sed 's/^tini-v//; s/-riscv64$//')
+          # RPM versions cannot contain hyphens - replace with dots
+          VERSION=$(echo "$VERSION" | tr '-' '.')
           echo "Package version: $VERSION"
 
           # Update spec file
