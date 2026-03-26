@@ -1,5 +1,5 @@
 Package: buildkit
-Version: 0.28.0-riscv64-1
+Version: 0.28.1-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verächten <bruno@verachten.fr>
 Installed-Size: 71945
@@ -8,11 +8,11 @@ Suggests: docker.io (>= 20.10) | docker-ce (>= 20.10)
 Homepage: https://github.com/moby/buildkit
 Priority: optional
 Section: devel
-Filename: pool/main/b/buildkit/buildkit_0.28.0-riscv64-1_riscv64.deb
-Size: 17019856
-SHA256: 4adec618e1b22551b0a635bcd552a44c686fc5039b59179dd0d478293e418b91
-SHA1: 97c187fd1737b6c58ce630728c7f856b2fe3b729
-MD5sum: 46117548c22ca8c0aed0baba2905e52a
+Filename: pool/main/b/buildkit/buildkit_0.28.1-riscv64-1_riscv64.deb
+Size: 17029052
+SHA256: 984b36c497f8107f45f15485926f0ba249530f26651769503cc56f8393a29cb4
+SHA1: 54426ad68f7bae2eb9aa272c58f0b2e81254941f
+MD5sum: 863f90d553c3829c043f4aed72a355f9
 Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
  BuildKit is a toolkit for converting source code to build artifacts in an
  efficient, expressive, and repeatable manner. It is the next-generation
@@ -39,18 +39,18 @@ Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolki
  the RISC-V 64-bit architecture.
 
 Package: cagent
-Version: 1.36.0-1
+Version: 1.37.0-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 101790
+Installed-Size: 102088
 Homepage: https://github.com/docker/cagent
 Priority: optional
 Section: devel
-Filename: pool/main/c/cagent/cagent_1.36.0-1_riscv64.deb
-Size: 37373008
-SHA256: 76875014e92f3dcd14821bdcdd280e2311284f31bc806d9eab92020bd39bc101
-SHA1: 38583990deaf2f4e78fd3fb6636a439ad6d8ca4d
-MD5sum: fccac8dadaa9fc8f2f8160d116178ee3
+Filename: pool/main/c/cagent/cagent_1.37.0-1_riscv64.deb
+Size: 37478680
+SHA256: 6995989103a02e3b03fd17528087419df1f9e2a099ca8c6472755d81147f6b18
+SHA1: a5053bf08d618d9bf3f49958b0d1bbcee78a359b
+MD5sum: 633983db51752c0e941ad1e453156de5
 Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
  cagent is a powerful, easy to use, customizable multi-agent runtime that
  orchestrates AI agents with specialized capabilities and tools.
