@@ -39,18 +39,18 @@ Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolki
  the RISC-V 64-bit architecture.
 
 Package: cagent
-Version: 1.43.0-1
+Version: 1.44.0-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 115031
+Installed-Size: 118483
 Homepage: https://github.com/docker/cagent
 Priority: optional
 Section: devel
-Filename: pool/main/c/cagent/cagent_1.43.0-1_riscv64.deb
-Size: 40054732
-SHA256: 71dbd03a7dd114fb943ee9ede2de60116f3bc89149dc2d84776ccdd398e0faa9
-SHA1: f3c2bcece052cabda7b90d419c7a11e702effaf6
-MD5sum: d209556c15e78c50ee14322e5394a8d2
+Filename: pool/main/c/cagent/cagent_1.44.0-1_riscv64.deb
+Size: 40948200
+SHA256: a03c0da29c3d21c72cb077e71d0783a9a9de844eef7374405e5450a10c55fe19
+SHA1: 6bfa1bc64afa38e6d18e4ab397d39c88e1b83f5a
+MD5sum: e5f1c3f8f10d4f0006f79bde843fc7f6
 Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
  cagent is a powerful, easy to use, customizable multi-agent runtime that
  orchestrates AI agents with specialized capabilities and tools.
