@@ -146,10 +146,10 @@ Description: Docker command-line interface (CLI) for RISC-V64
  This package provides pre-built binaries for RISC-V64 architecture.
 
 Package: docker-compose-plugin
-Version: 5.1.2-riscv64-1
+Version: 5.1.3-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 26938
+Installed-Size: 27003
 Recommends: docker-cli
 Conflicts: docker-compose
 Breaks: docker-compose
@@ -158,11 +158,11 @@ Provides: docker-compose
 Homepage: https://github.com/docker/compose
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker-compose-plugin/docker-compose-plugin_5.1.2-riscv64-1_riscv64.deb
-Size: 6756792
-SHA256: 93772dc43a12d238e96c17ec7453b32ee92b245074ea0e6ccea7cb4fdde37420
-SHA1: 3c0ff54adbe935d013cf9311d26d78cfcaeaea9f
-MD5sum: 4fd850c1ef4e1578326414b4148c06b1
+Filename: pool/main/d/docker-compose-plugin/docker-compose-plugin_5.1.3-riscv64-1_riscv64.deb
+Size: 6764252
+SHA256: 52e22704c0ea3a6e63e900e556d62e080ef1b75187f8d6bbc0d338d78ff4b802
+SHA1: c5803757e184991e5a020c820ee9eaa826e96b5b
+MD5sum: 8d43a41bb0b8973dbfb051d18be7202b
 Description: Docker Compose v2 plugin for RISC-V64
  Docker Compose is a tool for running multi-container applications on
  Docker defined using the Compose file format. A Compose file is used
