@@ -39,18 +39,18 @@ Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolki
  the RISC-V 64-bit architecture.
 
 Package: cagent
-Version: 1.61.0-1
+Version: 1.65.0-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 128554
+Installed-Size: 129473
 Homepage: https://github.com/docker/cagent
 Priority: optional
 Section: devel
-Filename: pool/main/c/cagent/cagent_1.61.0-1_riscv64.deb
-Size: 44244872
-SHA256: 25e53534fbe43ce32f7a8e5f170a9c1cbbde2a6fa9d9bdebb47652a742aae738
-SHA1: 81810ab5f3b528d25ecb7626d9a1cf08d89b4f75
-MD5sum: 1844e3e31c28426a0c171c15b7a08b94
+Filename: pool/main/c/cagent/cagent_1.65.0-1_riscv64.deb
+Size: 44558224
+SHA256: bfe1633fa7bf8a556a7ec7e3d191a8a98d1fe3af7f93ab0130bd4f2aa2298706
+SHA1: 1e766abe3c346f4d3f5dc4f7afa3e33649ed5e57
+MD5sum: 8ce44cf31e4aafbbb956b157a34bfa28
 Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
  cagent is a powerful, easy to use, customizable multi-agent runtime that
  orchestrates AI agents with specialized capabilities and tools.
@@ -142,32 +142,6 @@ Description: Docker command-line interface (CLI) for RISC-V64
  The Docker CLI is the command-line interface for Docker, allowing users
  to interact with Docker containers and images from the terminal. It provides
  commands for building, running, and managing containers.
- .
- This package provides pre-built binaries for RISC-V64 architecture.
-
-Package: docker-compose-plugin
-Version: 5.1.3-riscv64-1
-Architecture: riscv64
-Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 27003
-Recommends: docker-cli
-Conflicts: docker-compose
-Breaks: docker-compose
-Replaces: docker-compose
-Provides: docker-compose
-Homepage: https://github.com/docker/compose
-Priority: optional
-Section: admin
-Filename: pool/main/d/docker-compose-plugin/docker-compose-plugin_5.1.3-riscv64-1_riscv64.deb
-Size: 6764252
-SHA256: 52e22704c0ea3a6e63e900e556d62e080ef1b75187f8d6bbc0d338d78ff4b802
-SHA1: c5803757e184991e5a020c820ee9eaa826e96b5b
-MD5sum: 8d43a41bb0b8973dbfb051d18be7202b
-Description: Docker Compose v2 plugin for RISC-V64
- Docker Compose is a tool for running multi-container applications on
- Docker defined using the Compose file format. A Compose file is used
- to define how one or more containers that make up your application
- are configured.
  .
  This package provides pre-built binaries for RISC-V64 architecture.
 
