@@ -28,12 +28,11 @@ jobs:
             && sudo apt install gh -y
           }
 
-      - name: Run UpdateCLI for cagent version updates
+      - name: Install Updatecli
         uses: updatecli/updatecli-action@v2
-        with:
-          command: apply
-          config: .updatecli.d/cagent.yaml
-          values: .updatecli.d/values.yaml
+
+      - name: Run UpdateCLI for cagent version updates
+        run: updatecli pipeline apply --config .updatecli.d/cagent.yaml --values .updatecli.d/values.yaml
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

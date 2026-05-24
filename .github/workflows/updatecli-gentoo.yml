@@ -28,12 +28,11 @@ jobs:
             && sudo apt install gh -y
           }
 
-      - name: Run UpdateCLI for Gentoo packages
+      - name: Install Updatecli
         uses: updatecli/updatecli-action@v2
-        with:
-          command: apply
-          config: .updatecli.d/gentoo-*.yaml
-          values: .updatecli.d/values.yaml
+
+      - name: Run UpdateCLI for Gentoo packages
+        run: updatecli pipeline apply --config .updatecli.d/gentoo-containerd.yaml --config .updatecli.d/gentoo-docker-cli.yaml --config .updatecli.d/gentoo-docker-compose.yaml --config .updatecli.d/gentoo-runc.yaml --config .updatecli.d/gentoo-tini.yaml --values .updatecli.d/values.yaml
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
