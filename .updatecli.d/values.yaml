@@ -5,7 +5,11 @@
 github:
   user: "github-actions[bot]"
   email: "github-actions[bot]@users.noreply.github.com"
-  username: "github-actions[bot]"
+  # Git HTTPS basic-auth username for clone/push. For a GITHUB_TOKEN this
+  # must be "x-access-token" (what actions/checkout uses); "github-actions[bot]"
+  # is rejected with "HTTP Basic: Access denied". Commit authorship still uses
+  # the user/email above.
+  username: "x-access-token"
   # Token: manifests use {{ requiredEnv .github.token }} which reads
   # the environment variable named by this value
   token: "UPDATECLI_GITHUB_TOKEN"
