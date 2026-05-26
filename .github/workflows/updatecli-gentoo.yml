@@ -31,8 +31,51 @@ jobs:
       - name: Install Updatecli
         uses: updatecli/updatecli-action@v2
 
+      # updatecli only resolves the latest versions and edits the local working
+      # copy of the generation script. It does NOT clone, commit or open a PR
+      # (its go-git clone cannot handle this ~6.5 GB repository). The pull
+      # request is created below with the git CLI, which works here.
       - name: Run UpdateCLI for Gentoo packages
         run: updatecli pipeline apply --config .updatecli.d/gentoo-containerd.yaml --config .updatecli.d/gentoo-docker-cli.yaml --config .updatecli.d/gentoo-docker-compose.yaml --config .updatecli.d/gentoo-runc.yaml --config .updatecli.d/gentoo-tini.yaml --values .updatecli.d/values.yaml
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Open pull request if versions changed
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$(git status --porcelain generate-gentoo-overlay-modular.sh)" ]; then
+            echo "No Gentoo version changes; nothing to do."
+            exit 0
+          fi
+
+          # Avoid stacking duplicate PRs if one is already awaiting review.
+          if [ "$(gh pr list --state open --label gentoo --label automated --json number --jq 'length')" -gt 0 ]; then
+            echo "An automated Gentoo update PR is already open; skipping."
+            git checkout -- generate-gentoo-overlay-modular.sh
+            exit 0
+          fi
+
+          for label in gentoo automated; do
+            gh label create "$label" --color ededed --force >/dev/null 2>&1 || true
+          done
+
+          branch="updatecli/gentoo-$(date -u +%Y%m%d%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add generate-gentoo-overlay-modular.sh
+          git commit -m "chore(gentoo): update package versions"
+          git push origin "$branch"
+
+          changes="$(git show --no-color HEAD -- generate-gentoo-overlay-modular.sh | grep -E '^[-+][A-Z_]+_VERSION=' || true)"
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "chore(gentoo): update package versions" \
+            --label gentoo \
+            --label automated \
+            --body "$(printf 'Automated Gentoo overlay version bumps from the latest RISC-V64 releases.\n\nChanged in generate-gentoo-overlay-modular.sh:\n\n```\n%s\n```\n' "$changes")"
