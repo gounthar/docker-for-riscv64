@@ -14,6 +14,7 @@ scms:
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
       branch: "main"
+      depth: 1
 
 sources:
   cagentRelease:

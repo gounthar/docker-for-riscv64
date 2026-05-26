@@ -15,6 +15,7 @@ scms:
       token: "{{ requiredEnv .github.token }}"
       username: "{{ .github.username }}"
       branch: "main"
+      depth: 1
 
 sources:
   # Track latest Docker Engine release (source of containerd binary)
