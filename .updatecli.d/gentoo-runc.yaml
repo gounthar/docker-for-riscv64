@@ -27,7 +27,7 @@ sources:
         latest: true
       versionfilter:
         kind: regex
-        pattern: '^v(\d+\.\d+\.\d+)-riscv64$'
+        pattern: '^v([0-9]+[.][0-9]+[.][0-9]+)-riscv64$'
     transformers:
       - trimprefix: "v"
       - trimsuffix: "-riscv64"
@@ -40,7 +40,7 @@ sources:
     spec:
       command: |
         DOCKER_VERSION="{{ source `dockerRelease` }}"
-        gh release view "v${DOCKER_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq '.assets[].name' | grep "runc-" | grep ".rpm" | head -1 | sed -E 's/runc-([0-9]+\.[0-9]+\.[0-9]+)-.*/\1/'
+        gh release view "v${DOCKER_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq '.assets[].name' | grep "runc-" | grep ".rpm" | grep -oE '[0-9]+[.][0-9]+[.][0-9]+' | head -1
       environments:
         - name: PATH
         - name: GITHUB_TOKEN
@@ -67,7 +67,7 @@ targets:
     sourceid: runcVersion
     spec:
       file: "generate-gentoo-overlay-modular.sh"
-      matchpattern: 'RUNC_VERSION="([0-9]+\.[0-9]+\.[0-9]+)"'
+      matchpattern: 'RUNC_VERSION="([0-9]+[.][0-9]+[.][0-9]+)"'
       replacepattern: 'RUNC_VERSION="{{ source `runcVersion` }}"'
     scmid: default
 

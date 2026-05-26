@@ -27,7 +27,7 @@ sources:
         latest: true
       versionfilter:
         kind: regex
-        pattern: '^tini-v(\d+\.\d+\.\d+)-riscv64$'
+        pattern: '^tini-v([0-9]+[.][0-9]+[.][0-9]+)-riscv64$'
     transformers:
       - trimprefix: "tini-v"
       - trimsuffix: "-riscv64"
@@ -66,7 +66,7 @@ targets:
     sourceid: tiniRelease
     spec:
       file: "generate-gentoo-overlay-modular.sh"
-      matchpattern: 'TINI_VERSION="([0-9]+\.[0-9]+\.[0-9]+)"'
+      matchpattern: 'TINI_VERSION="([0-9]+[.][0-9]+[.][0-9]+)"'
       replacepattern: 'TINI_VERSION="{{ source `tiniRelease` }}"'
     scmid: default
 
