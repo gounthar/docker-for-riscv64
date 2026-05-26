@@ -35,4 +35,5 @@ jobs:
         run: updatecli pipeline apply --config .updatecli.d/cagent.yaml --values .updatecli.d/values.yaml
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATECLI_GITHUB_USERNAME: x-access-token
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
