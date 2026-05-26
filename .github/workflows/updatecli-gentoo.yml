@@ -43,7 +43,10 @@ jobs:
 
       - name: Open pull request if versions changed
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # A PAT is required for gh pr create: the default GITHUB_TOKEN is
+          # blocked by the "Allow GitHub Actions to create and approve pull
+          # requests" org/repo setting.
+          GH_TOKEN: ${{ secrets.UPDATECLI_PAT }}
         run: |
           set -euo pipefail
 
