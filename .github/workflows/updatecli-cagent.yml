@@ -16,6 +16,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          # The cagent submodule is updated by updatecli, so it must be present.
+          submodules: true
 
       - name: Install GitHub CLI
         run: |
@@ -31,8 +34,54 @@ jobs:
       - name: Install Updatecli
         uses: updatecli/updatecli-action@v2
 
+      # updatecli only resolves the latest version and edits the local working
+      # copy (changelog, spec, cagent submodule). It does NOT clone, commit or
+      # open a PR (its go-git clone cannot handle this ~6.5 GB repository). The
+      # pull request is created below with the git CLI, which works here.
       - name: Run UpdateCLI for cagent version updates
         run: updatecli pipeline apply --config .updatecli.d/cagent.yaml --values .updatecli.d/values.yaml
         env:
           UPDATECLI_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Open pull request if cagent changed
+        env:
+          # A PAT is required for gh pr create: the default GITHUB_TOKEN is
+          # blocked by the "Allow GitHub Actions to create and approve pull
+          # requests" org/repo setting.
+          GH_TOKEN: ${{ secrets.UPDATECLI_PAT }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$(git status --porcelain debian-cagent/changelog rpm-cagent/cagent.spec cagent)" ]; then
+            echo "No cagent changes; nothing to do."
+            exit 0
+          fi
+
+          if [ "$(gh pr list --state open --label cagent --label automated --json number --jq 'length')" -gt 0 ]; then
+            echo "An automated cagent update PR is already open; skipping."
+            git checkout -- debian-cagent/changelog rpm-cagent/cagent.spec cagent 2>/dev/null || true
+            exit 0
+          fi
+
+          for label in cagent automated version-update; do
+            gh label create "$label" --color ededed --force >/dev/null 2>&1 || true
+          done
+
+          version="$(grep -oE '^Version:[[:space:]]+[0-9]+[.][0-9]+[.][0-9]+' rpm-cagent/cagent.spec | grep -oE '[0-9]+[.][0-9]+[.][0-9]+' | head -1)"
+          branch="updatecli/cagent-$(date -u +%Y%m%d%H%M%S)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add debian-cagent/changelog rpm-cagent/cagent.spec cagent
+          git commit -m "feat(cagent): update to ${version}"
+          git push origin "$branch"
+
+          gh pr create \
+            --base main \
+            --head "$branch" \
+            --title "feat(cagent): update to ${version}" \
+            --label cagent \
+            --label automated \
+            --label version-update \
+            --body "$(printf 'Automated cagent update to %s (upstream docker/cagent).\n\nUpdated:\n- debian-cagent/changelog\n- rpm-cagent/cagent.spec\n- cagent/ submodule\n\nAfter merge, track-cagent-releases builds the RISC-V64 binaries and packages.\n' "${version}")"
