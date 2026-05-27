@@ -16,9 +16,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        with:
-          # The cagent submodule is updated by updatecli, so it must be present.
-          submodules: true
+
+      - name: Initialize cagent submodule
+        # Only the cagent submodule is needed here. A full submodules: true
+        # would initialize moby, compose, cli, buildkit, etc. and reintroduce
+        # the repository-size problem this workflow avoids.
+        run: git submodule update --init --depth 1 cagent
 
       - name: Install GitHub CLI
         run: |

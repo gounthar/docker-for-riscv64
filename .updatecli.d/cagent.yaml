@@ -77,6 +77,7 @@ targets:
     sourceid: cagentRelease
     spec:
       command: |
+        set -euo pipefail
         cd cagent
         git fetch origin --tags
         git checkout "v{{ source `cagentRelease` }}"
@@ -89,5 +90,5 @@ targets:
             LATEST_TAG="v{{ source `cagentRelease` }}"
             CURRENT_COMMIT=$(git ls-files --stage cagent | awk '{print $2}')
             TARGET_COMMIT=$(git ls-remote https://github.com/docker/cagent.git "refs/tags/${LATEST_TAG}" | cut -f1)
-            [ "$CURRENT_COMMIT" != "$TARGET_COMMIT" ]
+            [ -n "$TARGET_COMMIT" ] && [ "$CURRENT_COMMIT" != "$TARGET_COMMIT" ]
 
