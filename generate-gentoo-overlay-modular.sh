@@ -20,6 +20,7 @@ CONTAINERD_VERSION="1.7.28"
 RUNC_VERSION="1.3.0"
 TINI_VERSION="0.19.0"
 
+# Print usage and the current default versions (interpolated from the constants above).
 usage() {
     cat << USAGE_EOF
 Usage: ./generate-gentoo-overlay-modular.sh [OPTIONS]

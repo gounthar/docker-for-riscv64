@@ -96,6 +96,7 @@ if [[ ! -f "$GENERATOR_SCRIPT" ]]; then
     exit 1
 fi
 
+# Read a version constant (e.g. DOCKER_VERSION) from the generator script.
 read_version() {
     local name="$1"
     local value
