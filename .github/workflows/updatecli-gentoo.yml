@@ -10,6 +10,12 @@ permissions:
   contents: write
   pull-requests: write
 
+# Serialize runs so the open-PR check and gh pr create below cannot race
+# and open duplicate update PRs.
+concurrency:
+  group: updatecli-gentoo
+  cancel-in-progress: false
+
 jobs:
   updatecli:
     runs-on: ubuntu-latest
