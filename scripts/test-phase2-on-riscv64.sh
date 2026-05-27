@@ -85,13 +85,35 @@ run_test() {
     fi
 }
 
-# Default versions (from generate-gentoo-overlay-modular.sh)
-DOCKER_VERSION="28.5.1"
-CLI_VERSION="28.5.1"
-COMPOSE_VERSION="2.40.1"
-CONTAINERD_VERSION="1.7.28"
-RUNC_VERSION="1.3.0"
-TINI_VERSION="0.19.0"
+# Default versions: read straight from the generator so this test always
+# validates the versions the overlay is actually built with (single source
+# of truth). Bumping the constants in generate-gentoo-overlay-modular.sh
+# propagates here automatically.
+SCRIPT_DIR="$(unset CDPATH; cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+GENERATOR_SCRIPT="${SCRIPT_DIR}/../generate-gentoo-overlay-modular.sh"
+if [[ ! -f "$GENERATOR_SCRIPT" ]]; then
+    echo "Error: cannot find generator script at $GENERATOR_SCRIPT" >&2
+    exit 1
+fi
+
+# Read a version constant (e.g. DOCKER_VERSION) from the generator script.
+read_version() {
+    local name="$1"
+    local value
+    value=$(grep -m1 "^${name}=" "$GENERATOR_SCRIPT" | cut -d'"' -f2)
+    if [[ -z "$value" ]]; then
+        echo "Error: could not read ${name} from $GENERATOR_SCRIPT" >&2
+        exit 1
+    fi
+    echo "$value"
+}
+
+DOCKER_VERSION="$(read_version DOCKER_VERSION)"
+CLI_VERSION="$(read_version CLI_VERSION)"
+COMPOSE_VERSION="$(read_version COMPOSE_VERSION)"
+CONTAINERD_VERSION="$(read_version CONTAINERD_VERSION)"
+RUNC_VERSION="$(read_version RUNC_VERSION)"
+TINI_VERSION="$(read_version TINI_VERSION)"
 
 TEMP_DIR=$(mktemp -d)
 trap "rm -rf $TEMP_DIR" EXIT
