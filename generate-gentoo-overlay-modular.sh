@@ -16,8 +16,8 @@ set -e
 DOCKER_VERSION="28.5.1"
 CLI_VERSION="29.5.2"
 COMPOSE_VERSION="5.1.4"
-CONTAINERD_VERSION="1.7.28"
-RUNC_VERSION="1.3.0"
+CONTAINERD_VERSION=""
+RUNC_VERSION=""
 TINI_VERSION="0.19.0"
 
 # Print usage and the current default versions (interpolated from the constants above).
