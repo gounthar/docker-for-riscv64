@@ -29,8 +29,16 @@ sources:
     spec:
       command: |
         DOCKER_VERSION="{{ source `dockerRelease` }}"
-        # Get containerd version from release assets
-        gh release view "v${DOCKER_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq '.assets[].name' | grep "containerd-" | grep ".rpm" | grep -oE '[0-9]+[.][0-9]+[.][0-9]+' | head -1
+        # Extract the containerd version from the release's RPM asset name.
+        VERSION=$(gh release view "v${DOCKER_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq '.assets[].name' | grep "containerd-" | grep ".rpm" | grep -oE '[0-9]+[.][0-9]+[.][0-9]+' | head -1)
+        # Fail instead of emitting an empty value when the RPM is not published yet
+        # (e.g. the release exists but its assets are still uploading). An empty
+        # source would otherwise overwrite a valid CONTAINERD_VERSION with an empty string.
+        if [ -z "$VERSION" ]; then
+          echo "No containerd RPM version found in v${DOCKER_VERSION}-riscv64 assets (assets still uploading?)" >&2
+          exit 1
+        fi
+        echo "$VERSION"
       environments:
         - name: PATH
         - name: GITHUB_TOKEN
@@ -45,7 +53,7 @@ conditions:
     spec:
       command: |
         DOCKER_VERSION="{{ source `dockerRelease` }}"
-        gh release view "v${DOCKER_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq '.assets[].name' | grep -q "^containerd$"
+        gh release view "v${DOCKER_VERSION}-riscv64" --repo gounthar/docker-for-riscv64 --json assets --jq '.assets[].name' | grep "containerd-" | grep -q ".rpm"
       environments:
         - name: PATH
         - name: GITHUB_TOKEN
