@@ -1,56 +1,16 @@
-Package: buildkit
-Version: 0.30.0-riscv64-1
-Architecture: riscv64
-Maintainer: Bruno Verächten <bruno@verachten.fr>
-Installed-Size: 69272
-Recommends: containerd (>= 1.7) | containerd.io (>= 1.7)
-Suggests: docker.io (>= 20.10) | docker-ce (>= 20.10)
-Homepage: https://github.com/moby/buildkit
-Priority: optional
-Section: devel
-Filename: pool/main/b/buildkit/buildkit_0.30.0-riscv64-1_riscv64.deb
-Size: 18067048
-SHA256: c3367a8b0e283d28229b7afd1dd39c8b5124d9fe6e0da36ab998c56267e974ac
-SHA1: f36fd22ab505f70197a59ad27e1d848d55c0e9c7
-MD5sum: 55836d258bed4107e634716ce6c8fb0d
-Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
- BuildKit is a toolkit for converting source code to build artifacts in an
- efficient, expressive, and repeatable manner. It is the next-generation
- container image builder, designed to be the backend for Docker Buildx and
- multi-platform builds.
- .
- Features include:
-  - Automatic garbage collection
-  - Extendable frontend formats
-  - Concurrent dependency resolution
-  - Efficient instruction caching
-  - Build cache import/export
-  - Nested build job invocations
-  - Distributable workers
-  - Multiple output formats
-  - Pluggable architecture
-  - Execution without root privileges
- .
- This package contains:
-  - buildkitd: BuildKit daemon (server)
-  - buildctl: BuildKit CLI client
- .
- This is the RISC-V64 port of BuildKit, providing native support for
- the RISC-V 64-bit architecture.
-
 Package: cagent
-Version: 1.81.2-1
+Version: 1.82.0-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 134925
+Installed-Size: 135116
 Homepage: https://github.com/docker/cagent
 Priority: optional
 Section: devel
-Filename: pool/main/c/cagent/cagent_1.81.2-1_riscv64.deb
-Size: 46276876
-SHA256: cfc2d58a6ebf0f77fec25c1552995cae11d30a93e85a7db1b72e238c3c1c715f
-SHA1: 5ca31f1ee24de93948c54749e10d00f53f97acef
-MD5sum: ea8c43bd4d1ff7ccd65d2cafc837f529
+Filename: pool/main/c/cagent/cagent_1.82.0-1_riscv64.deb
+Size: 46329432
+SHA256: f4c89aaed974bdbe290d89c1dc5ad97be7d0e195c0eb579e5a2ef37f49807f5b
+SHA1: 3787dd884f6d5ca6265a54670a07569a57a4b293
+MD5sum: 21b4860b05172bd1d5700193688bcc36
 Description: Multi-agent AI runtime by Docker Engineering for RISC-V64
  cagent is a powerful, easy to use, customizable multi-agent runtime that
  orchestrates AI agents with specialized capabilities and tools.
