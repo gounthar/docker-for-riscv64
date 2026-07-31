@@ -14,7 +14,7 @@ set -e
 
 # Default versions (single source of truth)
 DOCKER_VERSION="28.5.1"
-CLI_VERSION="29.6.1"
+CLI_VERSION="29.7.0"
 COMPOSE_VERSION="5.3.1"
 CONTAINERD_VERSION="1.7.28"
 RUNC_VERSION="1.3.0"
