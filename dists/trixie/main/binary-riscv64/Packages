@@ -121,10 +121,10 @@ Description: Docker CLI plugin for extended build capabilities
  the RISC-V 64-bit architecture.
 
 Package: docker-cli
-Version: 29.7.1-riscv64-1
+Version: 29.7.2-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verachten <bruno.verachten@gmail.com>
-Installed-Size: 37646
+Installed-Size: 37659
 Recommends: docker.io
 Conflicts: docker (<< 1.5~), docker.io (<< 18.09)
 Breaks: docker (<< 1.5~), docker.io (<< 18.09)
@@ -133,11 +133,11 @@ Provides: docker
 Homepage: https://github.com/docker/cli
 Priority: optional
 Section: admin
-Filename: pool/main/d/docker-cli/docker-cli_29.7.1-riscv64-1_riscv64.deb
-Size: 14860504
-SHA256: 7417d53ef844d7ac3e56a4ea03899ead64cc7a7f8dd167c120cb46db9a363741
-SHA1: f7917177ce9fdad6e000606b32544e3d4e2a97c2
-MD5sum: 210075ba3803b4d974dd0db21fd1bbad
+Filename: pool/main/d/docker-cli/docker-cli_29.7.2-riscv64-1_riscv64.deb
+Size: 14872580
+SHA256: aace4f0fdb2fcf0efcb8214c163bfb9a0ff109a4d11658aabe2dedb8e837c8dc
+SHA1: 55e7ce23c23861d9d5c403dd24fcb04d85c77013
+MD5sum: cfd293603856d04a660c97412d1e7c1a
 Description: Docker command-line interface (CLI) for RISC-V64
  The Docker CLI is the command-line interface for Docker, allowing users
  to interact with Docker containers and images from the terminal. It provides
