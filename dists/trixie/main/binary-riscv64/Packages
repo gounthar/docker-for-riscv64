@@ -1,18 +1,18 @@
 Package: buildkit
-Version: 0.32.2-riscv64-1
+Version: 0.33.0-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verächten <bruno@verachten.fr>
-Installed-Size: 69655
+Installed-Size: 70108
 Recommends: containerd (>= 1.7) | containerd.io (>= 1.7)
 Suggests: docker.io (>= 20.10) | docker-ce (>= 20.10)
 Homepage: https://github.com/moby/buildkit
 Priority: optional
 Section: devel
-Filename: pool/main/b/buildkit/buildkit_0.32.2-riscv64-1_riscv64.deb
-Size: 18180912
-SHA256: 291d1bb6dca7628f9dda42a2c4bad3b63171ff6b61c62a9e1d749bde44811ba4
-SHA1: e1e6246b5f7b7c742ce3b88bcf48766264bf0765
-MD5sum: 53c09ecb994da4f2edc0457bb15731a5
+Filename: pool/main/b/buildkit/buildkit_0.33.0-riscv64-1_riscv64.deb
+Size: 18285800
+SHA256: d57849bb53d39b9eda4f587ca843847777dca026b380c1086e6c81ba5554e353
+SHA1: 2ebfa766401e5a38ff3942b71c49c668e862d7c3
+MD5sum: 9d75cbf39399592c33d779461c1e9299
 Description: Concurrent, cache-efficient, and Dockerfile-agnostic builder toolkit
  BuildKit is a toolkit for converting source code to build artifacts in an
  efficient, expressive, and repeatable manner. It is the next-generation
