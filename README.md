@@ -682,7 +682,7 @@ docker --version
 - **k3s-riscv64** - K3s binary, built with upstream `make binary`
 - **k3s-riscv64.sha256sum** - Checksum
 - **k3s-images-riscv64.txt** - Images the binary pulls at runtime
-- Unofficial: K3s does not publish or test riscv64 ([k3s-io/k3s#7151](https://github.com/k3s-io/k3s/issues/7151)). Default images with no upstream riscv64 variant (pause, klipper-lb, metrics-server, busybox) are pointed at riscv64 builds; each release's notes list exactly which
+- Unofficial: K3s does not publish or test riscv64 ([k3s-io/k3s#7151](https://github.com/k3s-io/k3s/issues/7151)). Default images with no upstream riscv64 variant (pause, klipper-lb, metrics-server, busybox) are pointed at riscv64 builds; each release's notes list exactly which images were replaced
 
 ## Building from Source
 

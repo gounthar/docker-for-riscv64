@@ -38,6 +38,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+        with:
+          # Upstream K3s code runs later in this job; don't leave the token in .git/config
+          persist-credentials: false
 
       - name: Resolve K3s ref and release name
         id: ref
