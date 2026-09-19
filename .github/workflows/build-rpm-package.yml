@@ -87,10 +87,13 @@ jobs:
           cp rpm-runc/runc.spec ~/rpmbuild/SPECS/
 
       - name: Update package versions
+        id: versions
         if: steps.release.outputs.has-new-release == 'true'
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
+          set -euo pipefail
+
           # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo "$RELEASE_TAG" | sed 's/^v//; s/-riscv64$//')
 
@@ -106,6 +109,61 @@ jobs:
 
           # Update moby-engine version
           sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/moby-engine.spec
+
+          # runc and containerd come from their own upstream releases, not
+          # from the Docker tag, so read their versions from the binaries
+          # downloaded above. The runner is native riscv64, so they run here.
+          # Same extraction as the DEB path (build-versioned-packages.yml).
+          SCRIPT="$GITHUB_WORKSPACE/scripts/extract-versions.sh"
+          cd ~/rpmbuild/SOURCES
+          rm -f versions.env
+          bash "$SCRIPT"
+          RUNC_VERSION=$(sed -n 's/^RUNC_VERSION=//p' versions.env)
+          CONTAINERD_VERSION=$(sed -n 's/^CONTAINERD_VERSION=//p' versions.env)
+          rm -f versions.env
+
+          # Never fall back to a hardcoded version: a wrong label is worse
+          # than a failed build. RPM Version: cannot contain '-'.
+          for pair in "runc=$RUNC_VERSION" "containerd=$CONTAINERD_VERSION"; do
+            name=${pair%%=*}
+            ver=${pair#*=}
+            if ! [[ "$ver" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
+              echo "::error::Could not read a valid $name version from the binary (got '$ver')"
+              exit 1
+            fi
+          done
+          echo "runc version: $RUNC_VERSION"
+          echo "containerd version: $CONTAINERD_VERSION"
+
+          SPECS=~/rpmbuild/SPECS
+          sed -i "s/^Version:.*/Version:        $RUNC_VERSION/" "$SPECS/runc.spec"
+          sed -i "s/^Version:.*/Version:        $CONTAINERD_VERSION/" "$SPECS/containerd.spec"
+
+          # Dependency floors follow the versions shipped in this release
+          sed -i -E "s/^(Requires:[[:space:]]+runc) >= .*/\1 >= $RUNC_VERSION/" \
+            "$SPECS/containerd.spec" "$SPECS/moby-engine.spec"
+          sed -i -E "s/^(Requires:[[:space:]]+containerd) >= .*/\1 >= $CONTAINERD_VERSION/" \
+            "$SPECS/moby-engine.spec"
+
+          # Fail if any substitution did not land (spec layout changed)
+          check() {
+            if ! grep -Eq "$2" "$SPECS/$1"; then
+              echo "::error::$1 does not contain '$2' after the version update"
+              exit 1
+            fi
+          }
+          check runc.spec "^Version:[[:space:]]+${RUNC_VERSION}\$"
+          check containerd.spec "^Version:[[:space:]]+${CONTAINERD_VERSION}\$"
+          check containerd.spec "^Requires:[[:space:]]+runc >= ${RUNC_VERSION}\$"
+          check moby-engine.spec "^Version:[[:space:]]+${VERSION}\$"
+          check moby-engine.spec "^Requires:[[:space:]]+runc >= ${RUNC_VERSION}\$"
+          check moby-engine.spec "^Requires:[[:space:]]+containerd >= ${CONTAINERD_VERSION}\$"
+
+          {
+            echo "moby=$VERSION"
+            echo "runc=$RUNC_VERSION"
+            echo "containerd=$CONTAINERD_VERSION"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Build RPM packages in Fedora container
         if: steps.release.outputs.has-new-release == 'true'
