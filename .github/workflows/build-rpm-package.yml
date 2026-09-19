@@ -87,10 +87,13 @@ jobs:
           cp rpm-runc/runc.spec ~/rpmbuild/SPECS/
 
       - name: Update package versions
+        id: versions
         if: steps.release.outputs.has-new-release == 'true'
         env:
           RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
+          set -euo pipefail
+
           # Extract version from tag (v28.5.1-riscv64 -> 28.5.1)
           VERSION=$(echo "$RELEASE_TAG" | sed 's/^v//; s/-riscv64$//')
 
@@ -106,6 +109,61 @@ jobs:
 
           # Update moby-engine version
           sed -i "s/^Version:.*/Version:        $VERSION/" ~/rpmbuild/SPECS/moby-engine.spec
+
+          # runc and containerd come from their own upstream releases, not
+          # from the Docker tag, so read their versions from the binaries
+          # downloaded above. The runner is native riscv64, so they run here.
+          # Same extraction as the DEB path (build-versioned-packages.yml).
+          SCRIPT="$GITHUB_WORKSPACE/scripts/extract-versions.sh"
+          cd ~/rpmbuild/SOURCES
+          rm -f versions.env
+          bash "$SCRIPT"
+          RUNC_VERSION=$(sed -n 's/^RUNC_VERSION=//p' versions.env)
+          CONTAINERD_VERSION=$(sed -n 's/^CONTAINERD_VERSION=//p' versions.env)
+          rm -f versions.env
+
+          # Never fall back to a hardcoded version: a wrong label is worse
+          # than a failed build. RPM Version: cannot contain '-'.
+          for pair in "runc=$RUNC_VERSION" "containerd=$CONTAINERD_VERSION"; do
+            name=${pair%%=*}
+            ver=${pair#*=}
+            if ! [[ "$ver" =~ ^[0-9]+(\.[0-9]+)+$ ]]; then
+              echo "::error::Could not read a valid $name version from the binary (got '$ver')"
+              exit 1
+            fi
+          done
+          echo "runc version: $RUNC_VERSION"
+          echo "containerd version: $CONTAINERD_VERSION"
+
+          SPECS=~/rpmbuild/SPECS
+          sed -i "s/^Version:.*/Version:        $RUNC_VERSION/" "$SPECS/runc.spec"
+          sed -i "s/^Version:.*/Version:        $CONTAINERD_VERSION/" "$SPECS/containerd.spec"
+
+          # Dependency floors follow the versions shipped in this release
+          sed -i -E "s/^(Requires:[[:space:]]+runc) >= .*/\1 >= $RUNC_VERSION/" \
+            "$SPECS/containerd.spec" "$SPECS/moby-engine.spec"
+          sed -i -E "s/^(Requires:[[:space:]]+containerd) >= .*/\1 >= $CONTAINERD_VERSION/" \
+            "$SPECS/moby-engine.spec"
+
+          # Fail if any substitution did not land (spec layout changed)
+          check() {
+            if ! grep -Eq "$2" "$SPECS/$1"; then
+              echo "::error::$1 does not contain '$2' after the version update"
+              exit 1
+            fi
+          }
+          check runc.spec "^Version:[[:space:]]+${RUNC_VERSION}\$"
+          check containerd.spec "^Version:[[:space:]]+${CONTAINERD_VERSION}\$"
+          check containerd.spec "^Requires:[[:space:]]+runc >= ${RUNC_VERSION}\$"
+          check moby-engine.spec "^Version:[[:space:]]+${VERSION}\$"
+          check moby-engine.spec "^Requires:[[:space:]]+runc >= ${RUNC_VERSION}\$"
+          check moby-engine.spec "^Requires:[[:space:]]+containerd >= ${CONTAINERD_VERSION}\$"
+
+          {
+            echo "moby=$VERSION"
+            echo "runc=$RUNC_VERSION"
+            echo "containerd=$CONTAINERD_VERSION"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Build RPM packages in Fedora container
         if: steps.release.outputs.has-new-release == 'true'
@@ -156,6 +214,43 @@ jobs:
           echo "Fixed ownership of RPM files"
           ls -lh ~/rpmbuild/RPMS/riscv64/
 
+      - name: Select and verify this run's RPMs
+        id: rpms
+        if: steps.release.outputs.has-new-release == 'true'
+        env:
+          MOBY_VERSION: ${{ steps.versions.outputs.moby }}
+          RUNC_VERSION: ${{ steps.versions.outputs.runc }}
+          CONTAINERD_VERSION: ${{ steps.versions.outputs.containerd }}
+        run: |
+          set -euo pipefail
+
+          # ~/rpmbuild/RPMS/riscv64 is shared with the other RPM workflows on
+          # this runner (cli, compose, buildx, buildkit, cagent, tini).
+          # Only pick the three packages this workflow built, by name and
+          # version, so nothing left there by another workflow gets signed
+          # or uploaded to the engine release.
+          shopt -s nullglob
+          files=()
+          for pair in "runc=$RUNC_VERSION" "containerd=$CONTAINERD_VERSION" \
+                      "moby-engine=$MOBY_VERSION"; do
+            name=${pair%%=*}
+            ver=${pair#*=}
+            matches=(~/rpmbuild/RPMS/riscv64/"$name-$ver"-*.riscv64.rpm)
+            if [ "${#matches[@]}" -ne 1 ]; then
+              echo "::error::Expected exactly one $name-$ver RPM, found ${#matches[@]}"
+              exit 1
+            fi
+            got=$(rpm -qp --qf '%{NAME} %{VERSION}' "${matches[0]}")
+            if [ "$got" != "$name $ver" ]; then
+              echo "::error::${matches[0]} reports '$got', expected '$name $ver'"
+              exit 1
+            fi
+            echo "OK: $(basename "${matches[0]}") is $got"
+            files+=("${matches[0]}")
+          done
+
+          echo "files=${files[*]}" >> "$GITHUB_OUTPUT"
+
       - name: Run rpmlint checks
         if: steps.release.outputs.has-new-release == 'true'
         run: |
@@ -163,12 +258,16 @@ jobs:
           docker run --rm \
             -v ~/rpmbuild:/root/rpmbuild:ro \
             fedorariscv/base:latest \
-            bash -c 'dnf install -y rpmlint && rpmlint /root/rpmbuild/RPMS/riscv64/*.rpm' || true
+            bash -c 'dnf install -y rpmlint &&
+              rpmlint /root/rpmbuild/RPMS/riscv64/{runc,containerd,moby-engine}-*.rpm' || true
 
       - name: Package info
         if: steps.release.outputs.has-new-release == 'true'
+        env:
+          RPM_FILES: ${{ steps.rpms.outputs.files }}
         run: |
-          for rpm in ~/rpmbuild/RPMS/riscv64/*.rpm; do
+          read -ra rpms <<< "$RPM_FILES"
+          for rpm in "${rpms[@]}"; do
             echo "============================================"
             echo "=== Package: $(basename $rpm) ==="
             echo "============================================"
@@ -202,8 +301,11 @@ jobs:
 
       - name: Sign RPM packages
         if: steps.release.outputs.has-new-release == 'true'
+        env:
+          RPM_FILES: ${{ steps.rpms.outputs.files }}
         run: |
           set -euo pipefail
+          read -ra rpms <<< "$RPM_FILES"
           echo "Signing RPM packages..."
 
           # Install rpm-sign if needed
@@ -220,7 +322,7 @@ jobs:
           echo "Using GPG key ID: $GPG_KEY_ID"
 
           # Sign each RPM package
-          for rpm in ~/rpmbuild/RPMS/riscv64/*.rpm; do
+          for rpm in "${rpms[@]}"; do
             echo "Signing $(basename $rpm)..."
             setsid rpmsign --addsign --define "_gpg_name $GPG_KEY_ID" "$rpm" || {
               echo "Error: Failed to sign $rpm"
@@ -234,7 +336,7 @@ jobs:
 
           # Verify signatures
           echo "Verifying signatures:"
-          for rpm in ~/rpmbuild/RPMS/riscv64/*.rpm; do
+          for rpm in "${rpms[@]}"; do
             echo "Checking $(basename $rpm)..."
             rpm -qip "$rpm" | grep -i signature || echo "Warning: No signature found"
           done
@@ -244,11 +346,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
+          RPM_FILES: ${{ steps.rpms.outputs.files }}
         run: |
+          set -euo pipefail
+          read -ra rpms <<< "$RPM_FILES"
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
 
-          for rpm in ~/rpmbuild/RPMS/riscv64/*.rpm; do
+          for rpm in "${rpms[@]}"; do
             echo "Uploading $(basename $rpm)..."
             gh release upload $RELEASE_TAG "$rpm" --repo gounthar/docker-for-riscv64 --clobber
           done
@@ -257,7 +362,7 @@ jobs:
           echo "✅ All RPM packages uploaded successfully!"
           echo ""
           echo "Packages built:"
-          ls -lh ~/rpmbuild/RPMS/riscv64/
+          ls -lh "${rpms[@]}"
           echo ""
           echo "Install with:"
           echo "  # Download all packages"

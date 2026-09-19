@@ -1,3 +1,5 @@
+# Version: is a placeholder. build-rpm-package.yml replaces it with the
+# version reported by the runc binary being packaged.
 Name:           runc
 Version:        1.3.0
 Release:        1%{?dist}
@@ -38,5 +40,5 @@ install -p -m 0755 %{SOURCE0} %{buildroot}%{_bindir}/runc
 %changelog
 * Mon Oct 20 2025 Bruno Verachten <gounthar@gmail.com> - 1.3.0-1
 - Initial RPM packaging for RISC-V64
-- Built from official runc v1.3.0 source
+- Built from official runc source (Version is read from the binary at build time)
 - Pre-built binaries for BananaPi F3

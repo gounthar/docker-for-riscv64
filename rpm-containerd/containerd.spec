@@ -1,3 +1,5 @@
+# Version: and the runc floor are placeholders. build-rpm-package.yml
+# replaces them with the versions reported by the binaries being packaged.
 Name:           containerd
 Version:        1.7.28
 Release:        1%{?dist}
@@ -62,5 +64,5 @@ install -p -m 0644 %{SOURCE2} %{buildroot}/usr/lib/systemd/system/containerd.ser
 %changelog
 * Mon Oct 20 2025 Bruno Verachten <gounthar@gmail.com> - 1.7.28-1
 - Initial RPM packaging for RISC-V64
-- Built from official containerd v1.7.28 source
+- Built from official containerd source (Version is read from the binary at build time)
 - Pre-built binaries for BananaPi F3

@@ -1,3 +1,5 @@
+# Version: and the containerd/runc floors are placeholders.
+# build-rpm-package.yml sets them from the release tag and the binaries.
 Name:           moby-engine
 Version:        28.5.1
 Release:        1%{?dist}
@@ -84,5 +86,5 @@ getent group docker >/dev/null || groupadd -r docker
 %changelog
 * Mon Oct 20 2025 Bruno Verachten <gounthar@gmail.com> - 28.5.1-1
 - Initial RPM packaging for RISC-V64
-- Built from official Moby v28.5.1 source
+- Built from official Moby source (Version is taken from the release tag at build time)
 - Pre-built binaries for BananaPi F3
