@@ -608,7 +608,8 @@ docker --version
 - **Docker Compose releases**: `compose-vX.Y.Z-riscv64` (e.g., `compose-v2.40.1-riscv64`)
 - **BuildKit releases**: `buildkit-vX.Y.Z-riscv64` (e.g., `buildkit-v0.14.0-riscv64`)
 - **Tini releases**: `tini-vX.Y.Z-riscv64` (e.g., `tini-v0.19.0-riscv64`)
-- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, `compose-vYYYYMMDD-dev`, `buildkit-vYYYYMMDD-dev`, or `tini-vYYYYMMDD-dev`
+- **K3s releases**: `k3s-vX.Y.Z-k3sN-riscv64` (e.g., `k3s-v1.37.0-k3s1-riscv64`; upstream's `+` becomes `-`)
+- **Development builds**: `vYYYYMMDD-dev`, `cli-vYYYYMMDD-dev`, `compose-vYYYYMMDD-dev`, `buildkit-vYYYYMMDD-dev`, `tini-vYYYYMMDD-dev`, or `k3s-vYYYYMMDD-dev`
 
 ### Automated Builds
 
@@ -635,6 +636,10 @@ docker --version
 **Tini:**
 - Weekly builds: Every Sunday at 05:00 UTC (latest Tini master)
 - Manual trigger support for specific versions
+
+**K3s:**
+- Weekly builds: Every Saturday at 03:00 UTC (latest stable K3s release; skipped if that release is already built)
+- Manual trigger support for any tag, branch, or commit
 
 ### Components
 
@@ -672,6 +677,12 @@ docker --version
 - **tini-static** (~2MB) - Static init binary
 - Installed to: `/usr/bin/tini` and `/usr/bin/tini-static`
 - Used by Docker with `--init` flag for proper signal handling
+
+**K3s releases** include:
+- **k3s-riscv64** - K3s binary, built with upstream `make binary`
+- **k3s-riscv64.sha256sum** - Checksum
+- **k3s-images-riscv64.txt** - Images the binary pulls at runtime
+- Unofficial: K3s does not publish or test riscv64 ([k3s-io/k3s#7151](https://github.com/k3s-io/k3s/issues/7151)). Default images with no upstream riscv64 variant (pause, klipper-lb, metrics-server, busybox) are pointed at riscv64 builds; each release's notes list exactly which images were replaced
 
 ## Building from Source
 

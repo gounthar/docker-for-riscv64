@@ -70,6 +70,7 @@ jobs:
             "^buildx-v[0-9]{8}-dev$"             # buildx-v20251102-dev
             "^buildkit-v[0-9]{8}-dev$"           # buildkit-v20251102-dev
             "^cagent-v[0-9]{8}-dev$"             # cagent-v20251102-dev
+            "^k3s-v[0-9]{8}-dev$"                # k3s-v20251102-dev
           )
 
           # Get all releases
