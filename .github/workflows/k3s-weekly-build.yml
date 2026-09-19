@@ -157,6 +157,12 @@ jobs:
       - name: Build K3s (native riscv64)
         if: steps.ref.outputs.skip != 'true'
         working-directory: ${{ runner.temp }}/k3s
+        env:
+          # The TTY progress display redraws the whole build graph several
+          # times a second. Under github-act-runner that flooded the step log
+          # (dropped from the step view) and the step died mid-export with no
+          # error text. Plain progress is what the working manual build used.
+          BUILDKIT_PROGRESS: plain
         run: |
           set -euo pipefail
           # The compile runs inside the BuildKit container, not as a child of
