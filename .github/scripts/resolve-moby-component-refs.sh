@@ -31,6 +31,13 @@ MOBY_LABEL="$2"
 CONTAINERD_INPUT="${3:-}"
 RUNC_INPUT="${4:-}"
 
+# The label ends up in the *_source outputs, so a line break in it would forge
+# extra records in $GITHUB_OUTPUT the same way an unchecked ref would.
+if [[ "$MOBY_LABEL" == *$'\n'* || "$MOBY_LABEL" == *$'\r'* ]]; then
+  echo "::error::Invalid moby label: it must be a single line"
+  exit 1
+fi
+
 # Set PIN to the default value of `ARG <name>=<value>` in moby's Dockerfile.
 # Exactly one such line must exist, and the value must be a release tag
 # (vX.Y.Z, optionally with a suffix) or a commit SHA.
@@ -66,6 +73,16 @@ moby_pin() {
 resolve() {
   local component="$1" arg="$2" input="$3" ref source
   if [ -n "$input" ]; then
+    # A ref only ever needs these characters, and anything else (a newline
+    # above all) would forge extra records in $GITHUB_OUTPUT, or break out of
+    # the shell assignments the workflow builds from these outputs.
+    if ! [[ "$input" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+      # Printable characters only in the echo: the newline this rejects would
+      # otherwise put a second workflow command in the log.
+      echo "::error::Invalid ${component} ref '${input//[^[:print:]]/?}':" \
+        "expected only letters, digits and the characters . _ / -"
+      return 1
+    fi
     ref="$input"
     source="explicit input"
   else
