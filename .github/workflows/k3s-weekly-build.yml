@@ -1,0 +1,269 @@
+name: Weekly K3s RISC-V64 Build
+
+# Upstream K3s lists linux/riscv64 in its Makefile but its release.yml
+# only publishes amd64/arm64/arm, so no official riscv64 binary exists.
+# This builds one natively on the BPI-F3 runners with upstream's own
+# `make binary`, from an unmodified upstream tag except for the runtime
+# image names below.
+
+on:
+  schedule:
+    # Saturday 03:00 UTC: Sunday 02:00-06:30 is taken by the Docker
+    # component builds, which share the same two runners
+    - cron: '0 3 * * 6'
+  workflow_dispatch:
+    inputs:
+      k3s_ref:
+        description: 'K3s ref to build (tag/branch/commit). Empty = latest stable K3s release'
+        required: false
+        default: ''
+      riscv64_images:
+        description: 'Point default images without a riscv64 variant at riscv64 builds'
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: k3s-weekly-build
+  cancel-in-progress: false
+
+jobs:
+  build-k3s:
+    runs-on: [self-hosted, riscv64]
+    timeout-minutes: 300
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Resolve K3s ref and release name
+        id: ref
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_REF: ${{ github.event.inputs.k3s_ref }}
+        run: |
+          set -euo pipefail
+          REF="${INPUT_REF:-}"
+          if [ -z "$REF" ]; then
+            REF=$(gh release list --repo k3s-io/k3s --exclude-drafts --exclude-pre-releases \
+                    --limit 1 --json tagName --jq '.[0].tagName')
+          fi
+          [ -n "$REF" ] || { echo "Could not resolve a K3s ref"; exit 1; }
+
+          # Official K3s tags look like v1.37.0+k3s1; '+' is replaced in our tag
+          if [[ "$REF" =~ ^v[0-9]+\.[0-9]+\.[0-9]+\+k3s[0-9]+$ ]]; then
+            RELEASE_VERSION="k3s-${REF//+/-}-riscv64"
+            RELEASE_TITLE="K3s ${REF} for RISC-V64"
+            IS_RELEASE=true
+          else
+            RELEASE_VERSION="k3s-v$(date -u +%Y%m%d)-dev"
+            RELEASE_TITLE="K3s RISC-V64 Development Build $(date -u +%Y%m%d)"
+            IS_RELEASE=false
+          fi
+
+          SKIP=false
+          if [ "$IS_RELEASE" = true ] && gh release view "$RELEASE_VERSION" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_VERSION} already exists, nothing to build"
+            SKIP=true
+          fi
+
+          {
+            echo "ref=${REF}"
+            echo "release_version=${RELEASE_VERSION}"
+            echo "release_title=${RELEASE_TITLE}"
+            echo "is_release=${IS_RELEASE}"
+            echo "skip=${SKIP}"
+          } >> "$GITHUB_OUTPUT"
+          echo "K3s ref: ${REF} -> ${RELEASE_VERSION} (skip=${SKIP})"
+
+      - name: Check disk space
+        if: steps.ref.outputs.skip != 'true'
+        run: |
+          df -h /
+          FREE_GB=$(df --output=avail -BG / | tail -1 | tr -dc '0-9')
+          if [ "$FREE_GB" -lt 20 ]; then
+            echo "Only ${FREE_GB}G free, pruning BuildKit cache"
+            docker buildx prune --force
+            df -h /
+          fi
+
+      - name: Clone K3s
+        if: steps.ref.outputs.skip != 'true'
+        env:
+          K3S_REF: ${{ steps.ref.outputs.ref }}
+        run: |
+          set -euo pipefail
+          SRC="${RUNNER_TEMP}/k3s"
+          rm -rf "$SRC"
+          # --branch covers tags and branches; fall back to a full clone for commits
+          if ! git clone --quiet --depth 1 --branch "$K3S_REF" https://github.com/k3s-io/k3s.git "$SRC"; then
+            git clone --quiet --filter=blob:none https://github.com/k3s-io/k3s.git "$SRC"
+            git -C "$SRC" checkout --quiet "$K3S_REF"
+          fi
+          echo "Building K3s from: $(git -C "$SRC" describe --tags --always) ($(git -C "$SRC" rev-parse HEAD))"
+
+      - name: Point runtime images at riscv64 variants
+        if: >-
+          steps.ref.outputs.skip != 'true' &&
+          (github.event_name == 'schedule' || github.event.inputs.riscv64_images == 'true')
+        working-directory: ${{ runner.temp }}/k3s
+        run: |
+          set -euo pipefail
+          # K3s pulls these at runtime; upstream publishes none of them for
+          # riscv64 yet. Replacements are the ones CARV-ICS-FORTH uses in its
+          # riscv64 K3s builds (https://github.com/CARV-ICS-FORTH/kubernetes-riscv64).
+          # An override is skipped as soon as the upstream image gains riscv64,
+          # and the build fails if an expected image reference disappears.
+          # upstream-repo|replacement-repo|file holding the version
+          OVERRIDES=(
+            "rancher/mirrored-pause|carvicsforth/pause|pkg/cli/cmds/agent.go"
+            "rancher/klipper-lb|carvicsforth/klipper-lb|pkg/cloudprovider/servicelb.go"
+            "rancher/mirrored-metrics-server|carvicsforth/metrics-server|manifests/metrics-server/metrics-server-deployment.yaml"
+            "rancher/mirrored-library-busybox|busybox|manifests/local-storage.yaml"
+          )
+          NOTES="${RUNNER_TEMP}/k3s-overrides.md"
+          : > "$NOTES"
+          for entry in "${OVERRIDES[@]}"; do
+            IFS='|' read -r UPSTREAM REPLACEMENT VERSION_FILE <<< "$entry"
+            TAG=$(grep -oE "${UPSTREAM}:[^\"[:space:]]+" "$VERSION_FILE" | head -1 | cut -d: -f2 || true)
+            if [ -z "$TAG" ]; then
+              echo "::error::${UPSTREAM} not found in ${VERSION_FILE}; upstream layout changed, review the overrides"
+              exit 1
+            fi
+            if docker buildx imagetools inspect --raw "docker.io/${UPSTREAM}:${TAG}" \
+                | jq -e '[.manifests[]?.platform.architecture] | index("riscv64")' >/dev/null; then
+              echo "${UPSTREAM}:${TAG} already ships riscv64, keeping it"
+              continue
+            fi
+            if ! docker buildx imagetools inspect --raw "docker.io/${REPLACEMENT}:${TAG}" \
+                | jq -e '[.manifests[]?.platform.architecture] | index("riscv64")' >/dev/null; then
+              echo "::warning::No riscv64 image for ${UPSTREAM}:${TAG} or ${REPLACEMENT}:${TAG}; leaving it unchanged"
+              echo "- \`${UPSTREAM}:${TAG}\`: **no riscv64 image available**, left unchanged" >> "$NOTES"
+              continue
+            fi
+            mapfile -t FILES < <(grep -rlF "${UPSTREAM}:" pkg manifests scripts/airgap)
+            sed -i "s|${UPSTREAM}:|${REPLACEMENT}:|g" "${FILES[@]}"
+            echo "${UPSTREAM}:${TAG} -> ${REPLACEMENT}:${TAG} in: ${FILES[*]}"
+            echo "- \`${UPSTREAM}:${TAG}\` -> \`${REPLACEMENT}:${TAG}\`" >> "$NOTES"
+          done
+          git status --short
+
+      - name: Build K3s (native riscv64)
+        if: steps.ref.outputs.skip != 'true'
+        working-directory: ${{ runner.temp }}/k3s
+        run: |
+          set -euo pipefail
+          # The compile runs inside the BuildKit container, not as a child of
+          # this shell, so `time` would report near-zero CPU. Measure host-wide
+          # busy CPU from /proc/stat instead; the runner runs one job at a time.
+          busy() { awk '/^cpu /{print $2+$3+$4+$7+$8+$9}' /proc/stat; }
+          TICKS=$(getconf CLK_TCK)
+          START=$(date +%s); BUSY0=$(busy)
+          make binary
+          END=$(date +%s); BUSY1=$(busy)
+          WALL=$((END - START))
+          CPU=$(( (BUSY1 - BUSY0) / TICKS ))
+          printf 'wall=%dm%02ds cpu=%dm%02ds (host-wide, %s cores, native riscv64 on %s)\n' \
+            $((WALL / 60)) $((WALL % 60)) $((CPU / 60)) $((CPU % 60)) "$(nproc)" "$(hostname)" \
+            | tee "${RUNNER_TEMP}/k3s-build-time.txt"
+          ls -l dist/artifacts/
+
+      - name: Verify binary
+        if: steps.ref.outputs.skip != 'true'
+        working-directory: ${{ runner.temp }}/k3s
+        run: |
+          set -euo pipefail
+          BIN=""
+          for candidate in dist/artifacts/k3s-riscv64 dist/artifacts/k3s; do
+            if [ -f "$candidate" ]; then BIN="$candidate"; break; fi
+          done
+          [ -n "$BIN" ] || { echo "::error::No k3s binary in dist/artifacts"; exit 1; }
+          file "$BIN"
+          file "$BIN" | grep -q "RISC-V" || { echo "::error::$BIN is not a RISC-V binary"; exit 1; }
+          # Native host: the binary can actually run here
+          "$BIN" --version | tee "${RUNNER_TEMP}/k3s-version.txt"
+
+          OUT="${RUNNER_TEMP}/k3s-release"
+          rm -rf "$OUT"; mkdir -p "$OUT"
+          cp "$BIN" "$OUT/k3s-riscv64"
+          cp scripts/airgap/image-list.txt "$OUT/k3s-images-riscv64.txt"
+          (cd "$OUT" && sha256sum k3s-riscv64 > k3s-riscv64.sha256sum)
+          ls -lh "$OUT"
+
+      - name: Create release
+        if: steps.ref.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          K3S_REF: ${{ steps.ref.outputs.ref }}
+          RELEASE_VERSION: ${{ steps.ref.outputs.release_version }}
+          RELEASE_TITLE: ${{ steps.ref.outputs.release_title }}
+        run: |
+          set -euo pipefail
+          COMMIT=$(git -C "${RUNNER_TEMP}/k3s" rev-parse HEAD)
+          BUILD_TIME=$(cat "${RUNNER_TEMP}/k3s-build-time.txt")
+          VERSION_OUT=$(cat "${RUNNER_TEMP}/k3s-version.txt")
+          if [ -s "${RUNNER_TEMP}/k3s-overrides.md" ]; then
+            OVERRIDES=$(cat "${RUNNER_TEMP}/k3s-overrides.md")
+          else
+            OVERRIDES="None: this binary uses upstream's default images unchanged."
+          fi
+
+          cat > release-notes.md << EOF
+          Unofficial K3s build for RISC-V64. K3s does not publish riscv64 binaries
+          ([k3s-io/k3s#7151](https://github.com/k3s-io/k3s/issues/7151)) and does not test riscv64.
+
+          **K3s ref:** \`${K3S_REF}\`
+          **Commit:** [\`${COMMIT:0:12}\`](https://github.com/k3s-io/k3s/commit/${COMMIT})
+          **Build Date:** $(date -u +%Y-%m-%d)
+          **Build:** upstream \`make binary\`, ${BUILD_TIME}
+
+          \`\`\`
+          ${VERSION_OUT}
+          \`\`\`
+
+          ## Changes from upstream
+
+          The only source change is the default image names for images K3s pulls
+          at runtime that have no riscv64 variant upstream yet:
+
+          ${OVERRIDES}
+
+          The replacement images are the riscv64 builds maintained by
+          [CARV-ICS-FORTH](https://github.com/CARV-ICS-FORTH/kubernetes-riscv64).
+          Because of this change the binary reports \`gitTreeState: dirty\`.
+
+          ## Installation
+
+          \`\`\`bash
+          sudo curl -L -o /usr/local/bin/k3s \\
+            https://github.com/${{ github.repository }}/releases/download/${RELEASE_VERSION}/k3s-riscv64
+          sudo chmod +x /usr/local/bin/k3s
+          curl -sfL https://get.k3s.io | INSTALL_K3S_SKIP_DOWNLOAD=true sh -
+          \`\`\`
+
+          Run \`k3s check-config\` first to confirm your kernel has what K3s needs.
+
+          ## Assets
+
+          - \`k3s-riscv64\`: the K3s binary
+          - \`k3s-riscv64.sha256sum\`: its checksum
+          - \`k3s-images-riscv64.txt\`: images this binary pulls, for preloading
+          EOF
+
+          if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
+            echo "Replacing existing development release ${RELEASE_VERSION}"
+            gh release delete "${RELEASE_VERSION}" --yes --cleanup-tag
+          fi
+
+          gh release create "${RELEASE_VERSION}" \
+            --title "${RELEASE_TITLE}" \
+            --notes-file release-notes.md \
+            --latest=false \
+            "${RUNNER_TEMP}"/k3s-release/*
+
+      - name: Clean up build tree
+        if: always() && steps.ref.outputs.skip != 'true'
+        run: rm -rf "${RUNNER_TEMP}/k3s" "${RUNNER_TEMP}/k3s-release"
