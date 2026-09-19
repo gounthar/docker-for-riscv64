@@ -5,6 +5,11 @@ on:
     # Check for new releases daily at 07:00 UTC (1 hour after Moby tracking)
     - cron: '0 7 * * *'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Log what the tracker would do, change nothing'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -14,14 +19,21 @@ permissions:
 jobs:
   check-release:
     runs-on: ubuntu-latest
+    concurrency:
+      group: track-cli-releases
+      cancel-in-progress: false
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Check for new Docker CLI release
-        id: check
+      - name: Get latest Docker CLI release
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+
           # Get latest stable tag from docker/cli repository
           # Note: docker/cli uses tags but doesn't create GitHub Releases
           LATEST=$(gh api repos/docker/cli/git/refs/tags \
@@ -30,75 +42,33 @@ jobs:
             | sort -V \
             | tail -n1)
 
-          if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+          if [ -z "$LATEST" ]; then
             echo "ERROR: Failed to fetch latest Docker CLI release"
             exit 1
           fi
 
-          echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
-
-          # Check if we've already built this (using cli-v*-riscv64 format)
           # Docker CLI tags are like v28.5.1, we create cli-v28.5.1-riscv64
-          CLEAN_VERSION="${LATEST#v}"
-          OUR_TAG="cli-v${CLEAN_VERSION}-riscv64"
-
-          if gh release view "${OUR_TAG}" >/dev/null 2>&1; then
-            echo "already_built=true" >> $GITHUB_OUTPUT
-          else
-            echo "already_built=false" >> $GITHUB_OUTPUT
-          fi
-
+          echo "latest_release=$LATEST" >> "$GITHUB_OUTPUT"
+          echo "expected_tag=cli-v${LATEST#v}-riscv64" >> "$GITHUB_OUTPUT"
           echo "Latest Docker CLI tag: $LATEST"
-          echo "Checking for: ${OUR_TAG}"
-        env:
-          GH_TOKEN: ${{ github.token }}
 
-      - name: Check for duplicate tracking issue
-        id: dedup
-        if: steps.check.outputs.already_built == 'false'
+      - name: Track release
         env:
           GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run == true }}
+          LATEST: ${{ steps.latest.outputs.latest_release }}
+          TRACK_COMPONENT: cli
+          TRACK_LATEST: ${{ steps.latest.outputs.latest_release }}
+          TRACK_EXPECTED_TAG: ${{ steps.latest.outputs.expected_tag }}
+          TRACK_LABEL: cli-release
+          TRACK_TITLE_PREFIX: 'Building Docker CLI '
+          TRACK_TITLE_SUFFIX: ' for RISC-V64'
+          TRACK_BUILD_WORKFLOW: cli-weekly-build.yml
+          TRACK_BUILD_INPUT: cli_ref
+          TRACK_ISSUE_BODY: ${{ runner.temp }}/issue-body.md
         run: |
-          LATEST=${{ steps.check.outputs.latest_release }}
-          EXISTING=$(gh issue list \
-            --label cli-release \
-            --state all \
-            --search "in:title Building Docker CLI ${LATEST} for RISC-V64" \
-            --json number,title \
-            --jq 'map(select(.title == "Building Docker CLI '"${LATEST}"' for RISC-V64")) | .[0].number // empty') || {
-            echo "ERROR: gh issue list failed while checking duplicates for Docker CLI ${LATEST}"
-            exit 1
-          }
-
-          if [ -n "$EXISTING" ]; then
-            echo "ℹ️ Tracking issue #$EXISTING already exists for Docker CLI ${LATEST}, skipping build and issue"
-            echo "is_duplicate=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_duplicate=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Trigger automatic build for new release
-        if: steps.check.outputs.already_built == 'false' && steps.dedup.outputs.is_duplicate != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          LATEST=${{ steps.check.outputs.latest_release }}
-
-          echo "New Docker CLI release detected: $LATEST"
-          echo "Triggering automatic build..."
-
-          gh workflow run cli-weekly-build.yml -f cli_ref=$LATEST
-
-          echo "Build triggered successfully!"
-
-      - name: Create tracking issue
-        if: steps.check.outputs.already_built == 'false' && steps.dedup.outputs.is_duplicate != 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          LATEST=${{ steps.check.outputs.latest_release }}
           CLEAN_VERSION="${LATEST#v}"
-          cat > issue-body.md << EOF
+          cat > "$TRACK_ISSUE_BODY" << EOF
           New Docker CLI release detected: **$LATEST**
 
           **Status:** Build automatically triggered
@@ -116,10 +86,8 @@ jobs:
 
           **Upstream release notes:** https://github.com/docker/cli/releases/tag/$LATEST
 
-          This issue will track the build progress. Close it once the release is published.
+          This issue will track the build progress. The daily tracker closes it once the
+          release is published, and retries the build if it is not.
           EOF
 
-          gh issue create \
-            --title "Building Docker CLI ${LATEST} for RISC-V64" \
-            --body-file issue-body.md \
-            --label "build-in-progress,cli-release"
+          bash .github/scripts/track-release.sh
