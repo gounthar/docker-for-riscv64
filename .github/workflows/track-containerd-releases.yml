@@ -5,6 +5,11 @@ on:
     # Check for new releases daily at 11:00 UTC
     - cron: '0 11 * * *'
   workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Log what the tracker would do, change nothing'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -14,14 +19,21 @@ permissions:
 jobs:
   check-release:
     runs-on: ubuntu-latest
+    concurrency:
+      group: track-containerd-releases
+      cancel-in-progress: false
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
 
-      - name: Check for new containerd release
-        id: check
+      - name: Get latest containerd release
+        id: latest
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
+          set -euo pipefail
+
           # Get latest stable release from containerd/containerd
           LATEST=$(gh api repos/containerd/containerd/releases/latest --jq '.tag_name // empty')
 
@@ -30,44 +42,27 @@ jobs:
             exit 1
           fi
 
-          echo "latest_release=$LATEST" >> $GITHUB_OUTPUT
-
-          # Containerd is bundled in Docker Engine builds, not released separately.
-          # Check if we already have an open or recent tracking issue for this version.
-          EXISTING=$(gh issue list \
-            --label "containerd-release" \
-            --state all \
-            --limit 50 \
-            --json number,title,state \
-            --jq ".[] | select(.title | contains(\"${LATEST}\")) | .number" \
-            | head -n1)
-
-          if [ -n "$EXISTING" ]; then
-            echo "already_tracked=true" >> $GITHUB_OUTPUT
-            echo "Containerd ${LATEST} already tracked in issue #${EXISTING}"
-          else
-            echo "already_tracked=false" >> $GITHUB_OUTPUT
-          fi
-
+          echo "latest_release=$LATEST" >> "$GITHUB_OUTPUT"
           echo "Latest containerd release: $LATEST"
-        env:
-          GH_TOKEN: ${{ github.token }}
 
-      - name: Trigger Docker Engine rebuild with new containerd
-        if: steps.check.outputs.already_tracked == 'false'
+      # Containerd is bundled in Docker Engine builds, not released separately:
+      # it counts as built once an engine release lists it in VERSIONS.txt.
+      - name: Track release
         env:
           GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ inputs.dry_run == true }}
+          LATEST: ${{ steps.latest.outputs.latest_release }}
+          TRACK_COMPONENT: containerd
+          TRACK_LATEST: ${{ steps.latest.outputs.latest_release }}
+          TRACK_ENGINE_COMPONENT: containerd
+          TRACK_LABEL: containerd-release
+          TRACK_TITLE_PREFIX: 'Building containerd '
+          TRACK_TITLE_SUFFIX: ' for Docker Engine RISC-V64'
+          TRACK_BUILD_WORKFLOW: docker-weekly-build.yml
+          TRACK_BUILD_INPUT: containerd_ref
+          TRACK_ISSUE_BODY: ${{ runner.temp }}/issue-body.md
         run: |
-          LATEST=${{ steps.check.outputs.latest_release }}
-
-          echo "New containerd release detected: $LATEST"
-          echo "Triggering Docker Engine rebuild..."
-
-          # Trigger the Docker Engine build with the new containerd version
-          gh workflow run docker-weekly-build.yml -f containerd_ref=$LATEST
-
-          # Create tracking issue
-          cat > issue-body.md << EOF
+          cat > "$TRACK_ISSUE_BODY" << EOF
           New containerd release detected: **$LATEST**
 
           **Status:** Docker Engine rebuild automatically triggered with containerd_ref=$LATEST
@@ -83,12 +78,8 @@ jobs:
 
           **Upstream release notes:** https://github.com/containerd/containerd/releases/tag/$LATEST
 
-          This issue will be closed automatically when the Docker Engine build completes.
+          The daily tracker closes this issue once an engine release lists containerd $LATEST
+          in its VERSIONS.txt, and retries the build if none does.
           EOF
 
-          gh issue create \
-            --title "Building containerd ${LATEST} for Docker Engine RISC-V64" \
-            --body-file issue-body.md \
-            --label "build-in-progress,containerd-release"
-
-          echo "Build triggered successfully!"
+          bash .github/scripts/track-release.sh
