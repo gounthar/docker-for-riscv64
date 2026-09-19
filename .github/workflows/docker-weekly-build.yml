@@ -214,10 +214,27 @@ jobs:
           git reset --hard "$RUNC_REF"
           git clean -fdx
 
-          # Build runc
-          make static
+          # Build runc without the libpathrs tag. runc 1.5 added libpathrs to
+          # its default BUILDTAGS (Makefile:14 at v1.5.1) and Debian/Armbian
+          # trixie ships no pathrs package, so pkg-config fails the build. moby
+          # drops the tag the same way in its own Dockerfile (runc-build stage,
+          # line 279 at docker-v29.8.1). Older runc Makefiles never read
+          # RUNC_BUILDTAGS (v1.3.0 and v1.4.0 only have EXTRA_BUILDTAGS, at
+          # Makefile:14-16), so passing it there is an ignored no-op. Do not
+          # drop seccomp: without it containerd cannot start a pod sandbox.
+          make RUNC_BUILDTAGS="-libpathrs" static
 
           ls -lh runc
+
+      - name: Verify runc was built with seccomp
+        working-directory: runc
+        run: |
+          set -euo pipefail
+          # runc prints a libseccomp line only when built with the seccomp tag.
+          # The runner is riscv64, so the binary runs here natively.
+          ./runc --version
+          ./runc --version | grep -q '^libseccomp:' \
+            || { echo "::error::runc was built without seccomp"; exit 1; }
 
       - name: Extract binaries
         env:
