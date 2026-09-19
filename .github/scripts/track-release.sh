@@ -30,10 +30,8 @@
 #   TRACK_EXPECTED_TAG      our release tag for V (cagent-v1.141.0-riscv64)
 #   TRACK_ENGINE_COMPONENT  instead of TRACK_EXPECTED_TAG, for components that
 #                           ship inside the engine release: containerd or runc.
-#                           V counts as built when an engine release lists it
-#                           in its VERSIONS.txt asset.
-#   TRACK_ENGINE_MATCH      any (default): any recent engine release counts;
-#                           newest: only the most recently published one
+#                           V counts as built when any recent engine release
+#                           lists it in its VERSIONS.txt asset.
 #   TRACK_MAX_RETRIES       default 3
 #   DRY_RUN                 true: log every write, perform none
 #   GH_REPO                 owner/repo, defaults to GITHUB_REPOSITORY
@@ -44,6 +42,17 @@
 set -euo pipefail
 
 RETRY_COMMENT_REGEX='^Retry [0-9]+ of [0-9]+:'
+# Left in the comment that closes an issue as done, so a later run can tell
+# an issue this tracker finished from one that was closed some other way.
+DONE_MARKER='<!-- track-release: done -->'
+# Counted as the same thing: the comments the build workflows themselves
+# leave when they close a tracking issue on a published release. Without
+# them, every issue closed before this tracker existed would be reopened
+# the day its release is pruned.
+DONE_MARKERS="${DONE_MARKER}
+Automatically closing - release published.
+Automatically closing - included in Docker Engine build.
+Automatically closed: Release"
 FAILED_LABEL='build-failed'
 
 # Logs go to stderr: several helpers print their result on stdout and are
@@ -107,6 +116,17 @@ count_retry_comments() {
     awk '{ n += $1 } END { print n + 0 }'
 }
 
+# Count the comments carrying the marker left by handle_done, in one or more
+# JSON arrays of issue comments on stdin. A count, not an exit status, so a
+# jq or awk failure aborts the run instead of reading as "no marker".
+count_done_markers() {
+  jq --arg markers "$DONE_MARKERS" \
+    '($markers | split("\n")) as $m
+     | [.[] | select(.body as $b | any($m[]; . as $marker | $b | contains($marker)))]
+     | length' \
+    | awk '{ n += $1 } END { print n + 0 }'
+}
+
 # Print the version of $1 (containerd or runc) listed in a VERSIONS.txt on
 # stdin, with a leading v to match upstream tags.
 engine_component_version() {
@@ -141,7 +161,7 @@ release_url() {
 
 # Print the URL of an engine release whose VERSIONS.txt lists V, or nothing.
 engine_release_url() {
-  local releases tag url asset listed checked=0
+  local releases tag url asset listed
   releases=$(gh api "repos/${GH_REPO}/releases?per_page=100" --jq '
     [.[]
      | select(.draft | not)
@@ -163,10 +183,6 @@ engine_release_url() {
         echo "$url"
         return 0
       fi
-    fi
-    checked=$((checked + 1))
-    if [ "$TRACK_ENGINE_MATCH" = "newest" ] && [ "$checked" -ge 1 ]; then
-      return 0
     fi
   done <<<"$releases"
 }
@@ -212,21 +228,33 @@ handle_done() {
   for num in $(jq -r --arg t "$TITLE" \
     '.[] | select(.title == $t and .state == "OPEN") | .number' <<<"$ISSUES"); do
     act "close #${num}, built as ${url}" \
-      gh issue close "$num" --comment "Built and released: ${url}"
+      gh issue close "$num" --comment "Built and released: ${url}
+
+${DONE_MARKER}"
   done
   decide "done (${url})"
 }
 
 handle_retry() {
-  local num=$1 state=$2 labels=$3 retries failed_run note=""
+  local num=$1 state=$2 labels=$3 comments retries done_markers failed_run note=""
 
   if grep -qxF "$FAILED_LABEL" <<<"$labels"; then
     decide "given up: #${num} is labelled ${FAILED_LABEL}, not dispatching"
     return 0
   fi
 
-  retries=$(gh api "repos/${GH_REPO}/issues/${num}/comments?per_page=100" --paginate |
-    count_retry_comments)
+  comments=$(gh api "repos/${GH_REPO}/issues/${num}/comments?per_page=100" --paginate)
+
+  # An issue this tracker closed as done is terminal. The release it was
+  # closed on may since have been deleted, by cleanup-old-dev-releases.yml
+  # or by hand, and rebuilding for a deletion is not wanted.
+  done_markers=$(count_done_markers <<<"$comments")
+  if [ "$state" != "OPEN" ] && [ "$done_markers" -gt 0 ]; then
+    decide "already built: #${num} was closed as done, not reopening"
+    return 0
+  fi
+
+  retries=$(count_retry_comments <<<"$comments")
 
   failed_run=$(jq -r '
     [.[] | select(.status == "completed")
@@ -290,7 +318,6 @@ main() {
   [ -n "$GH_REPO" ] || die "GH_REPO or GITHUB_REPOSITORY must be set"
   DRY_RUN="${DRY_RUN:-false}"
   MAX_RETRIES="${TRACK_MAX_RETRIES:-3}"
-  TRACK_ENGINE_MATCH="${TRACK_ENGINE_MATCH:-any}"
   TITLE="${TRACK_TITLE_PREFIX}${TRACK_LATEST}${TRACK_TITLE_SUFFIX}"
   ERR_FILE=$(mktemp)
   trap 'rm -f "$ERR_FILE"' EXIT

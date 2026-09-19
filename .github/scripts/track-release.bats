@@ -35,6 +35,36 @@ EOF
   [ "$output" = "0" ]
 }
 
+@test "done marker is found in the comment that carries it" {
+  run count_done_markers <<'EOF'
+[
+  {"body": "Retry 1 of 3: the previous build did not produce release cagent-v1.141.0-riscv64."},
+  {"body": "Built and released: https://example.invalid/r\n\n<!-- track-release: done -->"}
+]
+EOF
+  [ "$status" -eq 0 ]
+  [ "$output" = "1" ]
+}
+
+@test "the build workflows' own closing comments count as done" {
+  run count_done_markers <<'EOF'
+[{"body": "Automatically closing - release published."},
+ {"body": "Automatically closing - included in Docker Engine build."}]
+[{"body": "\u2705 Automatically closed: Release [v0.33.0](https://example.invalid) has been published."}]
+EOF
+  [ "$status" -eq 0 ]
+  [ "$output" = "3" ]
+}
+
+@test "done marker is absent from an issue closed by hand" {
+  run count_done_markers <<'EOF'
+[{"body": "closing, we do not need this build"}, {"body": "Retry 1 of 3: x"}]
+[]
+EOF
+  [ "$status" -eq 0 ]
+  [ "$output" = "0" ]
+}
+
 # expect_order A B: version_lt must hold for A,B and fail for B,A.
 expect_order() {
   version_lt "$1" "$2" || { echo "expected $1 < $2"; return 1; }
