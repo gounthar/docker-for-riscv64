@@ -108,6 +108,26 @@ jobs:
           fi
           echo "Building K3s from: $(git -C "$SRC" describe --tags --always) ($(git -C "$SRC" rev-parse HEAD))"
 
+      - name: Build runc with seccomp on riscv64
+        if: steps.ref.outputs.skip != 'true'
+        working-directory: ${{ runner.temp }}/k3s
+        run: |
+          set -euo pipefail
+          # Up to v1.37.0+k3s1, scripts/build strips the seccomp tag from runc
+          # on riscv64. containerd still requests a seccomp profile for every
+          # pod sandbox, so no pod can start ("seccomp: config provided but
+          # seccomp not supported"). Upstream dropped the workaround in
+          # k3s-io/k3s#14529; drop it here for refs that still carry it.
+          # shellcheck disable=SC2016 # matching the literal shell text
+          if grep -qF 'RUNC_TAGS="${RUNC_TAGS/seccomp/}"' scripts/build; then
+            sed -i '/# runc.s vendored libseccomp-golang can fail on riscv64/,/^    fi$/d' scripts/build
+            echo "Removed the riscv64 seccomp workaround from scripts/build"
+          fi
+          if grep -qF 'RUNC_TAGS/seccomp' scripts/build; then
+            echo "::error::scripts/build still strips seccomp from runc"
+            exit 1
+          fi
+
       - name: Point runtime images at riscv64 variants
         if: >-
           steps.ref.outputs.skip != 'true' &&
@@ -192,6 +212,13 @@ jobs:
           [ -n "$BIN" ] || { echo "::error::No k3s binary in dist/artifacts"; exit 1; }
           file "$BIN"
           file "$BIN" | grep -q "RISC-V" || { echo "::error::$BIN is not a RISC-V binary"; exit 1; }
+          # runc prints a libseccomp line only when built with seccomp; without
+          # it the binary starts a node but no pod can run
+          tar --zstd -xOf build/out/data-linux-riscv64.tar.zst ./bin/runc > "${RUNNER_TEMP}/runc"
+          chmod +x "${RUNNER_TEMP}/runc"
+          "${RUNNER_TEMP}/runc" --version
+          "${RUNNER_TEMP}/runc" --version | grep -q '^libseccomp:' \
+            || { echo "::error::bundled runc was built without seccomp"; exit 1; }
           # Native host: the binary can actually run here
           "$BIN" --version | tee "${RUNNER_TEMP}/k3s-version.txt"
 
