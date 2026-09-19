@@ -11,13 +11,13 @@ on:
         required: false
         default: 'master'
       containerd_ref:
-        description: 'Containerd version tag to build'
+        description: 'Containerd ref to build (empty = the version moby pins at moby_ref)'
         required: false
-        default: 'v2.2.1'
+        default: ''
       runc_ref:
-        description: 'Runc version tag to build'
+        description: 'Runc ref to build (empty = the version moby pins at moby_ref)'
         required: false
-        default: 'v1.4.0'
+        default: ''
 
 permissions:
   contents: write
@@ -89,7 +89,21 @@ jobs:
           fi
           echo "Go version from go.mod: $GO_VERSION"
           echo "go_version=$GO_VERSION" >> $GITHUB_OUTPUT
-      
+
+      # Build containerd and runc at the versions moby pins in its Dockerfile
+      # (ARG CONTAINERD_VERSION / ARG RUNC_VERSION) unless a ref is passed
+      # explicitly. Resolved once here; every later step reads these outputs.
+      - name: Resolve containerd and runc refs
+        id: component_refs
+        env:
+          MOBY_REF: ${{ github.event.inputs.moby_ref || 'master' }}
+          CONTAINERD_INPUT: ${{ github.event.inputs.containerd_ref }}
+          RUNC_INPUT: ${{ github.event.inputs.runc_ref }}
+        run: |
+          MOBY_LABEL="${MOBY_REF} ($(git -C moby rev-parse --short HEAD))"
+          bash .github/scripts/resolve-moby-component-refs.sh \
+            moby/Dockerfile "$MOBY_LABEL" "$CONTAINERD_INPUT" "$RUNC_INPUT"
+
       - name: Apply RISC-V patches
         run: |
           cd moby
@@ -158,7 +172,8 @@ jobs:
 
       - name: Build containerd
         run: |
-          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v2.2.1' }}"
+          CONTAINERD_REF="${{ steps.component_refs.outputs.containerd_ref }}"
+          echo "Building containerd ${CONTAINERD_REF} (${{ steps.component_refs.outputs.containerd_source }})"
           # Clone if needed, then always sync to the requested ref
           if [ ! -d "containerd" ]; then
             git clone https://github.com/containerd/containerd.git
@@ -181,7 +196,8 @@ jobs:
 
       - name: Build runc
         run: |
-          RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
+          RUNC_REF="${{ steps.component_refs.outputs.runc_ref }}"
+          echo "Building runc ${RUNC_REF} (${{ steps.component_refs.outputs.runc_source }})"
           # Clone if needed, then always sync to the requested ref
           if [ ! -d "runc" ]; then
             git clone https://github.com/opencontainers/runc.git
@@ -198,6 +214,11 @@ jobs:
           ls -lh runc
 
       - name: Extract binaries
+        env:
+          CONTAINERD_REF: ${{ steps.component_refs.outputs.containerd_ref }}
+          CONTAINERD_SOURCE: ${{ steps.component_refs.outputs.containerd_source }}
+          RUNC_REF: ${{ steps.component_refs.outputs.runc_ref }}
+          RUNC_SOURCE: ${{ steps.component_refs.outputs.runc_source }}
         run: |
           DATE=$(date +%Y%m%d)
           mkdir -p release-$DATE
@@ -223,6 +244,11 @@ jobs:
           ./release-$DATE/docker-proxy --version >> release-$DATE/VERSIONS.txt
           ./release-$DATE/containerd --version >> release-$DATE/VERSIONS.txt
           ./release-$DATE/runc --version >> release-$DATE/VERSIONS.txt
+          {
+            echo ""
+            echo "containerd ref: ${CONTAINERD_REF} (${CONTAINERD_SOURCE})"
+            echo "runc ref: ${RUNC_REF} (${RUNC_SOURCE})"
+          } >> "release-$DATE/VERSIONS.txt"
 
           # Copy documentation
           cp README.md release-$DATE/ || true
@@ -255,8 +281,10 @@ jobs:
             VERSION_INFO=$'**Moby Branch:** '"${MOBY_REF}"$'\n**Moby Commit:** '"${MOBY_COMMIT}"$'\n**Built Version:** '"${VERSION}"
           fi
 
-          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v2.2.1' }}"
-          RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
+          CONTAINERD_REF="${{ steps.component_refs.outputs.containerd_ref }}"
+          CONTAINERD_SOURCE="${{ steps.component_refs.outputs.containerd_source }}"
+          RUNC_REF="${{ steps.component_refs.outputs.runc_ref }}"
+          RUNC_SOURCE="${{ steps.component_refs.outputs.runc_source }}"
           GO_VERSION="${{ steps.moby_update.outputs.go_version }}"
 
           cat > release-notes.md << EOF
@@ -269,8 +297,8 @@ jobs:
           **Components:**
           - dockerd (Docker Engine)
           - docker-proxy (Network proxy)
-          - containerd (Container runtime ${CONTAINERD_REF})
-          - runc (OCI runtime ${RUNC_REF})
+          - containerd (Container runtime ${CONTAINERD_REF}, ${CONTAINERD_SOURCE})
+          - runc (OCI runtime ${RUNC_REF}, ${RUNC_SOURCE})
           - containerd-shim-runc-v2 (Containerd shim)
 
           **Build Command:**
@@ -319,8 +347,8 @@ jobs:
         run: |
           set -euo pipefail
           MOBY_REF="${{ github.event.inputs.moby_ref || 'master' }}"
-          CONTAINERD_REF="${{ github.event.inputs.containerd_ref || 'v2.2.1' }}"
-          RUNC_REF="${{ github.event.inputs.runc_ref || 'v1.4.0' }}"
+          CONTAINERD_REF="${{ steps.component_refs.outputs.containerd_ref }}"
+          RUNC_REF="${{ steps.component_refs.outputs.runc_ref }}"
           VERSION_REGEX='${{ env.VERSION_REGEX }}'
 
           RELEASE_URL="https://github.com/${{ github.repository }}/releases"
