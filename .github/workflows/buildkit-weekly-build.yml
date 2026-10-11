@@ -55,6 +55,13 @@ jobs:
         run: |
           # Clean up any unhealthy or stuck buildx builders
           # This prevents "container is restarting" errors from previous failed builds
+
+          # Drop any ghcr.io login an earlier job left on this host.
+          # Its GITHUB_TOKEN has expired, and Docker sends it instead
+          # of pulling anonymously, so bootstrapping the public
+          # buildkit-riscv64 image fails with "denied: denied".
+          docker logout ghcr.io || true
+
           echo "Current buildx builders:"
           docker buildx ls || true
 
@@ -464,3 +471,11 @@ jobs:
           done
 
           echo "Done! Closed $(echo "$ISSUES" | wc -w) issue(s)"
+
+      - name: Log out of GitHub Container Registry
+        if: ${{ always() }}
+        run: |
+          # The runner shares ~/.docker/config.json across jobs, so the
+          # GITHUB_TOKEN used for the push would outlive this job and break
+          # the next pull from ghcr.io on this host.
+          docker logout ghcr.io || true
