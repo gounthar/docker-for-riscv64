@@ -82,13 +82,22 @@ jobs:
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
 
-          # Extract Go version required by go.mod
-          GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+          # Build with the Go toolchain moby pins in its Dockerfile, not the
+          # go.mod `go` line: that line is only the minimum language version
+          # and lags behind (docker-v29.9.2: go.mod 1.26.8, Dockerfile 1.26.10,
+          # and 29.9.2 exists to ship the 1.26.10 security fix).
+          GO_VERSION=$(sed -n 's/^ARG GO_VERSION=\([0-9][0-9.]*\)$/\1/p' Dockerfile | head -n 1)
+          GO_SOURCE="Dockerfile"
           if [ -z "$GO_VERSION" ]; then
-            echo "WARNING: Could not extract Go version from go.mod, falling back to 1.25.5"
-            GO_VERSION="1.25.5"
+            GO_VERSION=$(grep '^go ' go.mod | awk '{print $2}')
+            GO_SOURCE="go.mod"
           fi
-          echo "Go version from go.mod: $GO_VERSION"
+          if [ -z "$GO_VERSION" ]; then
+            echo "WARNING: Could not extract Go version from Dockerfile or go.mod, falling back to 1.25.5"
+            GO_VERSION="1.25.5"
+            GO_SOURCE="fallback"
+          fi
+          echo "Go version from ${GO_SOURCE}: $GO_VERSION"
           echo "go_version=$GO_VERSION" >> $GITHUB_OUTPUT
 
       # Build containerd and runc at the versions moby pins in its Dockerfile
