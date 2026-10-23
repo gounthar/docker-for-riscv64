@@ -22,6 +22,12 @@ jobs:
     runs-on: [self-hosted, riscv64]
 
     steps:
+      # Compute the build date once. Steps that each ran `date +%Y%m%d`
+      # disagreed when a run crossed midnight in the runner's local time:
+      # the image was tagged with one day and looked up with the next.
+      - name: Set build date
+        run: echo "BUILD_DATE=$(date +%Y%m%d)" >> "$GITHUB_ENV"
+
       - name: Checkout repository
         uses: actions/checkout@v7
         with:
@@ -118,7 +124,7 @@ jobs:
       - name: Extract binaries
         run: |
           set -euo pipefail
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           mkdir -p release-buildkit-$DATE
 
           # Copy binaries (buildx outputs to bin/build/)
@@ -135,7 +141,7 @@ jobs:
       - name: Build BuildKit container image
         run: |
           set -euo pipefail
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
 
           # Get version from buildkit subdir
@@ -171,7 +177,7 @@ jobs:
           # The buildkitd --version command may fail in container context
           # (requires privileges), but that's acceptable for this smoke test.
           # We want to continue even if version check fails.
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
 
           # Test that container starts and reports version
           echo "Testing BuildKit container..."
@@ -187,7 +193,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
           IMAGE_TAG=$(cat release-buildkit-$DATE/IMAGE_TAG.txt)
 
@@ -220,7 +226,7 @@ jobs:
             sudo apt-get update && sudo apt-get install -y gh || true
           fi
 
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           BUILDKIT_REF="${{ github.event.inputs.buildkit_ref || 'master' }}"
 
           # Determine release version

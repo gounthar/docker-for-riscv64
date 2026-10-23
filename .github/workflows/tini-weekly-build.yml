@@ -21,6 +21,12 @@ jobs:
     runs-on: [self-hosted, riscv64]
 
     steps:
+      # Compute the build date once. Steps that each ran `date +%Y%m%d`
+      # disagreed when a run crossed midnight in the runner's local time:
+      # the image was tagged with one day and looked up with the next.
+      - name: Set build date
+        run: echo "BUILD_DATE=$(date +%Y%m%d)" >> "$GITHUB_ENV"
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -58,7 +64,7 @@ jobs:
 
       - name: Prepare release artifacts
         run: |
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           mkdir -p release-tini-$DATE
 
           # Copy binaries
@@ -88,7 +94,7 @@ jobs:
             sudo apt-get update && sudo apt-get install -y gh || true
           fi
 
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           TINI_REF="${{ github.event.inputs.tini_ref || 'v0.19.0' }}"
 
           # Get version from tini repo
