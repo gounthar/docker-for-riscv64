@@ -328,7 +328,7 @@ jobs:
           Automated build of Docker Engine for RISC-V64
 
           ${VERSION_INFO}
-          **Build Date:** $(date -u +%Y-%m-%d)
+          **Build Date:** ${BUILD_DATE:0:4}-${BUILD_DATE:4:2}-${BUILD_DATE:6:2}
           **Architecture:** riscv64
 
           **Components:**
