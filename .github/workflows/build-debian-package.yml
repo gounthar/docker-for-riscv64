@@ -34,8 +34,8 @@ jobs:
         env:
           PACKAGE_REVISION: ${{ github.event.inputs.package_revision || '1' }}
         run: |
-          if ! [[ "$PACKAGE_REVISION" =~ ^[1-9][0-9]*$ ]]; then
-            echo "::error::package_revision must be a positive integer (got '$PACKAGE_REVISION')"
+          if ! [[ "$PACKAGE_REVISION" =~ ^[1-9][0-9]{0,5}$ ]]; then
+            echo "::error::package_revision must be an integer from 1 to 999999 (got '$PACKAGE_REVISION')"
             exit 1
           fi
           echo "PACKAGE_REVISION=$PACKAGE_REVISION" >> "$GITHUB_ENV"
@@ -189,6 +189,11 @@ jobs:
             pkg=$(basename "$deb"); pkg=${pkg%%_*}
             pat="^${pkg//./\\.}_${VERSION//./\\.}-([0-9]+)_riscv64\\.deb$"
             published=$(echo "$ASSETS" | sed -nE "s/${pat}/\\1/p" | sort -n | tail -n 1)
+            # Fail closed on a revision too long for shell arithmetic
+            if [ "${#published}" -gt 6 ]; then
+              echo "::error::$RELEASE_TAG has $pkg revision $published, too large to compare"
+              exit 1
+            fi
             if [ -n "$published" ] && [ "$published" -gt "$PACKAGE_REVISION" ]; then
               echo "::error::$RELEASE_TAG already has $pkg revision $published; refusing to replace it with revision $PACKAGE_REVISION"
               exit 1
