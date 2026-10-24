@@ -16,6 +16,10 @@ name: Build RPM Package
         description: 'Release tag to build package from'
         required: true
         default: 'v28.5.1-riscv64'
+      package_revision:
+        description: 'Package revision (bump to republish the same version with new content)'
+        required: false
+        default: '1'
 
 jobs:
   build-rpm:
@@ -25,6 +29,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Validate package revision
+        env:
+          PACKAGE_REVISION: ${{ github.event.inputs.package_revision || '1' }}
+        run: |
+          if ! [[ "$PACKAGE_REVISION" =~ ^[1-9][0-9]{0,5}$ ]]; then
+            echo "::error::package_revision must be an integer from 1 to 999999 (got '$PACKAGE_REVISION')"
+            exit 1
+          fi
+          echo "PACKAGE_REVISION=$PACKAGE_REVISION" >> "$GITHUB_ENV"
 
       - name: Get release tag
         id: release
@@ -138,6 +152,8 @@ jobs:
           SPECS=~/rpmbuild/SPECS
           sed -i "s/^Version:.*/Version:        $RUNC_VERSION/" "$SPECS/runc.spec"
           sed -i "s/^Version:.*/Version:        $CONTAINERD_VERSION/" "$SPECS/containerd.spec"
+          sed -i "s/^Release:.*/Release:        ${PACKAGE_REVISION}%{?dist}/" \
+            "$SPECS/runc.spec" "$SPECS/containerd.spec" "$SPECS/moby-engine.spec"
 
           # Dependency floors follow the versions shipped in this release
           sed -i -E "s/^(Requires:[[:space:]]+runc) >= .*/\1 >= $RUNC_VERSION/" \
@@ -158,6 +174,9 @@ jobs:
           check moby-engine.spec "^Version:[[:space:]]+${VERSION}\$"
           check moby-engine.spec "^Requires:[[:space:]]+runc >= ${RUNC_VERSION}\$"
           check moby-engine.spec "^Requires:[[:space:]]+containerd >= ${CONTAINERD_VERSION}\$"
+          for spec in runc.spec containerd.spec moby-engine.spec; do
+            check "$spec" "^Release:[[:space:]]+${PACKAGE_REVISION}%\\{\\?dist\\}\$"
+          done
 
           {
             echo "moby=$VERSION"
@@ -352,6 +371,24 @@ jobs:
           read -ra rpms <<< "$RPM_FILES"
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
+
+          # Refuse to replace a higher revision already on the release
+          ASSETS=$(gh release view "$RELEASE_TAG" --repo gounthar/docker-for-riscv64 \
+            --json assets --jq '.assets[].name')
+          for rpm in "${rpms[@]}"; do
+            nv=$(rpm -qp --qf '%{NAME}-%{VERSION}' "$rpm")
+            pat="^${nv//./\\.}-([0-9]+)\\.[^.]+\\.riscv64\\.rpm$"
+            published=$(echo "$ASSETS" | sed -nE "s/${pat}/\\1/p" | sort -n | tail -n 1)
+            # Fail closed on a revision too long for shell arithmetic
+            if [ "${#published}" -gt 6 ]; then
+              echo "::error::$RELEASE_TAG has $nv revision $published, too large to compare"
+              exit 1
+            fi
+            if [ -n "$published" ] && [ "$published" -gt "$PACKAGE_REVISION" ]; then
+              echo "::error::$RELEASE_TAG already has $nv revision $published; refusing to replace it with revision $PACKAGE_REVISION"
+              exit 1
+            fi
+          done
 
           for rpm in "${rpms[@]}"; do
             echo "Uploading $(basename $rpm)..."
