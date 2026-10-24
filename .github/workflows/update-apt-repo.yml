@@ -233,11 +233,11 @@ jobs:
 
           echo ""
           echo "Cleaning up: keeping only the latest version of each package..."
-          # For each package prefix, keep only the newest file (by timestamp)
+          # For each package prefix, keep only the highest version. A release
+          # can carry several package revisions (29.9.2-1 and 29.9.2-2), and
+          # file mtimes only reflect download order, so sort by version.
           for pattern in docker.io docker-cli docker-compose-plugin docker-buildx-plugin containerd runc cagent buildkit; do
-            # Get all matching files sorted by modification time (newest first)
-            # Keep the first (newest), delete the rest
-            ls -t ${pattern}_*.deb 2>/dev/null | tail -n +2 | xargs -r rm -v || true
+            ls ${pattern}_*.deb 2>/dev/null | sort -V | head -n -1 | xargs -r rm -v || true
           done
 
           echo ""
