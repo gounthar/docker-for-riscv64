@@ -372,6 +372,19 @@ jobs:
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
 
+          # Refuse to replace a higher revision already on the release
+          ASSETS=$(gh release view "$RELEASE_TAG" --repo gounthar/docker-for-riscv64 \
+            --json assets --jq '.assets[].name')
+          for rpm in "${rpms[@]}"; do
+            nv=$(rpm -qp --qf '%{NAME}-%{VERSION}' "$rpm")
+            pat="^${nv//./\\.}-([0-9]+)\\.[^.]+\\.riscv64\\.rpm$"
+            published=$(echo "$ASSETS" | sed -nE "s/${pat}/\\1/p" | sort -n | tail -n 1)
+            if [ -n "$published" ] && [ "$published" -gt "$PACKAGE_REVISION" ]; then
+              echo "::error::$RELEASE_TAG already has $nv revision $published; refusing to replace it with revision $PACKAGE_REVISION"
+              exit 1
+            fi
+          done
+
           for rpm in "${rpms[@]}"; do
             echo "Uploading $(basename $rpm)..."
             gh release upload $RELEASE_TAG "$rpm" --repo gounthar/docker-for-riscv64 --clobber

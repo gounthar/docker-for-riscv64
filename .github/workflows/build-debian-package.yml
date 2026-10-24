@@ -182,6 +182,19 @@ jobs:
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
 
+          # Refuse to replace a higher revision already on the release
+          VERSION=$(echo "$RELEASE_TAG" | sed 's/^v//; s/-riscv64$//')
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')
+          for deb in ../*.deb; do
+            pkg=$(basename "$deb"); pkg=${pkg%%_*}
+            pat="^${pkg//./\\.}_${VERSION//./\\.}-([0-9]+)_riscv64\\.deb$"
+            published=$(echo "$ASSETS" | sed -nE "s/${pat}/\\1/p" | sort -n | tail -n 1)
+            if [ -n "$published" ] && [ "$published" -gt "$PACKAGE_REVISION" ]; then
+              echo "::error::$RELEASE_TAG already has $pkg revision $published; refusing to replace it with revision $PACKAGE_REVISION"
+              exit 1
+            fi
+          done
+
           for deb in ../*.deb; do
             echo "Uploading $(basename $deb)..."
             gh release upload $RELEASE_TAG "$deb" --clobber
@@ -189,7 +202,6 @@ jobs:
 
           # A bumped revision leaves the earlier revision's .deb on the
           # release. Remove it so downloads and the APT repo see one build.
-          VERSION=$(echo "$RELEASE_TAG" | sed 's/^v//; s/-riscv64$//')
           for deb in ../*.deb; do
             new=$(basename "$deb")
             pkg=${new%%_*}
