@@ -390,22 +390,6 @@ jobs:
             gh release upload $RELEASE_TAG "$rpm" --repo gounthar/docker-for-riscv64 --clobber
           done
 
-          # A bumped revision leaves the earlier revision's RPMs on the
-          # release. Remove them so downloads and the RPM repo see one build.
-          for rpm in "${rpms[@]}"; do
-            new=$(basename "$rpm")
-            nv=$(rpm -qp --qf '%{NAME}-%{VERSION}' "$rpm")
-            gh release view "$RELEASE_TAG" --repo gounthar/docker-for-riscv64 \
-                --json assets --jq '.assets[].name' |
-              { grep -E "^${nv//./\\.}-[0-9]+\\.[^.]+\\.riscv64\\.rpm$" || true; } |
-              { grep -vxF "$new" || true; } |
-              while read -r old; do
-                echo "Removing superseded $old"
-                gh release delete-asset "$RELEASE_TAG" "$old" \
-                  --repo gounthar/docker-for-riscv64 --yes
-              done
-          done
-
           echo ""
           echo "✅ All RPM packages uploaded successfully!"
           echo ""

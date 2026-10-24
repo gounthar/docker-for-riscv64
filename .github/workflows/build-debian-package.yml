@@ -200,20 +200,6 @@ jobs:
             gh release upload $RELEASE_TAG "$deb" --clobber
           done
 
-          # A bumped revision leaves the earlier revision's .deb on the
-          # release. Remove it so downloads and the APT repo see one build.
-          for deb in ../*.deb; do
-            new=$(basename "$deb")
-            pkg=${new%%_*}
-            gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' |
-              { grep -E "^${pkg//./\\.}_${VERSION//./\\.}-[0-9]+_riscv64\\.deb$" || true; } |
-              { grep -vxF "$new" || true; } |
-              while read -r old; do
-                echo "Removing superseded $old"
-                gh release delete-asset "$RELEASE_TAG" "$old" --yes
-              done
-          done
-
           echo ""
           echo "✅ All Debian packages uploaded successfully!"
           echo ""
