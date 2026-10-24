@@ -12,6 +12,10 @@ on:
         description: 'Release tag to build package from'
         required: true
         default: 'v28.5.1-riscv64'
+      package_revision:
+        description: 'Package revision (bump to republish the same version with new content)'
+        required: false
+        default: '1'
 
 permissions:
   contents: write
@@ -25,6 +29,16 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
+
+      - name: Validate package revision
+        env:
+          PACKAGE_REVISION: ${{ github.event.inputs.package_revision || '1' }}
+        run: |
+          if ! [[ "$PACKAGE_REVISION" =~ ^[1-9][0-9]*$ ]]; then
+            echo "::error::package_revision must be a positive integer (got '$PACKAGE_REVISION')"
+            exit 1
+          fi
+          echo "PACKAGE_REVISION=$PACKAGE_REVISION" >> "$GITHUB_ENV"
 
       - name: Check if new release exists
         id: check_release
@@ -110,10 +124,10 @@ jobs:
           export DEBFULLNAME="GitHub Actions"
 
           # Check if this version is already in changelog
-          if ! head -1 debian/changelog | grep -q "$VERSION"; then
-            echo "Version $VERSION not in changelog, updating..."
+          if ! head -1 debian/changelog | grep -qF "(${VERSION}-${PACKAGE_REVISION})"; then
+            echo "Version ${VERSION}-${PACKAGE_REVISION} not in changelog, updating..."
             cd debian
-            dch --newversion "${VERSION}-1" \
+            dch --newversion "${VERSION}-${PACKAGE_REVISION}" \
                 --distribution trixie \
                 --force-distribution \
                 --check-dirname-level 0 \
@@ -123,7 +137,7 @@ jobs:
             echo "Version $VERSION already in changelog"
           fi
 
-          echo "Package version: $VERSION"
+          echo "Package version: ${VERSION}-${PACKAGE_REVISION}"
           echo "Moby commit: $MOBY_COMMIT"
 
       - name: Build package
@@ -168,9 +182,36 @@ jobs:
           echo "Uploading packages to release $RELEASE_TAG"
           echo ""
 
+          # Refuse to replace a higher revision already on the release
+          VERSION=$(echo "$RELEASE_TAG" | sed 's/^v//; s/-riscv64$//')
+          ASSETS=$(gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name')
+          for deb in ../*.deb; do
+            pkg=$(basename "$deb"); pkg=${pkg%%_*}
+            pat="^${pkg//./\\.}_${VERSION//./\\.}-([0-9]+)_riscv64\\.deb$"
+            published=$(echo "$ASSETS" | sed -nE "s/${pat}/\\1/p" | sort -n | tail -n 1)
+            if [ -n "$published" ] && [ "$published" -gt "$PACKAGE_REVISION" ]; then
+              echo "::error::$RELEASE_TAG already has $pkg revision $published; refusing to replace it with revision $PACKAGE_REVISION"
+              exit 1
+            fi
+          done
+
           for deb in ../*.deb; do
             echo "Uploading $(basename $deb)..."
             gh release upload $RELEASE_TAG "$deb" --clobber
+          done
+
+          # A bumped revision leaves the earlier revision's .deb on the
+          # release. Remove it so downloads and the APT repo see one build.
+          for deb in ../*.deb; do
+            new=$(basename "$deb")
+            pkg=${new%%_*}
+            gh release view "$RELEASE_TAG" --json assets --jq '.assets[].name' |
+              { grep -E "^${pkg//./\\.}_${VERSION//./\\.}-[0-9]+_riscv64\\.deb$" || true; } |
+              { grep -vxF "$new" || true; } |
+              while read -r old; do
+                echo "Removing superseded $old"
+                gh release delete-asset "$RELEASE_TAG" "$old" --yes
+              done
           done
 
           echo ""
