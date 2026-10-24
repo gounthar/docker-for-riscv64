@@ -21,6 +21,12 @@ jobs:
     runs-on: [self-hosted, riscv64]
 
     steps:
+      # Compute the build date once. Steps that each ran `date +%Y%m%d`
+      # disagreed when a run crossed midnight in the runner's local time:
+      # the image was tagged with one day and looked up with the next.
+      - name: Set build date
+        run: echo "BUILD_DATE=$(date +%Y%m%d)" >> "$GITHUB_ENV"
+
       - name: Checkout repository
         uses: actions/checkout@v7
 
@@ -61,7 +67,7 @@ jobs:
 
       - name: Extract binary
         run: |
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           mkdir -p release-buildx-$DATE
 
           # Copy binary and rename to docker-buildx
@@ -83,7 +89,7 @@ jobs:
             sudo apt-get update && sudo apt-get install -y gh || true
           fi
 
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           BUILDX_REF="${{ github.event.inputs.buildx_ref || 'master' }}"
 
           # Determine release version
@@ -108,7 +114,7 @@ jobs:
           Automated build of Docker Buildx plugin for RISC-V64
 
           ${VERSION_INFO}
-          **Build Date:** $(date -u +%Y-%m-%d)
+          **Build Date:** ${BUILD_DATE:0:4}-${BUILD_DATE:4:2}-${BUILD_DATE:6:2}
           **Architecture:** riscv64
 
           **What is Docker Buildx?**
@@ -178,7 +184,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          DATE=$(date +%Y%m%d)
+          DATE="${BUILD_DATE}"
           BUILDX_REF="${{ github.event.inputs.buildx_ref || 'master' }}"
 
           # Determine release tag (must match what was created above)
