@@ -207,3 +207,21 @@ jobs:
 
           echo ""
           echo "✅ Docker CLI RPM package uploaded successfully!"
+
+      # A build dispatched by another workflow runs as github-actions[bot],
+      # and the GITHUB_TOKEN-created run never emits the workflow_run event
+      # update-rpm-repo.yml listens for. Dispatch it directly in that case,
+      # as the Debian builds already do for update-apt-repo.yml. Runs started
+      # by a person or by workflow_run still go through workflow_run.
+      - name: Trigger RPM repository update
+        if: >-
+          steps.release.outputs.has-new-release == 'true' &&
+          github.event_name == 'workflow_dispatch' &&
+          github.triggering_actor == 'github-actions[bot]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
+        run: |
+          gh workflow run update-rpm-repo.yml --repo "$GITHUB_REPOSITORY" \
+            -f release_tag="$RELEASE_TAG" \
+            || echo "::warning::Failed to trigger RPM repo update for $RELEASE_TAG"
