@@ -428,5 +428,4 @@ jobs:
           RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
         run: |
           gh workflow run update-rpm-repo.yml --repo "$GITHUB_REPOSITORY" \
-            -f release_tag="$RELEASE_TAG" \
-            || echo "::warning::Failed to trigger RPM repo update for $RELEASE_TAG"
+            -f release_tag="$RELEASE_TAG"
