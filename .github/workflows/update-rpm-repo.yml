@@ -72,6 +72,12 @@ jobs:
             # is harmless. Binding exactly would need every build workflow
             # to hand its tag over through an artifact.
             echo "Triggering run: $RUN_NAME ($RUN_ID), $RUN_STARTED -> $RUN_UPDATED"
+            # An empty bound would match nothing and end green below, which
+            # would look like "nothing new" on every run. Fail instead.
+            if [ -z "$RUN_STARTED" ] || [ -z "$RUN_UPDATED" ]; then
+              echo "::error::workflow_run payload has no run_started_at/updated_at; cannot select releases"
+              exit 1
+            fi
             RELEASE_TAGS=$(gh api --paginate \
                              "repos/gounthar/docker-for-riscv64/releases?per_page=100" \
                              --jq '.[] | {tag: .tag_name, a: [.assets[] | select(.name | endswith(".riscv64.rpm")) | .created_at]}' | \
