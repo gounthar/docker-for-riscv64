@@ -216,3 +216,20 @@ jobs:
           echo "  wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_TAG}/cagent-*.rpm"
           echo "  sudo dnf install -y ./cagent-*.rpm"
           echo "  cagent version"
+
+      # A build dispatched by another workflow runs as github-actions[bot],
+      # and the GITHUB_TOKEN-created run never emits the workflow_run event
+      # update-rpm-repo.yml listens for. Dispatch it directly in that case,
+      # as the Debian builds already do for update-apt-repo.yml. Runs started
+      # by a person or by workflow_run still go through workflow_run.
+      - name: Trigger RPM repository update
+        if: >-
+          steps.release.outputs.has-new-release == 'true' &&
+          github.event_name == 'workflow_dispatch' &&
+          github.triggering_actor == 'github-actions[bot]'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.release-tag }}
+        run: |
+          gh workflow run update-rpm-repo.yml --repo "$GITHUB_REPOSITORY" \
+            -f release_tag="$RELEASE_TAG"
