@@ -45,38 +45,64 @@ jobs:
           # Create directory structure for RPM repo
           mkdir -p rpm/fedora/riscv64
 
-      - name: Get release tag
+      - name: Get release tags
         env:
           GH_TOKEN: ${{ github.token }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ github.event.inputs.release_tag }}
+          RUN_STARTED: ${{ github.event.workflow_run.run_started_at }}
+          RUN_UPDATED: ${{ github.event.workflow_run.updated_at }}
+          RUN_NAME: ${{ github.event.workflow_run.name }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
         run: |
           set -euo pipefail
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            RELEASE_TAG="${{ github.event.inputs.release_tag }}"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            RELEASE_TAGS="$INPUT_TAG"
           else
-            # Find the latest release with RPM packages using JSON output
-            # Look for any release (docker, compose, cli, tini, buildx, buildkit, or cagent) that has .rpm files
-            for tag in $(gh release list --repo gounthar/docker-for-riscv64 --limit 50 --json tagName | \
-                         jq -r '.[] | select(.tagName | test("^(v[0-9]+\\.[0-9]+\\.[0-9]+-riscv64|compose-v|cli-v|tini-v|buildx-v|buildkit-v|cagent-v)")) | .tagName'); do
-              ASSETS=$(gh release view "$tag" --json assets --jq '.assets[].name' 2>/dev/null || echo "")
-              if echo "$ASSETS" | grep -q '\.rpm$'; then
-                RELEASE_TAG="$tag"
-                echo "Found release with RPM packages: $RELEASE_TAG"
-                break
-              fi
-            done
+            # Take the releases that the triggering run uploaded RPMs to:
+            # assets created between its start and its completion. Picking
+            # the newest release with RPMs instead added whichever package
+            # was released last (e.g. buildx) whatever had just been built.
+            #
+            # Deliberately a window, not an exact binding to RUN_ID: if
+            # another RPM build uploads during the same window, its release
+            # is added here too. Those are published release assets that its
+            # own update run would add moments later, so adding them early
+            # is harmless. Binding exactly would need every build workflow
+            # to hand its tag over through an artifact.
+            echo "Triggering run: $RUN_NAME ($RUN_ID), $RUN_STARTED -> $RUN_UPDATED"
+            # An empty bound would match nothing and end green below, which
+            # would look like "nothing new" on every run. Fail instead.
+            if [ -z "$RUN_STARTED" ] || [ -z "$RUN_UPDATED" ]; then
+              echo "::error::workflow_run payload has no run_started_at/updated_at; cannot select releases"
+              exit 1
+            fi
+            RELEASE_TAGS=$(gh api --paginate \
+                             "repos/gounthar/docker-for-riscv64/releases?per_page=100" \
+                             --jq '.[] | {tag: .tag_name, a: [.assets[] | select(.name | endswith(".riscv64.rpm")) | .created_at]}' | \
+                           jq -r --arg from "$RUN_STARTED" --arg to "$RUN_UPDATED" \
+                             'select(any(.a[]; . >= $from and . <= $to)) | .tag' | \
+                           sort -u | tr '\n' ' ' | sed 's/ $//')
+
+            if [ -z "$RELEASE_TAGS" ]; then
+              # The build found its assets already present and skipped, or
+              # uploaded nothing: there is nothing new to add.
+              echo "::notice::Run $RUN_ID uploaded no RPM assets; repository left unchanged"
+              exit 0
+            fi
           fi
 
-          # Validate RELEASE_TAG is not empty
-          if [ -z "$RELEASE_TAG" ]; then
-            echo "Error: No matching release found with RPM packages"
+          if [ -z "$RELEASE_TAGS" ]; then
+            echo "Error: no release tag given"
             exit 1
           fi
 
-          echo "Adding packages from release: $RELEASE_TAG"
-          echo "RELEASE_TAG=$RELEASE_TAG" >> $GITHUB_ENV
+          echo "Adding packages from: $RELEASE_TAGS"
+          echo "RELEASE_TAGS=$RELEASE_TAGS" >> "$GITHUB_ENV"
 
       - name: Download RPM packages from release
+        if: env.RELEASE_TAGS != ''
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -84,15 +110,17 @@ jobs:
           cd rpm/fedora/riscv64
 
           # Download all RPM packages
-          echo "Downloading RPM packages from $RELEASE_TAG..."
-          gh release download $RELEASE_TAG \
-            --pattern '*.riscv64.rpm' \
-            --repo gounthar/docker-for-riscv64 \
-            --clobber
+          for tag in $RELEASE_TAGS; do
+            echo "Downloading RPM packages from $tag..."
+            gh release download "$tag" \
+              --pattern '*.riscv64.rpm' \
+              --repo gounthar/docker-for-riscv64 \
+              --clobber
+          done
 
           # Validate RPM packages were downloaded
           if ! ls *.rpm 1> /dev/null 2>&1; then
-            echo "Error: No RPM packages found in release $RELEASE_TAG"
+            echo "Error: No RPM packages found in $RELEASE_TAGS"
             exit 1
           fi
 
@@ -101,6 +129,7 @@ jobs:
           ls -lh *.rpm
 
       - name: Import GPG signing key
+        if: env.RELEASE_TAGS != ''
         env:
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
         run: |
@@ -124,6 +153,7 @@ jobs:
           gpg --list-secret-keys
 
       - name: Create repository metadata
+        if: env.RELEASE_TAGS != ''
         run: |
           set -euo pipefail
           cd rpm/fedora/riscv64
@@ -147,6 +177,7 @@ jobs:
           ls -lh repodata/
 
       - name: Create repository configuration file
+        if: env.RELEASE_TAGS != ''
         run: |
           cat > rpm/docker-riscv64.repo << 'EOF'
           [docker-riscv64]
@@ -162,6 +193,7 @@ jobs:
           cat rpm/docker-riscv64.repo
 
       - name: Update README for RPM repo
+        if: env.RELEASE_TAGS != ''
         run: |
           cat > rpm/README.md << 'EOF'
           # Docker RISC-V64 RPM Repository
@@ -254,6 +286,7 @@ jobs:
           echo "Created RPM repository README"
 
       - name: Commit and push changes
+        if: env.RELEASE_TAGS != ''
         env:
           GH_TOKEN: ${{ github.token }}
           GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -264,11 +297,11 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add rpm/
-          COMMIT_MSG="feat: add RPM packages from $RELEASE_TAG to repository
+          COMMIT_MSG="feat: add RPM packages from $RELEASE_TAGS to repository
 
           Automated update from GitHub Actions.
 
-          Release: $RELEASE_TAG
+          Release: $RELEASE_TAGS
           Workflow: ${{ github.workflow }}
           Run: ${{ github.run_id }}"
 
@@ -309,15 +342,17 @@ jobs:
                   # Re-download and re-add packages
                   cd rpm/fedora/riscv64
 
-                  echo "Re-downloading RPM packages from $RELEASE_TAG..."
-                  gh release download $RELEASE_TAG \
-                    --pattern '*.riscv64.rpm' \
-                    --repo gounthar/docker-for-riscv64 \
-                    --clobber
+                  for tag in $RELEASE_TAGS; do
+                    echo "Re-downloading RPM packages from $tag..."
+                    gh release download "$tag" \
+                      --pattern '*.riscv64.rpm' \
+                      --repo gounthar/docker-for-riscv64 \
+                      --clobber
+                  done
 
                   # Validate packages were downloaded
                   if ! ls *.rpm 1> /dev/null 2>&1; then
-                    echo "❌ Error: No RPM packages found in release $RELEASE_TAG"
+                    echo "❌ Error: No RPM packages found in $RELEASE_TAGS"
                     exit 1
                   fi
 
@@ -348,9 +383,9 @@ jobs:
                   # Commit again if there are changes
                   if ! git diff --quiet rpm/; then
                     git add rpm/
-                    git commit -m "feat: add RPM packages from $RELEASE_TAG to repository" \
+                    git commit -m "feat: add RPM packages from $RELEASE_TAGS to repository" \
                                -m "Automated update from GitHub Actions (retry $RETRY_COUNT)." \
-                               -m "Release: $RELEASE_TAG" \
+                               -m "Release: $RELEASE_TAGS" \
                                -m "Workflow: ${{ github.workflow }}" \
                                -m "Run: ${{ github.run_id }}"
                   else
@@ -372,13 +407,14 @@ jobs:
           echo "✅ Changes committed and pushed successfully"
 
       - name: Summary
+        if: env.RELEASE_TAGS != ''
         run: |
           echo ""
           echo "================================================"
           echo "✅ RPM Repository Updated Successfully!"
           echo "================================================"
           echo ""
-          echo "Release: $RELEASE_TAG"
+          echo "Release: $RELEASE_TAGS"
           echo "Repository URL: https://gounthar.github.io/docker-for-riscv64/rpm/fedora/riscv64"
           echo ""
           echo "Add repository with:"
