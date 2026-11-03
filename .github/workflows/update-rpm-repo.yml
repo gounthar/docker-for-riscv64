@@ -64,9 +64,16 @@ jobs:
             # assets created between its start and its completion. Picking
             # the newest release with RPMs instead added whichever package
             # was released last (e.g. buildx) whatever had just been built.
+            #
+            # Deliberately a window, not an exact binding to RUN_ID: if
+            # another RPM build uploads during the same window, its release
+            # is added here too. Those are published release assets that its
+            # own update run would add moments later, so adding them early
+            # is harmless. Binding exactly would need every build workflow
+            # to hand its tag over through an artifact.
             echo "Triggering run: $RUN_NAME ($RUN_ID), $RUN_STARTED -> $RUN_UPDATED"
             RELEASE_TAGS=$(gh api --paginate \
-                             "repos/${{ github.repository }}/releases?per_page=100" \
+                             "repos/gounthar/docker-for-riscv64/releases?per_page=100" \
                              --jq '.[] | {tag: .tag_name, a: [.assets[] | select(.name | endswith(".riscv64.rpm")) | .created_at]}' | \
                            jq -r --arg from "$RUN_STARTED" --arg to "$RUN_UPDATED" \
                              'select(any(.a[]; . >= $from and . <= $to)) | .tag' | \
