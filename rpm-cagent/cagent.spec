@@ -1,5 +1,5 @@
 Name:           cagent
-Version:        1.9.13
+Version:        1.161.0
 Release:        1%{?dist}
 Summary:        Multi-agent AI runtime by Docker Engineering for RISC-V64
 License:        Apache-2.0
