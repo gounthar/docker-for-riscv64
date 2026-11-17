@@ -83,16 +83,21 @@ targets:
     spec:
       command: |
         set -euo pipefail
-        cd cagent
-        git fetch origin --tags
-        git checkout "v{{ source `cagentRelease` }}"
-        cd ..
-        git add cagent
+        # Exit 0 = changed, 1 = already there, 2 = failure. Every step
+        # maps its own failure to 2: with set -e alone a git error that
+        # returns 1 (fetch rejecting a conflicting tag, a failed checkout)
+        # would read as "already there" while the version targets still
+        # move.
+        cd cagent || exit 2
+        git fetch origin --tags || exit 2
+        git checkout "v{{ source `cagentRelease` }}" || exit 2
+        cd .. || exit 2
+        git add cagent || exit 2
         # Report a change only when the committed submodule pointer (HEAD,
         # not the index just staged) differs from the checked-out tag.
-        # Exit 0 = changed, 1 = already there; anything else is a failure.
-        CURRENT_COMMIT=$(git ls-tree HEAD cagent | awk '{print $3}')
-        TARGET_COMMIT=$(git -C cagent rev-parse HEAD)
+        CURRENT_COMMIT=$(git ls-tree HEAD cagent | awk '{print $3}') || exit 2
+        TARGET_COMMIT=$(git -C cagent rev-parse HEAD) || exit 2
+        [ -n "$CURRENT_COMMIT" ] && [ -n "$TARGET_COMMIT" ] || exit 2
         [ "$CURRENT_COMMIT" != "$TARGET_COMMIT" ] || exit 1
       changedif:
         # "shell" is not a valid kind; updatecli accepts exitcode,
