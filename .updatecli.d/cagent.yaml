@@ -68,13 +68,18 @@ targets:
     sourceid: cagentRelease
     spec:
       file: "rpm-cagent/cagent.spec"
-      matchpattern: '^Version:[[:space:]]+([0-9]+[.][0-9]+[.][0-9]+)'
+      # (?m): Version is not on line 1; without it Go anchors ^ at file start.
+      matchpattern: '(?m)^Version:[[:space:]]+([0-9]+[.][0-9]+[.][0-9]+)'
       replacepattern: 'Version:        {{ source `cagentRelease` }}'
 
   updateCagentSubmodule:
     name: "Update cagent submodule to latest release"
     kind: shell
-    sourceid: cagentRelease
+    # No sourceid: the version is templated into the command below. With
+    # sourceid, updatecli also appends it as a trailing argument, which runs
+    # as a command of its own ("1.161.0: not found", exit 127), and it
+    # rejects sourceid together with disablesourceinput.
+    disablesourceinput: true
     spec:
       command: |
         set -euo pipefail
@@ -83,12 +88,18 @@ targets:
         git checkout "v{{ source `cagentRelease` }}"
         cd ..
         git add cagent
+        # Report a change only when the committed submodule pointer (HEAD,
+        # not the index just staged) differs from the checked-out tag.
+        # Exit 0 = changed, 1 = already there; anything else is a failure.
+        CURRENT_COMMIT=$(git ls-tree HEAD cagent | awk '{print $3}')
+        TARGET_COMMIT=$(git -C cagent rev-parse HEAD)
+        [ "$CURRENT_COMMIT" != "$TARGET_COMMIT" ] || exit 1
       changedif:
-        kind: shell
+        # "shell" is not a valid kind; updatecli accepts exitcode,
+        # console/output or file/checksum.
+        kind: exitcode
         spec:
-          command: |
-            LATEST_TAG="v{{ source `cagentRelease` }}"
-            CURRENT_COMMIT=$(git ls-files --stage cagent | awk '{print $2}')
-            TARGET_COMMIT=$(git ls-remote https://github.com/docker/cagent.git "refs/tags/${LATEST_TAG}" | cut -f1)
-            [ -n "$TARGET_COMMIT" ] && [ "$CURRENT_COMMIT" != "$TARGET_COMMIT" ]
+          warning: 0
+          success: 1
+          failure: 2
 
