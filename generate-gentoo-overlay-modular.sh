@@ -14,10 +14,10 @@ set -e
 
 # Default versions (single source of truth)
 DOCKER_VERSION="28.5.1"
-CLI_VERSION="29.9.3"
-COMPOSE_VERSION="5.7.0"
+CLI_VERSION="29.10.0"
+COMPOSE_VERSION="5.7.2"
 CONTAINERD_VERSION="2.4.2"
-RUNC_VERSION="1.5.2"
+RUNC_VERSION="1.5.3"
 TINI_VERSION="0.19.0"
 
 # Print usage and the current default versions (interpolated from the constants above).
