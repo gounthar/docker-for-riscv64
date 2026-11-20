@@ -92,19 +92,19 @@ Description: Container runtime for RISC-V64 architecture
  Built on BananaPi F3 running Armbian Trixie.
 
 Package: docker-buildx-plugin
-Version: 0.39.0-riscv64-1
+Version: 0.39.1-riscv64-1
 Architecture: riscv64
 Maintainer: Bruno Verächten <bruno@verachten.fr>
-Installed-Size: 59183
+Installed-Size: 59247
 Recommends: docker.io (>= 20.10) | docker-ce (>= 20.10)
 Homepage: https://github.com/docker/buildx
 Priority: optional
 Section: devel
-Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.39.0-riscv64-1_riscv64.deb
-Size: 16133180
-SHA256: 60f5dc771c31c2984e19fa6cc9137e2d89a69e58771de1b881f2404b13900687
-SHA1: 86a5c1656aff50ef3a573184ddfb1d3abf020e9f
-MD5sum: 74fd443ee20d615af69a2d292934ecc7
+Filename: pool/main/d/docker-buildx-plugin/docker-buildx-plugin_0.39.1-riscv64-1_riscv64.deb
+Size: 16135828
+SHA256: 791f233fc6004394125aa5ede18b3257ac1f3badfb674879d066e54d3913e6a6
+SHA1: f7ab2aa7163a5a10ae57f5174042c7b60f61a59d
+MD5sum: 9185c32796e5efa4bbf033f677a8243d
 Description: Docker CLI plugin for extended build capabilities
  Docker Buildx is a Docker CLI plugin that extends the docker build command
  with the full BuildKit features.
