@@ -31,10 +31,10 @@ The `docker-<version>.tgz` bundle contains `docker`, `dockerd`, `containerd`, `c
 VERSION=29.10.1
 curl -fsSLO "https://download.docker.com/linux/static/stable/riscv64/docker-${VERSION}.tgz"
 curl -fsSLO "https://download.docker.com/linux/static/stable/riscv64/docker-${VERSION}.tgz.sha256"
-sha256sum -c "docker-${VERSION}.tgz.sha256"
-tar -xzf "docker-${VERSION}.tgz"
-sudo cp docker/* /usr/bin/
-sudo dockerd &
+sha256sum -c "docker-${VERSION}.tgz.sha256" \
+  && tar -xzf "docker-${VERSION}.tgz" \
+  && sudo cp docker/* /usr/bin/ \
+  && { sudo dockerd & }
 ```
 
 `dockerd` needs `iptables` on the host to set up the default bridge network.
