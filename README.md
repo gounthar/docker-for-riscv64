@@ -21,6 +21,31 @@ This project provides pre-built Docker Engine, CLI, and Compose binaries for RIS
 - Built and tested on Debian Trixie / Armbian Trixie and Fedora RISC-V64
 - Minimal patches for RISC-V compatibility
 
+## Official Docker static binaries for riscv64
+
+Since Docker 29.10.1 (November 2026), Docker publishes official riscv64 static binaries at [download.docker.com/linux/static/stable/riscv64/](https://download.docker.com/linux/static/stable/riscv64/). This follows [moby/moby#44735](https://github.com/moby/moby/pull/44735) and [docker/packaging#605](https://github.com/docker/packaging/pull/605). If a static tarball is all you need, use the official one.
+
+The `docker-<version>.tgz` bundle contains `docker`, `dockerd`, `containerd`, `containerd-shim-runc-v2`, `ctr`, `runc`, `docker-init` and `docker-proxy`. `docker-cli_<version>.tgz`, `docker-engine_<version>.tgz` and `docker-rootless-extras-<version>.tgz` are published next to it. Install it the way [Docker's binaries guide](https://docs.docker.com/engine/install/binaries/) describes:
+
+```bash
+VERSION=29.10.1
+curl -fsSLO "https://download.docker.com/linux/static/stable/riscv64/docker-${VERSION}.tgz"
+curl -fsSLO "https://download.docker.com/linux/static/stable/riscv64/docker-${VERSION}.tgz.sha256"
+sha256sum -c "docker-${VERSION}.tgz.sha256" \
+  && tar -xzf "docker-${VERSION}.tgz" \
+  && sudo cp docker/* /usr/bin/ \
+  && { sudo dockerd & }
+```
+
+`dockerd` needs `iptables` on the host to set up the default bridge network.
+
+What this project still adds on top of the official bundle, as of 2026-11-24:
+
+- `.deb` and `.rpm` packages with systemd units. Docker's apt and Fedora repositories have no riscv64 packages yet.
+- The Docker Compose and Buildx CLI plugins as `.deb`/`.rpm` packages. Upstream [Compose](https://github.com/docker/compose/releases) and [Buildx](https://github.com/docker/buildx/releases) publish riscv64 binaries in their own releases, but neither plugin is in the static bundle.
+
+The 29.10.1 bundle was smoke-tested on a BananaPi F3 (SpacemiT K1): containers ran from alpine and hello-world, a small image built with the legacy builder, and the default bridge reached the internet. That was one run, with dockerd inside a privileged Debian Trixie container.
+
 ## Quick Start
 
 > **Note:** The examples below use specific version numbers for illustration.
@@ -350,7 +375,7 @@ docker compose down
 
 BuildKit is available for RISC-V64, enabling multi-platform builds and advanced Docker Buildx features.
 
-> **Important:** The official `moby/buildkit:buildx-stable-1` container image does not support RISC-V64. You must use the RISC-V64-specific BuildKit image (`ghcr.io/gounthar/buildkit-riscv64`) when creating Docker Buildx builders. See [Option 2](#option-2-container-image-for-docker-buildx-recommended) below.
+> **Note:** The official `moby/buildkit:buildx-stable-1` image now lists `linux/riscv64` in its manifest (checked 2026-11-24), but it has not been tested with this project yet. The RISC-V64-specific BuildKit image (`ghcr.io/gounthar/buildkit-riscv64`) described in [Option 2](#option-2-container-image-for-docker-buildx-recommended) below is the tested path.
 
 #### Option 1: APT Repository (Binaries Only)
 
@@ -791,4 +816,4 @@ This project follows the licensing of its upstream components:
 
 ---
 
-**Note**: This is an unofficial build of Docker Engine for RISC-V64. For production use, always verify binaries and test thoroughly on your target hardware.
+**Note**: This is an unofficial build of Docker Engine for RISC-V64. Docker now publishes [official riscv64 static binaries](#official-docker-static-binaries-for-riscv64); prefer those when a tarball is enough. For production use, always verify binaries and test thoroughly on your target hardware.
