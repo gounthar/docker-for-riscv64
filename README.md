@@ -375,7 +375,7 @@ docker compose down
 
 BuildKit is available for RISC-V64, enabling multi-platform builds and advanced Docker Buildx features.
 
-> **Note:** The official `moby/buildkit:buildx-stable-1` image now lists `linux/riscv64` in its manifest (checked 2026-11-24), but it has not been tested with this project yet. The RISC-V64-specific BuildKit image (`ghcr.io/gounthar/buildkit-riscv64`) described in [Option 2](#option-2-container-image-for-docker-buildx-recommended) below is the tested path.
+> **Note:** The official `moby/buildkit:buildx-stable-1` image lists `linux/riscv64` and works on riscv64. Tested once on 2026-11-25 on a Banana Pi BPI-F3 (native riscv64, inside a Debian Trixie container) with the official Docker 29.10.1 static bundle and buildx v0.39.1: `docker buildx create --driver docker-container --use` pulled it as the default image (BuildKit v0.35.1), and `docker buildx build --load` of a small Dockerfile ran to completion. With that image, no `--driver-opt image=...` is needed. The RISC-V64-specific image (`ghcr.io/gounthar/buildkit-riscv64`) described in [Option 2](#option-2-container-image-for-docker-buildx-recommended) below is still available.
 
 #### Option 1: APT Repository (Binaries Only)
 
