@@ -1,109 +1,119 @@
 name: Weekly cagent RISC-V64 Build
 
+# Upstream docker/docker-agent (formerly docker/cagent) publishes its own
+# docker-agent-linux-riscv64 binary since v1.167.0. This workflow no longer
+# compiles cagent: it downloads that binary, checks it against the sha256
+# digest GitHub records for the upstream release asset, runs it once on
+# riscv64, and republishes it as cagent-linux-riscv64 so the Debian and RPM
+# package workflows keep working unchanged.
+#
+# Triggered by track-cagent-releases.yml with a release tag. There is no
+# schedule any more: the weekly dev build from main existed because nobody
+# else built riscv64, and upstream now cuts a release every day or two.
+
 on:
-  schedule:
-    # Run every Sunday at 06:00 UTC (after buildx build)
-    - cron: '0 6 * * 0'
   workflow_dispatch:
     inputs:
       cagent_ref:
-        description: 'cagent ref to build (branch/tag/commit)'
-        required: false
-        default: 'main'
+        description: 'Upstream docker-agent release tag to repackage (e.g. v1.167.0)'
+        required: true
 
 permissions:
   contents: write
   actions: write
   issues: write
 
+env:
+  UPSTREAM_REPO: docker/docker-agent
+  UPSTREAM_ASSET: docker-agent-linux-riscv64
+
 jobs:
   build-cagent:
+    # riscv64 runner so the downloaded binary is executed natively once
+    # before it is republished.
     runs-on: [self-hosted, riscv64]
 
     steps:
-      # Compute the build date once. Steps that each ran `date +%Y%m%d`
-      # disagreed when a run crossed midnight in the runner's local time:
-      # the image was tagged with one day and looked up with the next.
-      - name: Set build date
-        run: echo "BUILD_DATE=$(date +%Y%m%d)" >> "$GITHUB_ENV"
-
-      - name: Checkout repository
-        uses: actions/checkout@v7
-        with:
-          # Don't checkout all submodules - we only need cagent
-          submodules: false
-          fetch-depth: 0
-
-      - name: Checkout cagent submodule only
+      - name: Ensure gh is installed
         run: |
-          # Only init and update the cagent submodule (skip moby, cli, compose)
-          git submodule update --init --depth 1 cagent
-          cd cagent
-          # Force update tags to avoid conflicts with existing local tags
-          git fetch origin --tags --force
-          git checkout ${{ github.event.inputs.cagent_ref || 'main' }}
-          # Pull only if it's a branch (not a tag or commit)
-          if git symbolic-ref -q HEAD >/dev/null; then
-            git pull origin ${{ github.event.inputs.cagent_ref || 'main' }}
-          else
-            echo "Checked out tag or commit, skipping pull"
+          if ! command -v gh >/dev/null 2>&1; then
+            sudo apt-get update && sudo apt-get install -y gh
           fi
 
-      - name: Detect Go version from cagent go.mod
-        id: detect_go
-        run: |
-          GO_VERSION=$(grep '^go ' cagent/go.mod | awk '{print $2}')
-          if [ -z "$GO_VERSION" ]; then
-            echo "WARNING: Could not extract Go version from cagent/go.mod, falling back to 1.26.0"
-            GO_VERSION="1.26.0"
-          fi
-          echo "Go version from cagent/go.mod: $GO_VERSION"
-          echo "go_version=$GO_VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Set up Go
-        uses: actions/setup-go@v7
-        with:
-          go-version: '${{ steps.detect_go.outputs.go_version }}'
-
-      - name: Install build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y build-essential
-
-      - name: Build cagent binary
+      - name: Validate release tag
+        env:
+          CAGENT_REF: ${{ github.event.inputs.cagent_ref }}
         run: |
           set -euo pipefail
-          cd cagent
+          if ! [[ "$CAGENT_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::cagent_ref must be an upstream release tag like v1.167.0, got '$CAGENT_REF'"
+            exit 1
+          fi
+          CLEAN_REF="${CAGENT_REF#v}"
+          echo "UPSTREAM_TAG=v${CLEAN_REF}" >> "$GITHUB_ENV"
+          echo "CLEAN_REF=${CLEAN_REF}" >> "$GITHUB_ENV"
 
-          # Set version from git tag
-          GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || echo "dev")
-          GIT_COMMIT=$(git rev-parse HEAD)
-          echo "Building cagent version: $GIT_TAG"
-          echo "Commit: $GIT_COMMIT"
-
-          # Build with version info (CGO enabled for tree-sitter dependency)
-          GOOS=linux GOARCH=riscv64 CGO_ENABLED=1 go build \
-            -ldflags "-X 'github.com/docker/cagent/pkg/version.Version=${GIT_TAG}' -X 'github.com/docker/cagent/pkg/version.Commit=${GIT_COMMIT}'" \
-            -o cagent-linux-riscv64 \
-            ./main.go
-
-          # Verify binary exists
-          ls -lh cagent-linux-riscv64
-          file cagent-linux-riscv64
-
-      - name: Extract binary
+      - name: Download upstream riscv64 binary and verify sha256
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          DATE="${BUILD_DATE}"
-          mkdir -p release-cagent-$DATE
+          set -euo pipefail
+          WORK="${RUNNER_TEMP}/cagent-${CLEAN_REF}"
+          rm -rf "$WORK" && mkdir -p "$WORK"
+          echo "WORK=$WORK" >> "$GITHUB_ENV"
 
-          # Copy binary
-          cp cagent/cagent-linux-riscv64 release-cagent-$DATE/
-          chmod +x release-cagent-$DATE/cagent-linux-riscv64
+          # GitHub stores a sha256 digest for every release asset.
+          DIGEST=$(gh api "repos/${UPSTREAM_REPO}/releases/tags/${UPSTREAM_TAG}" \
+            --jq ".assets[] | select(.name == \"${UPSTREAM_ASSET}\") | .digest")
+          if [ -z "$DIGEST" ]; then
+            echo "::error::${UPSTREAM_REPO} ${UPSTREAM_TAG} has no ${UPSTREAM_ASSET} asset (upstream ships riscv64 from v1.167.0 on)"
+            exit 1
+          fi
+          EXPECTED="${DIGEST#sha256:}"
+          if ! [[ "$EXPECTED" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::error::Unexpected digest format for ${UPSTREAM_ASSET}: '$DIGEST'"
+            exit 1
+          fi
 
-          # Get version
-          ./release-cagent-$DATE/cagent-linux-riscv64 version > release-cagent-$DATE/VERSION.txt 2>&1 || echo "Version command not available"
+          gh release download "$UPSTREAM_TAG" --repo "$UPSTREAM_REPO" \
+            --pattern "$UPSTREAM_ASSET" --dir "$WORK"
 
-          ls -lh release-cagent-$DATE/
+          ACTUAL=$(sha256sum "$WORK/$UPSTREAM_ASSET" | awk '{print $1}')
+          echo "expected sha256: $EXPECTED"
+          echo "actual   sha256: $ACTUAL"
+          if [ "$ACTUAL" != "$EXPECTED" ]; then
+            echo "::error::sha256 mismatch for ${UPSTREAM_ASSET} ${UPSTREAM_TAG}"
+            exit 1
+          fi
+          echo "UPSTREAM_SHA256=$EXPECTED" >> "$GITHUB_ENV"
+
+      - name: Check and stage binary
+        run: |
+          set -euo pipefail
+          BIN="$WORK/$UPSTREAM_ASSET"
+          chmod +x "$BIN"
+
+          file "$BIN"
+          if ! file "$BIN" | grep -q 'RISC-V'; then
+            echo "::error::${UPSTREAM_ASSET} is not a RISC-V executable"
+            exit 1
+          fi
+
+          # Run it natively and make sure it reports the tag we asked for.
+          VERSION_OUT=$("$BIN" version 2>&1)
+          echo "$VERSION_OUT"
+          if ! grep -qF "$UPSTREAM_TAG" <<< "$VERSION_OUT"; then
+            echo "::error::'version' output does not mention ${UPSTREAM_TAG}"
+            exit 1
+          fi
+
+          # The package workflows download cagent-linux-riscv64.
+          OUT="$WORK/release"
+          mkdir -p "$OUT"
+          cp "$BIN" "$OUT/cagent-linux-riscv64"
+          echo "$VERSION_OUT" > "$OUT/VERSION.txt"
+          (cd "$OUT" && sha256sum cagent-linux-riscv64 > cagent-linux-riscv64.sha256)
+          ls -lh "$OUT"
 
       - name: Create release
         id: create_release
@@ -111,95 +121,34 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          # Ensure gh is installed
-          if ! command -v gh >/dev/null 2>&1; then
-            sudo apt-get update && sudo apt-get install -y gh || true
-          fi
+          RELEASE_VERSION="cagent-v${CLEAN_REF}-riscv64"
+          echo "release_version=${RELEASE_VERSION}" >> "$GITHUB_OUTPUT"
 
-          DATE="${BUILD_DATE}"
-          CAGENT_REF="${{ github.event.inputs.cagent_ref || 'main' }}"
+          cat > "$WORK/release-notes.md" << EOF
+          cagent (docker-agent) v${CLEAN_REF} for RISC-V64
 
-          # Get version from submodule
-          cd cagent
-          CAGENT_VERSION=$(git describe --tags --exact-match 2>/dev/null || git describe --tags --always)
-          cd ..
-
-          # Determine release version (handle both v1.9.13 and 1.9.13 formats)
-          if [[ "$CAGENT_REF" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-            # Official release: v1.9.13 or 1.9.13 -> cagent-v1.9.13-riscv64
-            CLEAN_REF="${CAGENT_REF#v}"
-            RELEASE_VERSION="cagent-v${CLEAN_REF}-riscv64"
-            RELEASE_TITLE="cagent v${CLEAN_REF} for RISC-V64"
-            VERSION_INFO="**cagent Version:** v${CLEAN_REF}"
-          else
-            # Development build
-            RELEASE_VERSION="cagent-v${DATE}-dev"
-            RELEASE_TITLE="cagent RISC-V64 Development Build ${DATE}"
-            VERSION_INFO="**cagent Branch:** ${CAGENT_REF}
-            **cagent Version:** ${CAGENT_VERSION}"
-          fi
-
-          # Output release version for next step
-          echo "release_version=${RELEASE_VERSION}" >> $GITHUB_OUTPUT
-
-          cat > release-notes.md << EOF
-          Automated build of cagent for RISC-V64
-
-          ${VERSION_INFO}
-          **Build Date:** ${BUILD_DATE:0:4}-${BUILD_DATE:4:2}-${BUILD_DATE:6:2}
-          **Architecture:** riscv64
-
-          **About cagent:**
-          cagent is a powerful, easy to use, customizable multi-agent runtime that
-          orchestrates AI agents with specialized capabilities and tools.
-
-          Key features:
-          - Multi-agent architecture for domain-specific specialists
-          - MCP (Model Context Protocol) integration for external tools
-          - Smart task delegation between agents
-          - YAML-based declarative configuration
-          - Support for multiple AI providers (OpenAI, Anthropic, Gemini, xAI, Mistral)
+          This is the official upstream binary, unmodified:
+          https://github.com/${UPSTREAM_REPO}/releases/tag/${UPSTREAM_TAG}
+          (asset \`${UPSTREAM_ASSET}\`, sha256 \`${UPSTREAM_SHA256}\`).
+          It is republished here under the name \`cagent-linux-riscv64\` for the
+          Debian and RPM packages in this repository's APT and RPM repos.
 
           **Installation:**
           \`\`\`bash
-          # Download binary
-          wget https://github.com/gounthar/docker-for-riscv64/releases/download/${RELEASE_VERSION}/cagent-linux-riscv64
+          wget https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_VERSION}/cagent-linux-riscv64
           chmod +x cagent-linux-riscv64
-
-          # Install to system
           sudo mv cagent-linux-riscv64 /usr/bin/cagent
-          # Or install to local bin
-          mv cagent-linux-riscv64 ~/.local/bin/cagent
-
-          # Verify
           cagent version
           \`\`\`
 
-          **Build Command:**
-          \`\`\`bash
-          # Requires build-essential (gcc, g++, make) for CGO dependencies
-          cd cagent
-          GOOS=linux GOARCH=riscv64 CGO_ENABLED=1 go build \\
-            -ldflags "-X 'github.com/docker/cagent/pkg/version.Version=${CAGENT_VERSION}'" \\
-            -o cagent-linux-riscv64 ./main.go
-          \`\`\`
-
-          Automated build on RISC-V64 hardware
+          Or download \`${UPSTREAM_ASSET}\` straight from the upstream release.
           EOF
 
-          # For development builds, delete existing release if it exists
-          if [[ "$RELEASE_VERSION" =~ -dev$ ]]; then
-            echo "Checking for existing development release..."
-            if gh release view "${RELEASE_VERSION}" >/dev/null 2>&1; then
-              echo "Deleting existing release ${RELEASE_VERSION}..."
-              gh release delete "${RELEASE_VERSION}" --yes
-            fi
-          fi
-
           gh release create "${RELEASE_VERSION}" \
-            --title "${RELEASE_TITLE}" \
-            --notes-file release-notes.md \
-            release-cagent-$DATE/*
+            --repo "$GITHUB_REPOSITORY" \
+            --title "cagent v${CLEAN_REF} for RISC-V64" \
+            --notes-file "$WORK/release-notes.md" \
+            "$WORK"/release/*
 
       - name: Trigger package builds for official releases
         if: ${{ !endsWith(steps.create_release.outputs.release_version, '-dev') }}
@@ -214,13 +163,13 @@ jobs:
           sleep 10
 
           echo "Triggering Debian package build for ${RELEASE_VERSION}..."
-          if ! gh workflow run build-cagent-package.yml -f release_tag="${RELEASE_VERSION}"; then
+          if ! gh workflow run build-cagent-package.yml --repo "$GITHUB_REPOSITORY" -f release_tag="${RELEASE_VERSION}"; then
             echo "::error::Failed to trigger Debian package build"
             exit 1
           fi
 
           echo "Triggering RPM package build for ${RELEASE_VERSION}..."
-          if ! gh workflow run build-cagent-rpm.yml -f release_tag="${RELEASE_VERSION}"; then
+          if ! gh workflow run build-cagent-rpm.yml --repo "$GITHUB_REPOSITORY" -f release_tag="${RELEASE_VERSION}"; then
             echo "::error::Failed to trigger RPM package build"
             exit 1
           fi
@@ -246,6 +195,7 @@ jobs:
 
             # Find the issue by label and title
             ISSUE_NUMBER=$(gh issue list \
+              --repo "$GITHUB_REPOSITORY" \
               --label "build-in-progress,cagent-release" \
               --state open \
               --limit 200 \
@@ -257,11 +207,11 @@ jobs:
               echo "Found tracking issue #${ISSUE_NUMBER}"
 
               # Comment on the issue with release link
-              gh issue comment "$ISSUE_NUMBER" \
+              gh issue comment "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" \
                 --body "Build completed successfully! Release published: https://github.com/${{ github.repository }}/releases/tag/${RELEASE_VERSION}"
 
               # Close the issue
-              gh issue close "$ISSUE_NUMBER" \
+              gh issue close "$ISSUE_NUMBER" --repo "$GITHUB_REPOSITORY" \
                 --reason completed \
                 --comment "Automatically closing - release published."
 
